@@ -115,3 +115,27 @@ class TestDown:
     def test_down_without_a_daemon_is_a_refusal_not_a_crash(self, capsys):
         assert main(["down", "--json"]) == 1
         assert json.loads(capsys.readouterr().out)["errorKey"] == "not-running"
+
+
+class TestDaemonEnvironment:
+    def test_the_daemon_can_import_the_package_without_an_inherited_pythonpath(
+        self, monkeypatch, capsys
+    ):
+        """
+        The failure CI found and this machine could not.
+
+        The daemon is a fresh interpreter with a fresh `sys.path`. Started from
+        a source checkout it has no way to find this package unless it is told
+        where it is — and `PYTHONPATH` being set locally, by hand, hid that on
+        every developer machine while failing on all four CI platforms at once.
+        """
+        monkeypatch.delenv("PYTHONPATH", raising=False)
+
+        assert main(["up"]) == 0, "the daemon could not start without an inherited PYTHONPATH"
+        capsys.readouterr()
+
+        try:
+            assert main(["status"]) == 0
+        finally:
+            main(["down"])
+            capsys.readouterr()

@@ -16,8 +16,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
+from pathlib import Path
 
 from . import paths, spawn
 from .daemon import discovery
@@ -80,6 +82,7 @@ def _up(args) -> int:
 
     pid = spawn.start_detached(
         [spawn.python_executable(), "-m", "portable.daemon"],
+        env=_daemon_environment(),
         log=paths.logs() / "daemon.log",
     )
 
@@ -151,6 +154,34 @@ def _status(args) -> int:
     print("\n".join(lines))
 
     return 0
+
+
+def _daemon_environment() -> dict[str, str]:
+    """
+    An environment in which the daemon can import the package that started it.
+
+    Inheriting the parent's is not enough, and the difference only shows outside
+    a developer's own setup. Run from a source checkout — by pytest, or by
+    `python -m portable.cli` — this package is on `sys.path` without `PYTHONPATH`
+    ever being set, so the detached child, a fresh interpreter with a fresh
+    `sys.path`, cannot find it at all.
+
+    Locally that was hidden by exporting `PYTHONPATH` by hand. CI, which does
+    not, failed on all four platforms at once — which is the whole reason it
+    runs.
+    """
+    import portable
+
+    package_root = str(Path(portable.__file__).resolve().parent.parent)
+    environment = dict(os.environ)
+    existing = [part for part in environment.get("PYTHONPATH", "").split(os.pathsep) if part]
+
+    # dict.fromkeys keeps the order and drops duplicates: the location this
+    # package was imported from wins, and whatever the caller had set survives
+    # behind it.
+    environment["PYTHONPATH"] = os.pathsep.join(dict.fromkeys([package_root, *existing]))
+
+    return environment
 
 
 def _await_daemon(timeout: float = 15.0) -> discovery.Endpoint | None:
