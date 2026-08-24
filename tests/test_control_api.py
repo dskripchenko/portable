@@ -322,3 +322,59 @@ class TestRestoringAfterARestart:
                     capture_output=True,
                     check=False,
                 )
+
+
+class TestTheDiscoveryFileIsNeverSeenHalfWritten:
+    """
+    The failure this prevents is a daemon that is alive and unreachable.
+
+    `read` treats a file it cannot parse as debris and deletes it — which is
+    right for a file truncated by a crash. But the writer used to truncate and
+    then fill, so for a moment the file was legitimately empty, and a client
+    polling ten times a second while the daemon starts lands in that moment. It
+    then deleted the note the daemon had just written and would never write
+    again, and polled an empty directory until it gave up.
+
+    It failed about one Windows CI run in four, as a timeout with nothing in any
+    log to explain it.
+    """
+
+    def test_a_reader_racing_the_writer_never_sees_nothing(self, tmp_path):
+        import threading
+
+        target = tmp_path / "daemon.json"
+        endpoint = discovery.Endpoint(port=1234, token="t" * 43, pid=os.getpid())
+        stop = threading.Event()
+        seen = []
+
+        def write_repeatedly():
+            while not stop.is_set():
+                discovery.write(endpoint, target)
+
+        writer = threading.Thread(target=write_repeatedly, daemon=True)
+        writer.start()
+
+        try:
+            deadline = time.monotonic() + 2
+
+            while time.monotonic() < deadline:
+                if target.exists():
+                    seen.append(discovery.read(target))
+        finally:
+            stop.set()
+            writer.join(timeout=5)
+
+        assert seen, "the writer never produced a file to read"
+        assert all(entry is not None for entry in seen), (
+            f"{seen.count(None)} of {len(seen)} reads saw a file that could not be parsed — "
+            "and each of those deleted it"
+        )
+        assert target.exists(), "the file was deleted by a reader"
+
+    def test_nothing_is_left_behind_beside_it(self, tmp_path):
+        # The temporary is renamed into place, not left as litter in a directory
+        # the tool also uses for pids and sockets.
+        target = tmp_path / "run" / "daemon.json"
+        discovery.write(discovery.Endpoint(port=1, token="t", pid=os.getpid()), target)
+
+        assert [entry.name for entry in target.parent.iterdir()] == ["daemon.json"]

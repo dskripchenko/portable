@@ -492,3 +492,27 @@ PECL publishes no digests for these, and this is a library about to be loaded
 into every PHP process, so the install says so plainly rather than staying quiet
 about it.
 
+### Fixed — a daemon that was alive, listening, and unreachable
+
+The discovery file — the only way any client finds the daemon — was written by
+truncating it and then filling it in. Between those two steps the file exists
+and is empty.
+
+`read` treats a file it cannot parse as debris and deletes it, which is right
+for one truncated by a crash. But `portable up` polls ten times a second during
+exactly the period the daemon is starting and writing, so it landed in that
+window, deleted the note the daemon had just written and would never write
+again, and then polled an empty directory until it gave up. The daemon stayed
+running the whole time, holding its port, reachable by nothing — including
+`portable down`.
+
+It failed on Windows CI about one run in four, as a timeout with nothing in any
+log to explain it. Two rounds of looking at it blamed the timeout, which was
+wrong: raising it from 15 to 60 seconds changed nothing, because there was
+nothing left to find.
+
+Written beside and renamed into place now. `os.replace` is atomic on Windows as
+well as POSIX, so a reader sees either the previous file or the complete new
+one. The test races a reader against a writer for two seconds; against the old
+implementation every single read saw an unparseable file.
+

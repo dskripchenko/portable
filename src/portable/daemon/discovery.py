@@ -50,16 +50,43 @@ def new_token() -> str:
 
 
 def write(endpoint: Endpoint, path: Path | None = None) -> Path:
+    """
+    Record where the daemon is, atomically.
+
+    Written beside and renamed into place, rather than opened with `O_TRUNC` and
+    filled in. The difference is a window — between the truncate and the write —
+    in which the file exists and is empty, and a client polling every tenth of a
+    second during exactly the period the daemon is starting will land in it.
+
+    That window was not theoretical. `read` treats a file it cannot parse as
+    debris and deletes it, so a client that looked at the wrong instant removed
+    the note the daemon had just written and would never write again: a daemon
+    listening, alive, and unreachable by anything, forever. It failed on
+    Windows CI roughly one run in four and read as a mysterious timeout.
+
+    `os.replace` is atomic on Windows as well as POSIX, so a reader now sees
+    either the previous file or the complete new one.
+    """
     path = path or paths.daemon_file()
     path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
 
     # Created with restrictive permissions before anything is written, rather
     # than chmod'ed afterwards: between the two there is a moment where the
     # token is readable, and that moment is exactly what an attacker waits for.
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 
-    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-        json.dump(asdict(endpoint), handle, indent=2)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump(asdict(endpoint), handle, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+
+        raise
 
     return path
 
