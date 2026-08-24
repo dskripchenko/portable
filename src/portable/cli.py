@@ -232,7 +232,7 @@ def _up(args) -> int:
         log=paths.logs() / "daemon.log",
     )
 
-    endpoint = _await_daemon()
+    endpoint = _await_daemon(pid)
 
     if endpoint is None:
         # Whether it is still there decides what to look at next: a process that
@@ -765,10 +765,27 @@ def _describe_contents(home: Path) -> str:
     return ", ".join(parts) if parts else "nothing yet"
 
 
-def _await_daemon(timeout: float = 15.0) -> discovery.Endpoint | None:
+def _await_daemon(pid: int | None = None, timeout: float = 60.0) -> discovery.Endpoint | None:
+    """
+    Wait for the daemon to answer, distinguishing slow from dead.
+
+    Two different situations were previously one number. A daemon that has died
+    is answerable immediately — there is nothing left to wait for — while one
+    that is merely slow deserves considerably longer than it used to get: a cold
+    Windows machine can spend fifteen seconds starting an interpreter and
+    importing, before any of this tool's own code runs. That is not a fault, and
+    a timeout tuned for a warm developer laptop turns it into one. It showed up
+    as CI failing once in four runs on `windows-latest`, which is the same cold
+    start a person gets on the first `portable up` after a reboot.
+
+    So: patient while the process is alive, immediate once it is not.
+    """
     deadline = time.monotonic() + timeout
 
     while time.monotonic() < deadline:
+        if pid is not None and not spawn.is_running(pid):
+            return None
+
         endpoint = discovery.read()
 
         if endpoint is not None:

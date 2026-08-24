@@ -18,7 +18,7 @@ import time
 
 import pytest
 
-from portable import paths, spawn
+from portable import cli, paths, spawn
 from portable.cli import main
 from portable.daemon import discovery
 
@@ -172,3 +172,39 @@ class TestRunAndEnv:
     def test_run_without_a_command_explains_itself(self, daemon, capsys):
         assert main(["run"]) == 2
         assert "Usage" in capsys.readouterr().err
+
+
+class TestWaitingForTheDaemon:
+    """
+    Slow and dead are different, and used to be one number.
+
+    A cold Windows machine can spend fifteen seconds starting an interpreter
+    before any of this tool's own code runs — not a fault, but a fixed timeout
+    tuned for a warm laptop turns it into one. It surfaced as CI failing once in
+    four on `windows-latest`, which is the same cold start a person gets on the
+    first `portable up` after a reboot.
+    """
+
+    def test_it_gives_up_at_once_when_the_process_is_gone(self):
+        # And does not sit out the full timeout. There is nothing left to wait
+        # for, and a minute of silence before a failure that was knowable
+        # immediately is a minute spent doubting the command.
+        started = time.monotonic()
+
+        assert cli._await_daemon(pid=-1, timeout=30) is None
+        assert time.monotonic() - started < 2
+
+    def test_it_keeps_waiting_while_the_process_is_alive(self, monkeypatch):
+        alive = [True]
+        monkeypatch.setattr(cli.spawn, "is_running", lambda pid: alive[0])
+
+        answered = []
+
+        def read():
+            answered.append(1)
+
+
+        monkeypatch.setattr(cli.discovery, "read", read)
+
+        assert cli._await_daemon(pid=1234, timeout=1.0) is None
+        assert len(answered) > 1, "it stopped polling while the daemon was still starting"
