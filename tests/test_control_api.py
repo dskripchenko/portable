@@ -189,3 +189,30 @@ class TestDiscovery:
     def test_tokens_are_not_predictable(self):
         assert len({discovery.new_token() for _ in range(50)}) == 50
         assert len(discovery.new_token()) >= 32
+
+
+class TestBindingDoesNotDependOnDns:
+    def test_starting_does_not_wait_on_a_reverse_lookup(self):
+        """
+        `HTTPServer.server_bind` calls `socket.getfqdn()` on the bound address —
+        a reverse DNS query for 127.0.0.1. Where the resolver is slow or
+        filtered it takes tens of seconds or hangs outright, and the daemon
+        never reaches the point of listening.
+
+        macOS CI runners hang on it every time. A corporate machine with a
+        filtered resolver — the kind this tool is written for — behaves
+        identically.
+        """
+        import time
+
+        server = ControlServer()
+        started = time.monotonic()
+
+        try:
+            server.start(port=0)
+            elapsed = time.monotonic() - started
+
+            assert elapsed < 2.0, f"binding took {elapsed:.1f}s — something is resolving names"
+            assert server._http.server_name == "localhost", "the lookup happened after all"
+        finally:
+            server.stop(timeout=5)
