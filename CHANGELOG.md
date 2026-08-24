@@ -310,3 +310,39 @@ official archives, and a `SHASUMS256.txt` beside every version.
 - **The bundler asked the network before looking in its own cache**, so a
   rebuild needed connectivity to learn the name of a file already on disk.
 
+### Added — choosing where it all lives
+
+- **`portable home`** reports the installation directory and what decided on it;
+  **`home set <path>`**, **`home set --beside`** and **`home clear`** change it;
+  **`--home PATH`** overrides it for one command, on either side of the verb.
+
+  `%LOCALAPPDATA%\portable` remains the default, and on a managed machine that
+  default can be unusable rather than merely unwelcome. AppLocker is commonly
+  configured to deny execution from under a user's profile — that is where
+  software installed without administrator rights lives, which is exactly why
+  the rule exists — and everything this tool downloads is an executable. Where
+  that applies, nothing starts at all until the location is moved.
+
+  The source is reported alongside the path because two of the three ways it can
+  be set are invisible from the outside: a variable exported in another shell, a
+  pointer file written months ago.
+
+  `--beside` records the word rather than the path it resolves to today. A flash
+  drive is `E:` on one machine and `F:` on the next, and freezing the letter in
+  would produce a bundle that works on exactly one computer — the opposite of
+  what choosing that option asks for.
+
+  Nothing is moved when the setting changes: copying hundreds of megabytes is a
+  surprising thing for a settings command to do, and a copy that failed halfway
+  would leave two half-installations. The old location and its contents are
+  reported instead, so it is neither silently re-downloaded nor silently kept.
+
+  Two refusals worth naming. A directory that cannot be written to is rejected
+  at `home set` rather than halfway through the first download, and is not
+  recorded — otherwise the failure leaves the tool pointed somewhere unusable
+  and every later command fails, including the one that would fix it. And the
+  setting cannot change while the daemon is running: its discovery file is the
+  only way any client finds it, so moving the location out from under it would
+  leave a daemon still holding ports 80 and 5432 that nothing can reach, `down`
+  included.
+

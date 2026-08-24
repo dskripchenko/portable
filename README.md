@@ -28,9 +28,10 @@ Every one of these is a design constraint, not an aspiration:
 - **No services, no autostart.** The supervisor is a process you start. It
   survives closing the terminal and the IDE; it does not survive a reboot, and
   that is the trade being made deliberately.
-- **No registry, no PATH, no system directories.** Everything lives under
-  `%LOCALAPPDATA%\portable`. Deleting that directory uninstalls the tool
-  completely.
+- **No registry, no PATH, no system directories.** Everything lives under one
+  directory. Deleting it uninstalls the tool completely.
+- **That directory is yours to choose.** `%LOCALAPPDATA%\portable` is only the
+  default — see below.
 
 The result runs on a locked-down corporate machine, which is precisely where
 this class of tool usually cannot be installed at all.
@@ -95,6 +96,32 @@ portable down
 Every command takes `--json`. The CLI holds no logic of its own: it asks the
 daemon and prints the answer, which is why an IDE plugin will be a second client
 rather than a second implementation.
+
+### Where it keeps things
+
+```
+portable home                        # where, and what decided that
+portable home set D:\dev\portable    # somewhere else, from now on
+portable home set --beside           # next to the launcher; travels with it
+portable home clear                  # back to the default
+portable --home E:\tmp status        # just this once
+```
+
+The default is `%LOCALAPPDATA%\portable`, and on a managed machine that default
+can be unusable rather than merely unwelcome: AppLocker is commonly configured
+to deny execution from under a user's profile — that is where software installed
+without administrator rights lives, which is the point of the rule — and
+everything downloaded here is an executable. Where that applies, nothing starts
+until this is pointed somewhere execution is allowed.
+
+`--beside` is the case an absolute path cannot express. It records the word, not
+the path it resolves to today, so a bundle on a flash drive keeps working when
+the drive letter changes.
+
+Changing this moves nothing. Copying hundreds of megabytes of runtimes would be
+a surprising thing for a settings command to do, and a copy that failed halfway
+would leave two half-installations — so the old location is reported instead,
+with what is still in it.
 
 ## Development
 

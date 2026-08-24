@@ -30,6 +30,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
 
+    # Before anything reads a path. `--home` works by setting the variable the
+    # rest of the tool already consults, which is why it needs no plumbing of
+    # its own and why the daemon, started with this environment, agrees with the
+    # client that started it.
+    if getattr(args, "home", None):
+        os.environ["PORTABLE_HOME"] = str(Path(args.home).expanduser().resolve())
+
     if not args.command:
         parser.print_help()
 
@@ -41,17 +48,35 @@ def main(argv: list[str] | None = None) -> int:
         return _fail(args, "not-running", str(error))
     except CallFailed as error:
         return _fail(args, error.key, error.message)
+    except (paths.NotABundle, paths.UnusableHome) as error:
+        return _fail(args, "unusable-home", str(error))
 
 
 def _parser() -> argparse.ArgumentParser:
+    # A parent parser rather than one flag on the top level, so that `--home`
+    # is accepted on either side of the command name. Somebody typing it after
+    # the verb is not making a mistake, and argparse would otherwise reject it
+    # in a way that reads like the flag does not exist.
+    #
+    # SUPPRESS matters: without it the subparser's own `None` default overwrites
+    # a value given before the command, silently.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
+        "--home",
+        metavar="PATH",
+        default=argparse.SUPPRESS,
+        help="Use this directory for this one command. See `portable home`.",
+    )
+
     parser = argparse.ArgumentParser(
         prog="portable",
+        parents=[common],
         description="A development environment that installs beside the system, not into it.",
     )
     subparsers = parser.add_subparsers(dest="command")
 
     def add(name: str, help_text: str, run) -> argparse.ArgumentParser:
-        sub = subparsers.add_parser(name, help=help_text)
+        sub = subparsers.add_parser(name, help=help_text, parents=[common])
         sub.add_argument("--json", action="store_true", help="Machine-readable output.")
         sub.set_defaults(run=run)
 
@@ -146,6 +171,41 @@ def _parser() -> argparse.ArgumentParser:
     add_service("list", "Databases and how to reach them.", _service_list)
 
     service.set_defaults(run=_service_help, service_command=None, json=False)
+
+    home = subparsers.add_parser(
+        "home",
+        parents=[common],
+        help="Where runtimes, data and logs are kept.",
+    )
+    # On the group itself, not only on its subcommands. `portable home` is the
+    # form that gets typed, and the form a plugin will call — leaving `--json`
+    # off it would make the one command about configuration the one command that
+    # cannot be read by a program.
+    home.add_argument("--json", action="store_true", help="Machine-readable output.")
+    home_commands = home.add_subparsers(dest="home_command")
+
+    def add_home(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = home_commands.add_parser(name, help=help_text, parents=[common])
+        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.set_defaults(run=run)
+
+        return sub
+
+    home_set = add_home("set", "Keep everything somewhere else, from now on.", _home_set)
+    home_set.add_argument(
+        "path",
+        nargs="?",
+        help="A directory. Created if it does not exist.",
+    )
+    home_set.add_argument(
+        "--beside",
+        action="store_true",
+        help="Keep it next to the launcher, so the whole installation travels with it.",
+    )
+
+    add_home("clear", "Go back to the default location.", _home_clear)
+
+    home.set_defaults(run=_home_show, home_command=None)
 
     return parser
 
@@ -278,6 +338,13 @@ def _daemon_environment() -> dict[str, str]:
     # package was imported from wins, and whatever the caller had set survives
     # behind it.
     environment["PYTHONPATH"] = os.pathsep.join(dict.fromkeys([package_root, *existing]))
+
+    # Pinned rather than left to be resolved again. The daemon would otherwise
+    # re-derive the location from its own environment and its own
+    # `sys.executable`, and any disagreement — a pointer file edited between the
+    # two, a `--home` that only the client saw — produces a daemon writing its
+    # discovery file where no client will look for it.
+    environment["PORTABLE_HOME"] = str(paths.root())
 
     return environment
 
@@ -562,6 +629,140 @@ def _site_help(args) -> int:
     print("Usage: portable site {add,remove,list}")
 
     return 2
+
+
+def _home_show(args) -> int:
+    """
+    Where everything lives, and what decided that.
+
+    The source is reported, not just the path. Two of the three ways it can be
+    set are invisible from the outside — a variable exported in some other
+    shell, a file written months ago — and "why is it installing over there" is
+    otherwise a question with no way to answer it.
+    """
+    home, source = paths.resolved()
+
+    # `--home` works by setting the variable, so that is what `resolved()` sees
+    # and reports. Repeating it back to somebody who typed the flag would send
+    # them looking for an export that does not exist.
+    if getattr(args, "home", None):
+        source = "--home"
+
+    is_bundle = paths.bundle() is not None
+
+    payload = {
+        "home": str(home),
+        "source": source,
+        "exists": home.exists(),
+        "settable": is_bundle,
+        "default": str(paths.default_root()),
+    }
+
+    if args.json:
+        return _emit(args, payload, "")
+
+    print(f"{home}")
+    print(f"  set by: {source}")
+
+    if not home.exists():
+        print("  nothing there yet — it is created on the first install")
+    else:
+        print(f"  holding: {_describe_contents(home)}")
+
+    if is_bundle:
+        print("\nTo move it: portable home set <path>, or --beside to keep it next to")
+        print("the launcher so the whole installation travels on one drive.")
+    else:
+        print("\nThis is a source checkout, so there is no launcher to record a setting")
+        print("beside. Set PORTABLE_HOME to move it.")
+
+    return 0
+
+
+def _home_set(args) -> int:
+    if args.beside == bool(args.path):
+        return _fail(
+            args,
+            "no-path",
+            "Give a directory, or --beside to keep everything next to the launcher.",
+        )
+
+    # A running daemon holds the old location: it has already opened its logs
+    # there, its runtimes are there, and its discovery file — the only way any
+    # client finds it — is there too. Moving the setting out from under it would
+    # leave a daemon nothing can reach and ports nothing can free.
+    if discovery.read() is not None:
+        return _fail(
+            args,
+            "still-running",
+            "Stop the daemon first: portable down. It is using the current location, "
+            "and would be unreachable the moment this changes.",
+        )
+
+    previous, _ = paths.resolved()
+    home = paths.set_home(paths.BESIDE if args.beside else args.path)
+
+    payload = {"home": str(home), "previous": str(previous)}
+    lines = [f"Everything will now be kept in {home}."]
+
+    # Nothing is moved. Copying hundreds of megabytes of runtimes on the way
+    # past would be a surprising thing for a settings command to do, and if it
+    # failed halfway it would do so across two locations. But leaving the old
+    # one unmentioned is how somebody re-downloads PHP without understanding
+    # why, and never reclaims the disk.
+    if previous != home and previous.exists() and any(previous.iterdir()):
+        payload["leftBehind"] = str(previous)
+        lines.append(
+            f"\n{previous} still holds {_describe_contents(previous)}.\n"
+            "Nothing was moved. Either copy that directory across, or re-install\n"
+            "what you need and delete it."
+        )
+
+    return _emit(args, payload, "\n".join(lines))
+
+
+def _home_clear(args) -> int:
+    if discovery.read() is not None:
+        return _fail(
+            args,
+            "still-running",
+            "Stop the daemon first: portable down.",
+        )
+
+    paths.clear_home()
+    home, source = paths.resolved()
+
+    return _emit(
+        args,
+        {"home": str(home), "source": source},
+        f"Back to {home}."
+        + (
+            "\nNote that PORTABLE_HOME is set in this shell and still wins."
+            if source == "PORTABLE_HOME"
+            else ""
+        ),
+    )
+
+
+def _describe_contents(home: Path) -> str:
+    """A one-line inventory, so a location can be recognised without opening it."""
+    parts = []
+
+    for name, label in (("runtimes", "runtime"), ("data", "database")):
+        directory = home / name
+
+        if directory.is_dir():
+            count = len([child for child in directory.iterdir() if child.is_dir()])
+
+            if count:
+                parts.append(f"{count} {label}{'s' if count != 1 else ''}")
+
+    size = sum(path.stat().st_size for path in home.rglob("*") if path.is_file())
+
+    if size:
+        parts.append(f"{size // 1048576} MB")
+
+    return ", ".join(parts) if parts else "nothing yet"
 
 
 def _await_daemon(timeout: float = 15.0) -> discovery.Endpoint | None:
