@@ -12,12 +12,18 @@ token is checked" is not a detail of the design, it is the design.
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
+import sys
+import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
+from portable import paths, spawn
 from portable.daemon import discovery
 from portable.daemon.client import CallFailed, Client, NotRunning
 from portable.daemon.server import ControlServer
@@ -216,3 +222,103 @@ class TestBindingDoesNotDependOnDns:
             assert server._http.server_name == "localhost", "the lookup happened after all"
         finally:
             server.stop(timeout=5)
+
+
+class TestRestoringAfterARestart:
+    """
+    Sites and databases outlive the daemon.
+
+    They are written down, so a person who declared a site expects it served
+    the next time this is running. Without this, `portable down` followed by
+    `portable up` leaves every site declared and none of them reachable — and
+    nothing says so, which is the worst version of it: the declaration is still
+    listed, the daemon is up, and the browser gets nothing.
+    """
+
+    def test_declared_sites_are_started_again(self, tmp_path):
+        from portable.daemon.server import ControlServer
+        from portable.sites import Site
+
+        server = ControlServer()
+        server.sites.add(Site(name="demo", root=tmp_path))
+
+        started = []
+        server.stack.reconcile = lambda sites, services: started.append(
+            [site.name for site in sites]
+        ) or {"sites": len(sites)}
+
+        server.restore()
+
+        assert started == [["demo"]]
+
+    def test_a_failure_to_restore_does_not_stop_the_daemon(self, tmp_path):
+        """
+        The property that makes this safe to do at startup.
+
+        Restoring is exactly where a machine-shaped failure lands — a port taken
+        since last time, a runtime deleted from under us. A daemon that refuses
+        to start because of one is a daemon nothing can reach to fix it,
+        including the command that would move it off that port.
+        """
+        from portable.daemon.server import ControlServer
+
+        server = ControlServer()
+
+        def explode(sites, services):
+            raise RuntimeError("port 80 is taken")
+
+        server.stack.reconcile = explode
+
+        result = server.restore()
+
+        assert result["restored"] is False
+        assert "port 80" in result["error"]
+
+    def test_the_daemon_actually_calls_it_on_startup(self, tmp_path):
+        """
+        Run the real entry point, not the class.
+
+        The call sits in `__main__.py`, which no other test executes — and a
+        restore that is implemented, tested and never wired up is indisputably
+        worse than one that was never written, because everything reads as done.
+        This is the same gap that once let the daemon ship unable to import its
+        own package: green locally, broken everywhere else.
+        """
+        import subprocess
+
+        log = tmp_path / "daemon.log"
+        pid = spawn.start_detached(
+            [sys.executable, "-m", "portable.daemon"],
+            env={
+                **os.environ,
+                "PYTHONPATH": str(Path(__file__).resolve().parent.parent / "src"),
+            },
+            log=log,
+        )
+
+        try:
+            deadline = time.monotonic() + 20
+
+            while time.monotonic() < deadline:
+                if "restored:" in log.read_text(encoding="utf-8", errors="replace"):
+                    break
+
+                time.sleep(0.1)
+            else:
+                raise AssertionError(
+                    f"The daemon never reported restoring anything.\n{paths.tail(log)}"
+                )
+        finally:
+            endpoint = discovery.read()
+
+            if endpoint is not None:
+                with contextlib.suppress(Exception):
+                    Client(endpoint=endpoint).shutdown()
+
+            with contextlib.suppress(Exception):
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", str(pid)] if os.name == "nt"
+                    else ["kill", "-9", str(pid)],
+                    capture_output=True,
+                    check=False,
+                )

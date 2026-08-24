@@ -103,6 +103,30 @@ class ControlServer:
         self._thread: threading.Thread | None = None
         self._shutdown = threading.Event()
 
+    def restore(self) -> dict:
+        """
+        Start what was declared before the last shutdown.
+
+        Sites and databases outlive the daemon — they are written down, and a
+        person who declared a site expects it served the next time this is
+        running, not to have to declare it a second time.
+
+        Called after the daemon is listening and discoverable, and never allowed
+        to prevent that. Restoring is exactly where a machine-shaped failure
+        surfaces — a port taken since last time, a runtime deleted from under us
+        — and a daemon that refuses to start because of one is a daemon nothing
+        can reach to fix it, including the command that would move the port.
+        """
+        try:
+            return self.stack.reconcile(self.sites.all(), self.services_registry.all())
+        # Deliberately everything. Narrowing this to the failures thought of
+        # today is how an unforeseen one takes the daemon down with it, and the
+        # whole point here is that nothing restoring can do that.
+        except Exception as error:  # noqa: BLE001
+            print(f"restore failed: {type(error).__name__}: {error}", flush=True)
+
+            return {"restored": False, "error": str(error)}
+
     @property
     def port(self) -> int:
         if self._http is None:

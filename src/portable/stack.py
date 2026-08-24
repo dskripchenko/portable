@@ -406,8 +406,21 @@ class Stack:
 
         tried = " or ".join(str(candidate) for candidate in self.candidate_ports)
 
+        # Named causes rather than a bare failure. Every one of these has been
+        # met in practice, and none of them is guessable from a log line about
+        # a port: the commonest by far is another local-development tool still
+        # running, because those hold 80 and 8080 both.
         raise StackError(
-            f"Caddy would not start on port {tried}.\n{paths.tail(paths.logs() / 'caddy.log')}"
+            f"Caddy would not start on port {tried}.\n\n"
+            "The usual reasons, in the order they turn out to be true:\n"
+            "  - another local stack is running — Laragon, XAMPP, Docker Desktop.\n"
+            "    Those take 80 and 8080 together, which is what this looks like.\n"
+            "  - IIS or the World Wide Web Publishing Service holds 80.\n"
+            "  - the port sits inside a range Windows has reserved. Nothing is\n"
+            "    listening and binding still fails; `netsh interface ipv4 show\n"
+            "    excludedportrange protocol=tcp` lists them.\n\n"
+            "`netstat -ano | findstr \":80 \"` names the process holding it.\n\n"
+            f"{paths.tail(paths.logs() / 'caddy.log')}"
         )
 
     def _write_config(self, sites: list[caddy.Site], port: int) -> Path:
