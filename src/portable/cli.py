@@ -146,7 +146,7 @@ def _up(args) -> int:
             args,
             "daemon-did-not-start",
             f"The daemon was started as pid {pid} ({alive}) and never answered.\n"
-            f"{_log_tail(paths.logs() / 'daemon.log')}",
+            f"{paths.tail(paths.logs() / 'daemon.log')}",
         )
 
     return _emit(args, {"pid": endpoint.pid, "port": endpoint.port},
@@ -211,21 +211,6 @@ def _status(args) -> int:
     print("\n".join(lines))
 
     return 0
-
-
-def _log_tail(path: Path, lines: int = 20) -> str:
-    """The end of a log, formatted for a failure message."""
-    if not path.exists():
-        return f"Nothing was written to {path}."
-
-    text = path.read_text(encoding="utf-8", errors="replace").strip()
-
-    if not text:
-        return f"{path} is empty — the process died before it could say anything."
-
-    tail = "\n".join(text.splitlines()[-lines:])
-
-    return f"Last of {path}:\n{tail}"
 
 
 def _daemon_environment() -> dict[str, str]:

@@ -237,7 +237,7 @@ class Stack:
         tried = " or ".join(str(candidate) for candidate in self.candidate_ports)
 
         raise StackError(
-            f"Caddy would not start on port {tried}. See {paths.logs() / 'caddy.log'}."
+            f"Caddy would not start on port {tried}.\n{paths.tail(paths.logs() / 'caddy.log')}"
         )
 
     def _write_config(self, sites: list[caddy.Site], port: int) -> Path:

@@ -77,6 +77,25 @@ def daemon_file() -> Path:
     return run() / "daemon.json"
 
 
+def tail(path: Path, lines: int = 25) -> str:
+    """
+    The end of a log, formatted for a failure message.
+
+    Shown rather than pointed at. "See the log file" asks a person to go and
+    read a traceback the program has already read — and on a CI runner, or any
+    machine somebody else is holding, nobody goes.
+    """
+    if not path.exists():
+        return f"Nothing was written to {path}."
+
+    text = path.read_text(encoding="utf-8", errors="replace").strip()
+
+    if not text:
+        return f"{path} is empty — the process died before it could say anything."
+
+    return f"Last of {path}:\n" + "\n".join(text.splitlines()[-lines:])
+
+
 def ensure_layout() -> None:
     """Creates the directories. Safe to call repeatedly."""
     for path in (root(), runtimes(), downloads(), sites(), logs(), run()):
