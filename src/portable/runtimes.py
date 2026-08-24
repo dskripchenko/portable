@@ -35,6 +35,8 @@ EXECUTABLES = {
     # nobody keeps current.
     "postgres": ("postgres.exe", "postgres"),
     "mariadb": ("mariadbd.exe", "mariadbd"),
+    "redis": ("redis-server.exe", "redis-server"),
+    "node": ("node.exe", "node"),
 }
 
 

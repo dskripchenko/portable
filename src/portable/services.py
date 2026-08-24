@@ -26,16 +26,18 @@ from pathlib import Path
 
 from . import paths
 
-KINDS = ("postgres", "mariadb")
+KINDS = ("postgres", "mariadb", "redis")
 
 #: Default ports. The conventional ones, so a connection string copied from
 #: anywhere works — and taken as a preference rather than a promise: if
 #: something already holds one, the next free port is used and reported.
-DEFAULT_PORTS = {"postgres": 5432, "mariadb": 3306}
+DEFAULT_PORTS = {"postgres": 5432, "mariadb": 3306, "redis": 6379}
 
 #: The administrative account each kind creates. Named here because a person
 #: needs it to connect and should not have to know two conventions.
-SUPERUSERS = {"postgres": "postgres", "mariadb": "root"}
+SUPERUSERS = {"postgres": "postgres", "mariadb": "root", "redis": ""}
+"""Redis has no accounts by default, and an empty string says so rather than
+inventing one for the sake of a uniform table."""
 
 NAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
 
@@ -67,14 +69,28 @@ class Service:
         return SUPERUSERS[self.kind]
 
     @property
+    def needs_init(self) -> bool:
+        """
+        Whether this kind has to be prepared before it will start.
+
+        Redis does not: it writes its dump into whatever directory it is pointed
+        at and creates it if need be. Running a preparation step for it would
+        mean inventing one.
+        """
+        return self.kind in ("postgres", "mariadb")
+
+    @property
     def initialised(self) -> bool:
         """
-        Whether the data directory has been created.
+        Whether the data directory is ready.
 
         A directory that exists but is empty counts as not initialised: that is
         what an interrupted `initdb` leaves behind, and starting a server on it
         fails in a way that reads like corruption.
         """
+        if not self.needs_init:
+            return True
+
         return self.data.is_dir() and any(self.data.iterdir())
 
 
@@ -127,6 +143,17 @@ def start_command(kind: str, executables: dict[str, Path], data: Path, port: int
             "-h", "127.0.0.1",
         ]
 
+    if kind == "redis":
+        return [
+            str(executables["server"]),
+            "--port", str(port),
+            "--bind", "127.0.0.1",
+            "--dir", str(data),
+            # Foreground: the supervisor owns the lifetime, and a server that
+            # daemonises itself becomes a process nothing here can stop.
+            "--daemonize", "no",
+        ]
+
     return [
         str(executables["server"]),
         f"--datadir={data}",
@@ -143,6 +170,7 @@ def start_command(kind: str, executables: dict[str, Path], data: Path, port: int
 EXECUTABLES = {
     "postgres": {"server": "postgres", "initdb": "initdb", "client": "psql"},
     "mariadb": {"server": "mariadbd", "install": "mariadb-install-db", "client": "mariadb"},
+    "redis": {"server": "redis-server", "client": "redis-cli"},
 }
 
 

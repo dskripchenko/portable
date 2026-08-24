@@ -227,3 +227,53 @@ rather than glossed over.
   reported it as merely "stopped" — inviting somebody to start it and be
   confused a second time. A failed `add` now withdraws it.
 
+### Added — Node and Redis
+
+- **Redis, as a service.** `portable service add redis`. No preparation step:
+  it writes its dump into whatever directory it is given, and inventing an
+  initialisation for it would be inventing work. Started in the foreground —
+  a server that daemonises itself becomes a process nothing here can stop, and
+  `portable down` would leave it holding its port.
+
+- **Node, as a toolchain** — which is a different thing, and needed a different
+  answer. It is not a service and not a router; it is used from a terminal, and
+  this tool does not touch the system PATH. So the daemon answers *what a shell
+  would need* and the client applies it:
+
+  - `portable env [--shell powershell|cmd|posix]` prints settings to evaluate;
+  - `portable run npm install` runs a command with the runtimes reachable.
+
+  The knowledge stays in the API. An IDE plugin offering a terminal gets the
+  same answer from the same place.
+
+- **`latest` for Node means the newest LTS.** An environment that installs an
+  odd-numbered Node by default produces bug reports about a runtime the project
+  never meant to support. The actual newest is still reachable by naming it.
+
+### Notes on the publishers
+
+Redis does not support Windows and publishes nothing for it. The archive used
+here is a third-party rebuild — current, tracking upstream within days, built
+through msys2 — and it publishes no digests, which `install` reports. The fork
+most often recommended, `tporadowski/redis`, last released in February 2022 at
+Redis 5.
+
+Anyone who would rather not: `portable install redis --from <path>` takes a
+binary they chose themselves, and Microsoft's Garnet is a native RESP-compatible
+alternative worth knowing about.
+
+Node is the one publisher here with nothing to work around: an official index,
+official archives, and a `SHASUMS256.txt` beside every version.
+
+### Fixed
+
+- **`portable run` took a runtime from the machine without saying so.** Asked
+  for `node` with nothing installed, it ran the system's — the exact confusion
+  the command exists to prevent. Falling back is still deliberate, because
+  `portable run composer install` should work; doing it silently for a *runtime*
+  is not, and it is now named on stderr.
+
+- **An empty entry could reach PATH.** On POSIX that means the current
+  directory, so with nothing installed a command run through `portable run`
+  could pick up something from whichever directory it was typed in.
+

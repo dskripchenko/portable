@@ -139,3 +139,36 @@ class TestDaemonEnvironment:
         finally:
             main(["down"])
             capsys.readouterr()
+
+
+class TestRunAndEnv:
+    def test_an_empty_path_entry_is_never_produced(self, daemon, capsys):
+        """
+        On POSIX an empty element in PATH means the *current directory*. With
+        nothing installed the naive join produced `PATH=":$PATH"`, so a command
+        run through this would pick up whatever happened to be in the directory
+        it was typed in.
+        """
+        assert main(["env", "--shell", "posix"]) == 0
+
+        output = capsys.readouterr().out
+
+        assert 'PATH=":' not in output
+        assert "Nothing installed" in output
+
+    def test_taking_a_runtime_from_the_machine_is_said_out_loud(self, daemon, capsys):
+        # Falling back is deliberate — `portable run composer` should work. Doing
+        # it silently for a *runtime* is not: this command exists to make it
+        # certain which one runs.
+        from portable.cli import _names_a_runtime, _runtime_behind
+
+        assert _names_a_runtime("node")
+        assert _names_a_runtime("npm")
+        assert _runtime_behind("npm") == "node"
+        # Not a runtime: expected to come from the machine, and mentioning it
+        # every time would be noise.
+        assert not _names_a_runtime("composer")
+
+    def test_run_without_a_command_explains_itself(self, daemon, capsys):
+        assert main(["run"]) == 2
+        assert "Usage" in capsys.readouterr().err

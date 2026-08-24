@@ -162,6 +162,7 @@ class ControlServer:
             ("GET", f"{API}/sites"): self._sites,
             ("POST", f"{API}/sites/add"): self._site_add,
             ("POST", f"{API}/sites/remove"): self._site_remove,
+            ("GET", f"{API}/environment"): self._environment,
             ("GET", f"{API}/services"): self._services_list,
             ("POST", f"{API}/services/add"): self._service_add,
             ("POST", f"{API}/services/remove"): self._service_remove,
@@ -339,6 +340,44 @@ class ControlServer:
         self._reconcile()
 
         return {"removed": name}
+
+    def _environment(self, _payload: dict) -> dict:
+        """
+        The directories a shell would need on PATH to reach what is installed.
+
+        Node is why this exists. It is not a service and not a router — it is a
+        toolchain, used from a terminal, and this tool does not touch the system
+        PATH. So instead of changing the machine, it answers what the machine
+        would need, and `portable run` and `portable env` do the rest locally.
+
+        The knowledge stays here; only the applying is done by the client. A
+        plugin offering a terminal gets the same answer from the same place.
+        """
+        entries = []
+
+        for entry in self.runtimes.all():
+            directory = entry.directory / "bin"
+
+            if not directory.is_dir():
+                directory = entry.directory
+
+            entries.append(
+                {
+                    "name": entry.name,
+                    "version": entry.version,
+                    "path": str(directory),
+                }
+            )
+
+        return {
+            "path": [entry["path"] for entry in entries],
+            "runtimes": entries,
+            "vars": {
+                # So a script can tell it is running inside one of these, and
+                # find the rest of the installation without being told.
+                "PORTABLE_HOME": str(paths.root()),
+            },
+        }
 
     def _services_list(self, _payload: dict) -> dict:
         declared = {service.name: service for service in self.services_registry.all()}

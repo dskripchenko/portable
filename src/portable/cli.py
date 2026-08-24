@@ -62,7 +62,9 @@ def _parser() -> argparse.ArgumentParser:
     add("status", "What is running.", _status)
 
     install = add("install", "Download a runtime — php, caddy.", _install)
-    install.add_argument("runtime", choices=("php", "caddy", "postgres", "mariadb"))
+    install.add_argument(
+        "runtime", choices=("php", "caddy", "postgres", "mariadb", "node", "redis")
+    )
     install.add_argument(
         "version",
         nargs="?",
@@ -106,6 +108,22 @@ def _parser() -> argparse.ArgumentParser:
 
     site.set_defaults(run=_site_help, site_command=None, json=False)
 
+    env = add("env", "Print the shell settings that reach the installed runtimes.", _env)
+    env.add_argument(
+        "--shell",
+        choices=("powershell", "cmd", "posix"),
+        help="Defaults to what this platform most likely uses.",
+    )
+
+    run = subparsers.add_parser(
+        "run",
+        help="Run a command with the installed runtimes on PATH.",
+        # Otherwise `portable run npm --version` is read as a flag of ours.
+        prefix_chars="\x00",
+    )
+    run.add_argument("argv", nargs=argparse.REMAINDER)
+    run.set_defaults(run=_run, json=False)
+
     service = subparsers.add_parser("service", help="Databases run by this installation.")
     service_commands = service.add_subparsers(dest="service_command")
 
@@ -117,7 +135,7 @@ def _parser() -> argparse.ArgumentParser:
         return sub
 
     service_add = add_service("add", "Start a database.", _service_add)
-    service_add.add_argument("kind", choices=("postgres", "mariadb"))
+    service_add.add_argument("kind", choices=("postgres", "mariadb", "redis"))
     service_add.add_argument("--name", help="Defaults to the kind. A second instance needs one.")
     service_add.add_argument("--version")
     service_add.add_argument("--port", type=int, help="Defaults to the conventional one, if free.")
@@ -353,6 +371,134 @@ def _site_list(args) -> int:
         print(f"  {site['url']:<40} {site['root']}{pinned}")
 
     return 0
+
+
+def _env(args) -> int:
+    """
+    Print what a shell needs to reach the runtimes.
+
+    Printed for evaluation rather than applied, because a process cannot change
+    its parent's environment — the reason every tool of this shape ends in
+    `eval $(...)` or its equivalent.
+    """
+    result = Client().call("GET", "/v1/environment")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    shell = args.shell or ("powershell" if os.name == "nt" else "posix")
+    directories = [entry for entry in result["path"] if entry]
+    separator = ";" if os.name == "nt" else ":"
+
+    if not directories:
+        print("# Nothing installed — nothing to add to PATH.")
+
+        return 0
+
+    joined = separator.join(directories)
+
+    if shell == "powershell":
+        lines = [f'$env:PATH = "{joined}{separator}$env:PATH"']
+        lines += [f'$env:{name} = "{value}"' for name, value in result["vars"].items()]
+    elif shell == "cmd":
+        lines = [f"set PATH={joined};%PATH%"]
+        lines += [f"set {name}={value}" for name, value in result["vars"].items()]
+    else:
+        lines = [f'export PATH="{joined}{separator}$PATH"']
+        lines += [f'export {name}="{value}"' for name, value in result["vars"].items()]
+
+    print("\n".join(lines))
+
+    return 0
+
+
+def _run(args) -> int:
+    """
+    Run a command with the runtimes reachable, without changing anything.
+
+    `portable run npm install` is the whole point of installing Node through a
+    tool that refuses to touch PATH.
+    """
+    argv = [argument for argument in args.argv if argument]
+
+    if not argv:
+        print("Usage: portable run <command> [arguments]", file=sys.stderr)
+
+        return 2
+
+    import shutil
+    import subprocess
+
+    result = Client().call("GET", "/v1/environment")
+    ours = [entry for entry in result["path"] if entry]
+    separator = ";" if os.name == "nt" else ":"
+
+    environment = dict(os.environ)
+
+    # Empty entries dropped rather than joined blindly. On POSIX an empty
+    # element in PATH means the *current directory* — so a machine with nothing
+    # installed produced `PATH=":$PATH"` and would run whatever happened to sit
+    # in the directory the command was typed in.
+    environment["PATH"] = separator.join(
+        [*ours, *[entry for entry in environment.get("PATH", "").split(separator) if entry]]
+    )
+    environment.update(result["vars"])
+
+    executable = shutil.which(argv[0], path=environment["PATH"])
+
+    if executable is None:
+        installed = ", ".join(f"{entry['name']} {entry['version']}" for entry in result["runtimes"])
+
+        print(
+            f"{argv[0]!r} was not found, here or on your PATH. "
+            f"Installed: {installed or 'nothing'}.",
+            file=sys.stderr,
+        )
+
+        return 127
+
+    # Falling back to the machine's own tools is deliberate: `portable run
+    # composer install` should work, and composer is not something this
+    # installs. Taking a *runtime* from the machine while saying nothing is not
+    # — this command exists to make it certain which one runs, and silence is
+    # how somebody spends an hour on a version difference that was never theirs.
+    if _names_a_runtime(argv[0]) and not _is_ours(executable, ours):
+        print(
+            f"note: {argv[0]} came from {executable}, which portable does not "
+            f"manage. `portable install {_runtime_behind(argv[0])}` would change that.",
+            file=sys.stderr,
+        )
+
+    return subprocess.call([executable, *argv[1:]], env=environment)
+
+
+#: Commands that *are* runtimes, and the runtime each belongs to. Taking one of
+#: these from elsewhere is worth mentioning; anything else — composer, a
+#: project's own script — is expected to come from the machine.
+RUNTIME_COMMANDS = {
+    "node": "node",
+    "npm": "node",
+    "npx": "node",
+    "php": "php",
+    "psql": "postgres",
+    "redis-cli": "redis",
+    "mariadb": "mariadb",
+    "mysql": "mariadb",
+}
+
+
+def _names_a_runtime(command: str) -> bool:
+    return Path(command).stem.lower() in RUNTIME_COMMANDS
+
+
+def _runtime_behind(command: str) -> str:
+    return RUNTIME_COMMANDS.get(Path(command).stem.lower(), command)
+
+
+def _is_ours(executable: str, directories: list[str]) -> bool:
+    resolved = Path(executable).resolve()
+
+    return any(resolved.is_relative_to(Path(directory).resolve()) for directory in directories)
 
 
 def _service_add(args) -> int:

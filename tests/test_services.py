@@ -156,4 +156,86 @@ class TestCommands:
 
     def test_the_conventional_ports_are_the_defaults(self):
         # So a connection string copied from anywhere works unchanged.
-        assert DEFAULT_PORTS == {"postgres": 5432, "mariadb": 3306}
+        assert DEFAULT_PORTS == {"postgres": 5432, "mariadb": 3306, "redis": 6379}
+
+    def test_redis_is_not_told_to_daemonise(self):
+        # The supervisor owns the lifetime. A server that forks away becomes a
+        # process nothing here can stop, and `portable down` leaves it holding
+        # its port.
+        argv = start_command("redis", {"server": Path("/bin/redis-server")}, Path("/d"), 6379)
+
+        assert "--daemonize" in argv
+        assert argv[argv.index("--daemonize") + 1] == "no"
+        assert "127.0.0.1" in argv
+
+    def test_only_the_kinds_with_state_are_prepared(self):
+        # Redis writes its dump into whatever directory it is given. Inventing a
+        # preparation step for it would be inventing work.
+        assert Service(name="pg", kind="postgres").needs_init
+        assert Service(name="my", kind="mariadb").needs_init
+        assert not Service(name="rd", kind="redis").needs_init
+
+
+class TestNodeCatalog:
+    def node_index(self) -> list[dict]:
+        return json.loads((FIXTURES / "node-index.json").read_text(encoding="utf-8"))
+
+    def test_the_default_is_lts_not_the_newest_release(self):
+        """
+        A development environment that installs an odd-numbered Node by default
+        produces bug reports about a runtime the project never meant to support.
+        The newest is still reachable by asking for it.
+        """
+        from portable.catalog import node
+
+        index = self.node_index()
+        lts = node.resolve("lts", index=index)
+        latest = node.resolve("latest", index=index)
+
+        assert int(lts.version.split(".")[0]) % 2 == 0, "an LTS major is always even"
+        assert lts.version != latest.version, "the fixture no longer distinguishes the two"
+
+    def test_a_major_resolves_to_its_newest_patch(self):
+        from portable.catalog import node
+
+        build = node.resolve("24", index=self.node_index())
+
+        assert build.version.startswith("24.")
+
+    def test_checksums_are_published_per_version(self):
+        from portable.catalog import node
+
+        build = node.resolve("lts", index=self.node_index())
+
+        assert node.checksum_url(build.version).endswith("SHASUMS256.txt")
+        assert node.checksum_for(
+            build.filename, f"{'a' * 64}  {build.filename}\n"
+        ) == "a" * 64
+
+
+class TestRedisCatalog:
+    def redis_release(self) -> dict:
+        return json.loads((FIXTURES / "redis-release.json").read_text(encoding="utf-8"))
+
+    def test_the_service_bundling_archive_is_not_taken(self):
+        # It differs only by carrying something that needs administrator rights
+        # to use, which this tool has decided not to ask for.
+        from portable.catalog import redis
+
+        assert "with-Service" not in redis.resolve(release=self.redis_release()).filename
+
+    def test_the_version_is_the_upstream_one(self):
+        # The rebuild's tag mirrors Redis's version, and reporting the rebuild's
+        # own numbering would make `redis 8.10.1` mean something else.
+        from portable.catalog import redis
+
+        build = redis.resolve(release=self.redis_release())
+
+        assert build.version.count(".") == 2
+
+    def test_the_absence_of_a_digest_is_recorded(self):
+        # A third-party rebuild that publishes no checksums. `install` reports
+        # it rather than passing over it.
+        from portable.catalog import redis
+
+        assert redis.resolve(release=self.redis_release()).checksum is None

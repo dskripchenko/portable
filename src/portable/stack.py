@@ -159,8 +159,12 @@ class Stack:
                 for role, name in services_module.EXECUTABLES[service.kind].items()
             }
 
-            if not service.initialised:
+            if service.needs_init and not service.initialised:
                 self._initialise(service, binaries)
+            else:
+                # Redis is pointed at a directory and writes into it. Making it
+                # exist is this tool's job; filling it is not.
+                service.data.mkdir(parents=True, exist_ok=True)
 
             port = service.port or self._port_for(service)
             spec = Spec(
