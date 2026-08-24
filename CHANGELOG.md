@@ -563,3 +563,52 @@ would have:
   Xdebug 3 does not build for PHP 7.2 and never will; xdebug 2.9.8 does. The
   failure now says so and shows the command that names a version.
 
+### Added — `portable update` and `portable uninstall`
+
+`update` reports what has a newer release on the same line as what is installed;
+`--install` fetches them. `uninstall <runtime> <version>` deletes one and
+reclaims its disk.
+
+The two belong together. An update installs **alongside** rather than replacing,
+so anything pinned to the old version keeps working — which is right, and means
+something eventually has to take the old one away.
+
+**Updates stay on their own line**, and the line is what each catalog says it
+is: a branch for PHP (`8.4.24` looks for `8.4.x`), a series for MariaDB, a major
+for the rest. Crossing one is not an update. A PHP branch change brings
+deprecations to every site that pinned nothing, and a PostgreSQL data directory
+belongs to the major that created it — 17 will not start on 18's files. Those
+are installed by name, deliberately, or not at all.
+
+Asking is done through `available(line=...)` rather than `resolve()`. Each
+publisher's `resolve` takes what that publisher accepts — a branch for PHP, an
+exact tag for the GitHub-published ones — so asking all six for "the newest 8"
+returned 404s from Redis and PostgreSQL, and nothing at all for an archived PHP
+whose branch php.net's index no longer lists. Listing a line is the one question
+all six answer.
+
+Removal refuses to take away the last runtime a site or database is relying on:
+a site pinned to `8.4` follows whatever `8.4.x` is newest, so removing the only
+one leaves it failing to start with a message about a version nobody typed. An
+adopted runtime is forgotten, never deleted — it belongs to whoever put it
+there. An unreachable publisher is reported per runtime rather than hiding what
+the others said, and an adopted runtime is listed as not ours to update rather
+than omitted, since silence would read as "current".
+
+### Fixed
+
+- **A failed `site add` left the site declared.** `service add` already
+  withdrew its declaration on failure; sites did not, so a PHP that would not
+  start left a site `list` reported cheerfully — inviting the conclusion that it
+  exists and is merely stopped, then a second confusion when starting it does
+  nothing. Withdrawn now, but only when the site is new: a failed *edit* of an
+  existing site must not delete the declaration that was working.
+
+- **A pool that would not start raised a bare `OSError`** naming a path and an
+  error number and nothing about PHP. It now says which PHP, shows the end of
+  that worker's log, and names the cause this has on Windows — php.net's builds
+  link against the Visual C++ runtime and report its absence as
+  `VCRUNTIME140.dll not found`. Workers already started are stopped rather than
+  left behind, and named as they are created so the cleanup reaches for exactly
+  what it made.
+

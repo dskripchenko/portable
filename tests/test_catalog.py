@@ -134,7 +134,7 @@ class TestPhp:
         # Not all at once: the archive reaches back to 5.2 and holds three
         # hundred-odd builds, which answers nobody's question.
         listing = (FIXTURES / "php-archives.html").read_text(encoding="utf-8")
-        offers = php.available(php_index, branch="8.3", archive=listing)
+        offers = php.available(php_index, line="8.3", archive=listing)
         versions = [offer.version for offer in offers]
 
         assert versions[0] == "8.3.33", "the current release comes first"

@@ -86,6 +86,10 @@ portable install caddy
 portable site add demo C:\projects\demo
                                      # -> http://demo.localhost
 
+portable update                      # newer releases on the same line
+portable update --install
+portable uninstall php 8.3.20        # reclaim the disk afterwards
+
 portable ext list                    # what this PHP ships, and what is loaded
 portable ext enable sodium
 portable ext install xdebug          # not in the build — downloaded to match it

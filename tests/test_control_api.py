@@ -383,3 +383,184 @@ class TestTheDiscoveryFileIsNeverSeenHalfWritten:
         discovery.write(discovery.Endpoint(port=1, token="t", pid=os.getpid()), target)
 
         assert [entry.name for entry in target.parent.iterdir()] == ["daemon.json"]
+
+
+class TestUpdatesAndRemoval:
+    """
+    Updating stays on the line it finds, and removing is what balances that.
+
+    The two belong together. An update installs alongside rather than replacing,
+    so that anything pinned to the old version keeps working — which is right,
+    and means something eventually has to take the old one away.
+    """
+
+    def server(self):
+        from portable.daemon.server import ControlServer
+
+        return ControlServer()
+
+    def php(self, tmp_path, version: str, managed: bool = True):
+        from portable.runtimes import Installed
+
+        directory = tmp_path / "runtimes" / "php" / version
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "php.exe").write_text("", encoding="utf-8")
+
+        return Installed(name="php", version=version, directory=directory, managed=managed)
+
+    def test_an_update_stays_inside_its_own_line(self, tmp_path, monkeypatch):
+        """
+        8.4.24 looks for the newest 8.4.x, never 8.5.
+
+        A PHP branch change brings deprecations to every site that pinned
+        nothing, and a database major will not open the data directory the
+        previous one created. Those are installed by name, deliberately.
+        """
+        from portable.catalog import php as php_catalog
+
+        asked = []
+        server = self.server()
+        server.runtimes.add(self.php(tmp_path, "8.4.24"))
+
+        def available(index=None, line=None, archive=None):
+            asked.append(line)
+
+            return [type("O", (), {"version": "8.4.26", "note": ""})()]
+
+        monkeypatch.setattr(php_catalog, "available", available)
+
+        result = server._updates({})
+
+        # `available(line=...)`, not `resolve(...)`: each publisher's resolve
+        # takes something different, and asking all six for "the newest 8"
+        # produced 404s from Redis and PostgreSQL and nothing at all for an
+        # archived PHP whose branch the index no longer lists.
+        assert asked == ["8.4"], "it asked for something other than its own branch"
+        assert result["runtimes"][0]["update"] is True
+        assert result["runtimes"][0]["latest"] == "8.4.26"
+
+    def test_an_adopted_runtime_is_reported_rather_than_skipped(self, tmp_path):
+        # It may well be out of date. Saying nothing about it reads as saying it
+        # is current.
+        server = self.server()
+        server.runtimes.add(self.php(tmp_path, "8.2.0", managed=False))
+
+        entry = server._updates({})["runtimes"][0]
+
+        assert entry["managed"] is False
+        assert entry["update"] is False
+
+    def test_one_publisher_being_down_does_not_hide_the_others(self, tmp_path, monkeypatch):
+        from portable.catalog import php as php_catalog
+
+        server = self.server()
+        server.runtimes.add(self.php(tmp_path, "8.4.24"))
+        monkeypatch.setattr(
+            php_catalog, "available", lambda *a, **k: (_ for _ in ()).throw(OSError("no network"))
+        )
+
+        entry = server._updates({})["runtimes"][0]
+
+        assert "no network" in entry["error"]
+        assert entry["installed"] == "8.4.24"
+
+    def test_removing_the_last_php_a_site_relies_on_is_refused(self, tmp_path):
+        """
+        The failure this prevents is a site that stops starting.
+
+        A site pinned to `8.4` follows whatever 8.4.x is newest, so taking away
+        the only one leaves it failing with a message about a version nobody
+        typed.
+        """
+        from portable.sites import Site
+
+        server = self.server()
+        server.runtimes.add(self.php(tmp_path, "8.4.24"))
+        server.sites.add(Site(name="demo", root=tmp_path, php="8.4"))
+
+        with pytest.raises(Exception) as excinfo:
+            server._runtime_remove({"name": "php", "version": "8.4.24"})
+
+        assert "demo" in str(excinfo.value.args)
+
+    def test_removing_one_of_two_on_the_same_line_is_allowed(self, tmp_path):
+        # The site follows the other one. This is the case that makes updating
+        # and then reclaiming disk possible at all.
+        from portable.sites import Site
+
+        server = self.server()
+        server.runtimes.add(self.php(tmp_path, "8.4.24"))
+        server.runtimes.add(self.php(tmp_path, "8.4.26"))
+        server.sites.add(Site(name="demo", root=tmp_path, php="8.4"))
+
+        result = server._runtime_remove({"name": "php", "version": "8.4.24"})
+
+        assert result["deleted"] is True
+        assert not (tmp_path / "runtimes" / "php" / "8.4.24").exists()
+
+    def test_an_adopted_runtime_is_forgotten_and_not_deleted(self, tmp_path):
+        # It belongs to whoever put it there. Forgetting it is the whole of what
+        # this tool is entitled to do about it.
+        server = self.server()
+        entry = self.php(tmp_path, "8.1.0", managed=False)
+        server.runtimes.add(entry)
+
+        result = server._runtime_remove({"name": "php", "version": "8.1.0"})
+
+        assert result["deleted"] is False
+        assert entry.directory.exists(), "somebody else's PHP was deleted"
+
+
+class TestAFailedSiteAddLeavesNothingBehind:
+    """
+    A site that could not be started must not be listed as if it exists.
+
+    `service add` already worked this way; `site add` did not, so a PHP that
+    would not start left a site `list` reported cheerfully — inviting the
+    conclusion that it exists and is merely stopped, and a second confusion when
+    starting it does nothing.
+    """
+
+    def server(self):
+        from portable.daemon.server import ControlServer
+
+        return ControlServer()
+
+    def test_a_new_site_is_withdrawn(self, tmp_path):
+        from portable.daemon.server import ApiError
+
+        server = self.server()
+
+        def explode(*_args, **_kwargs):
+            raise ApiError(500, "nope", "PHP would not start")
+
+        server._reconcile = explode
+
+        with pytest.raises(ApiError):
+            server._site_add({"name": "demo", "root": str(tmp_path)})
+
+        assert server.sites.all() == []
+
+    def test_an_existing_one_is_not_destroyed_by_a_failed_replacement(self, tmp_path):
+        """
+        The case that makes a blanket rollback wrong.
+
+        Re-adding a site — to move its root, or change its PHP — that then fails
+        must leave the declaration that was working exactly where it was.
+        Deleting it would turn a failed edit into a lost site.
+        """
+        from portable.daemon.server import ApiError
+        from portable.sites import Site
+
+        server = self.server()
+        server.sites.add(Site(name="demo", root=tmp_path, php="8.4"))
+
+        def explode(*_args, **_kwargs):
+            raise ApiError(500, "nope", "PHP would not start")
+
+        server._reconcile = explode
+
+        with pytest.raises(ApiError):
+            server._site_add({"name": "demo", "root": str(tmp_path), "php": "7.1"})
+
+        assert [site.name for site in server.sites.all()] == ["demo"]

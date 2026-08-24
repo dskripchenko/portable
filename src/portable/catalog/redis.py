@@ -45,7 +45,12 @@ def _fetch(version: str) -> dict:
     return json.loads(net.read_text(url))
 
 
-def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+def line(version: str) -> str:
+    """Redis's major. Its RDB and AOF files are written per major."""
+    return version.split(".")[0]
+
+
+def available(releases: list[dict] | None = None, limit: int = 20, line: str | None = None) -> list[Offer]:
     """
     Redis versions this rebuild offers, newest first.
 
@@ -66,7 +71,7 @@ def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer
         if tag and usable:
             offers.append(Offer(version=_upstream_version(tag)))
 
-    return offers[:limit]
+    return _on_line(offers, line)[:limit]
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:
@@ -112,3 +117,18 @@ def _upstream_version(tag: str) -> str:
     found = re.search(r"(\d+\.\d+\.\d+)", tag)
 
     return found.group(1) if found else tag
+
+
+def _on_line(offers: list[Offer], wanted: str | None) -> list[Offer]:
+    """
+    Narrow a listing to one release line, when one was asked for.
+
+    Filtered here rather than by the caller so that every catalog answers the
+    same question the same way — the daemon asks "what is newest on this line"
+    of all six without knowing that a line means a branch for PHP, a series for
+    MariaDB and a major for the rest.
+    """
+    if wanted is None:
+        return offers
+
+    return [offer for offer in offers if line(offer.version) == wanted]

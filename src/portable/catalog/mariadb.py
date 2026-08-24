@@ -45,7 +45,17 @@ def series(index: dict | None = None) -> list[str]:
     return sorted(stable, key=_key, reverse=True)
 
 
-def available(index: dict | None = None) -> list[Offer]:
+def line(version: str) -> str:
+    """
+    MariaDB's series, `11.4`, which is how the project itself is organised.
+
+    Same reasoning as PostgreSQL: the data directory belongs to the series, and
+    crossing one is an upgrade with a procedure, not a download.
+    """
+    return ".".join(version.split(".")[:2])
+
+
+def available(index: dict | None = None, line: str | None = None) -> list[Offer]:
     """
     MariaDB series, newest first — not individual patch releases.
 
@@ -64,10 +74,13 @@ def available(index: dict | None = None) -> list[Offer]:
         if entry.get("release_id")
     ]
 
-    return [
-        Offer(version=release_id, note="" if status == "Stable" else status.lower())
-        for release_id, status in sorted(entries, key=lambda pair: _key(pair[0]), reverse=True)
-    ]
+    return _on_line(
+        [
+            Offer(version=release_id, note="" if status == "Stable" else status.lower())
+            for release_id, status in sorted(entries, key=lambda pair: _key(pair[0]), reverse=True)
+        ],
+        line,
+    )
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:
@@ -131,3 +144,18 @@ def _key(value: str) -> tuple[int, ...]:
         return tuple(int(part) for part in value.split("."))
     except ValueError:
         return (0,)
+
+
+def _on_line(offers: list[Offer], wanted: str | None) -> list[Offer]:
+    """
+    Narrow a listing to one release line, when one was asked for.
+
+    Filtered here rather than by the caller so that every catalog answers the
+    same question the same way — the daemon asks "what is newest on this line"
+    of all six without knowing that a line means a branch for PHP, a series for
+    MariaDB and a major for the rest.
+    """
+    if wanted is None:
+        return offers
+
+    return [offer for offer in offers if line(offer.version) == wanted]

@@ -306,9 +306,36 @@ class Stack:
                 command=self.worker_command,
             )
 
+            # Named as they are added, so that a failure halfway through takes
+            # away exactly what it created. Cleaning up `built.specs` instead
+            # reaches for workers that were never added and fails with a
+            # KeyError about the wrong thing entirely.
+            live: list[str] = []
+
             for spec in built.specs:
                 self.supervisor.add(spec)
-                self.supervisor.start(spec.name)
+                live.append(spec.name)
+
+                try:
+                    self.supervisor.start(spec.name)
+                except OSError as error:
+                    # What a `php-cgi.exe` that cannot start looks like from
+                    # here. On Windows the usual cause is the Visual C++
+                    # runtime that php.net's builds link against being absent,
+                    # and the bare OSError — which is what this used to raise —
+                    # named a path and a number and nothing about PHP.
+                    for name in live:
+                        self.supervisor.stop(name)
+                        self.supervisor.forget(name)
+
+                    raise StackError(
+                        f"PHP {runtime.version} would not start.\n"
+                        f"{error}\n\n"
+                        f"On Windows this is usually the Visual C++ runtime: php.net's "
+                        f"builds link against it and report its absence as "
+                        f"VCRUNTIME140.dll not found.\n"
+                        f"{paths.tail(spec.log)}"
+                    ) from error
 
             self.pools[version] = built
             started.append(version)

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import shutil
 import threading
 import urllib.parse
 from collections.abc import Callable
@@ -184,6 +185,8 @@ class ControlServer:
             ("GET", f"{API}/runtimes"): self._runtimes,
             ("POST", f"{API}/runtimes/install"): self._install,
             ("GET", f"{API}/runtimes/available"): self._available,
+            ("GET", f"{API}/runtimes/updates"): self._updates,
+            ("POST", f"{API}/runtimes/remove"): self._runtime_remove,
             ("GET", f"{API}/php/extensions"): self._extensions,
             ("POST", f"{API}/php/extensions/install"): self._extension_install,
             ("POST", f"{API}/php/extensions/enable"): self._extension_enable,
@@ -261,6 +264,156 @@ class ControlServer:
                 for offer in offers
             ],
         }
+
+    def _updates(self, payload: dict) -> dict:
+        """
+        Which installed runtimes have a newer release on their own line.
+
+        Within the line only — the newest 8.4.x for an 8.4, not 8.5. Crossing a
+        line is an upgrade with consequences the tool cannot judge: a PHP major
+        brings deprecations to every site that pinned nothing, and a database
+        major will not open the data directory the previous one created. Those
+        are installed by name, deliberately, or not at all.
+
+        Adopted runtimes are reported as not updatable rather than omitted. They
+        may well be out of date, and saying nothing about them reads as saying
+        they are current.
+        """
+        only = str(payload.get("name") or "").lower() or None
+        found = []
+
+        for entry in self.runtimes.all():
+            if only and entry.name != only:
+                continue
+
+            try:
+                catalog = catalogs.module(entry.name)
+            except CatalogError:
+                continue
+
+            record = {
+                "name": entry.name,
+                "installed": entry.version,
+                "line": catalog.line(entry.version),
+                "managed": entry.managed,
+                "latest": None,
+                "update": False,
+            }
+
+            if entry.managed:
+                try:
+                    # `available` rather than `resolve`, and this is not a
+                    # preference. Each catalog's `resolve` takes what its
+                    # publisher accepts — a branch for PHP, an exact tag for the
+                    # GitHub-published ones — so asking every catalog for "the
+                    # newest 8" produced a 404 from Redis and PostgreSQL and
+                    # nothing at all for an archived PHP whose branch the index
+                    # no longer lists. Listing a line is one question all six
+                    # answer.
+                    offers = catalog.available(line=catalog.line(entry.version))
+                    record["latest"] = offers[0].version if offers else None
+                    record["update"] = bool(offers) and _newer(offers[0].version, entry.version)
+                except (CatalogError, OSError) as error:
+                    # One publisher being unreachable should not hide what the
+                    # others said. Reported per runtime rather than failing the
+                    # whole answer.
+                    record["error"] = str(error)
+
+            found.append(record)
+
+        return {"runtimes": found}
+
+    def _runtime_remove(self, payload: dict) -> dict:
+        """
+        Delete an installed runtime and reclaim its disk.
+
+        Needed because updating installs alongside rather than replacing — the
+        old version stays so that anything pinned to it keeps working, which is
+        right, and means something eventually has to take it away.
+        """
+        name = str(payload.get("name") or "").lower()
+        version = str(payload.get("version") or "")
+        entry = next(
+            (
+                candidate
+                for candidate in self.runtimes.all()
+                if candidate.name == name and candidate.version == version
+            ),
+            None,
+        )
+
+        if entry is None:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND,
+                "no-such-runtime",
+                f"{name} {version} is not installed. "
+                f"Installed: {', '.join(f'{item.name} {item.version}' for item in self.runtimes.all()) or 'nothing'}.",
+            )
+
+        if used_by := self._what_uses(entry):
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "in-use",
+                f"{name} {version} is used by {', '.join(used_by)}. "
+                f"Point those elsewhere first, or remove them.",
+            )
+
+        self.runtimes.remove(name, version)
+
+        # An adopted runtime is forgotten, never deleted. It belongs to whoever
+        # put it there, and removing it from this tool's list is the whole of
+        # what this tool is entitled to do about it.
+        removed_files = False
+
+        if entry.managed and entry.directory.is_dir():
+            shutil.rmtree(entry.directory, ignore_errors=True)
+            removed_files = not entry.directory.exists()
+
+        return {
+            "name": name,
+            "version": version,
+            "directory": str(entry.directory),
+            "deleted": removed_files,
+            "managed": entry.managed,
+        }
+
+    def _what_uses(self, entry: Installed) -> list[str]:
+        """
+        Sites and databases that would break if this runtime went away.
+
+        A site pinned to `8.4` follows whatever 8.4.x is newest, so it is only
+        held to this exact build when nothing newer of that line is installed.
+        Checked rather than assumed: removing the only 8.4 out from under a site
+        pinned to 8.4 leaves it failing to start with a message about a version
+        nobody typed.
+        """
+        catalog = catalogs.modules().get(entry.name)
+        line = catalog.line(entry.version) if catalog else entry.version
+        siblings = [
+            other
+            for other in self.runtimes.of(entry.name)
+            if other.version != entry.version and (not catalog or catalog.line(other.version) == line)
+        ]
+
+        if siblings:
+            return []
+
+        users = []
+
+        if entry.name == "php":
+            users += [
+                f"site {site.name}"
+                for site in self.sites.all()
+                if site.php in (None, line, entry.version)
+            ]
+
+        users += [
+            f"service {service.name}"
+            for service in self.services_registry.all()
+            if service.kind == entry.name and service.version in (None, line, entry.version)
+        ]
+
+        return users
 
     # -------------------------------------------------------------- extensions
 
@@ -503,13 +656,28 @@ class ControlServer:
         root = Path(str(payload.get("root") or "")).expanduser()
 
         site = Site(name=name, root=root, php=payload.get("php") or None)
+        previous = {existing.name for existing in self.sites.all()}
 
         try:
             self.sites.add(site)
         except InvalidSite as error:
             raise ApiError(HTTPStatus.BAD_REQUEST, "invalid-site", str(error)) from error
 
-        self._reconcile()
+        try:
+            self._reconcile()
+        except ApiError:
+            # The declaration is withdrawn again — the same rule `service add`
+            # already followed, and for the same reason: a failed `add` that
+            # leaves the site listed invites the conclusion that it exists and
+            # is merely stopped, and being confused a second time when starting
+            # it does nothing.
+            #
+            # Only when the site is new. Re-adding an existing one that fails
+            # must not delete the working declaration it was replacing.
+            if site.name not in previous:
+                self.sites.remove(site.name)
+
+            raise
 
         return {
             "name": site.name,
@@ -681,6 +849,13 @@ class ApiError(Exception):
         self.status = status
         self.key = key
         self.message = message
+
+
+def _newer(candidate: str, than: str) -> bool:
+    def key(version: str) -> tuple[int, ...]:
+        return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
+
+    return key(candidate) > key(than)
 
 
 def _make_handler(server: ControlServer):

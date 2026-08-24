@@ -35,6 +35,18 @@ def _fetch_index(url: str = INDEX_URL) -> dict:
     return json.loads(net.read_text(url))
 
 
+def line(version: str) -> str:
+    """
+    The branch an update stays inside: `8.4.24` -> `8.4`.
+
+    PHP's own support policy is per branch, and a jump from 8.3 to 8.4 is a
+    language version change with deprecations in it. An update that crossed one
+    would be an upgrade somebody did not ask for, applied to every site that
+    pinned nothing.
+    """
+    return ".".join(version.split(".")[:2])
+
+
 def branches(index: dict | None = None) -> list[str]:
     """Every branch the index offers, newest first: `['8.5', '8.4', ...]`."""
     index = index if index is not None else _fetch_index()
@@ -83,17 +95,17 @@ def archived(listing: str | None = None) -> dict[str, str]:
 
 def available(
     index: dict | None = None,
-    branch: str | None = None,
+    line: str | None = None,
     archive: str | None = None,
 ) -> list[Offer]:
     """
     What can be installed, newest first.
 
-    Without a branch: the current release of each, which is all php.net's index
+    Without a line: the current release of each branch, which is all php.net's index
     holds — it lists one per branch and moves everything it supersedes to the
     archive.
 
-    With a branch: that branch's current release **and** every superseded patch
+    With one: that branch's current release **and** every superseded patch
     of it still downloadable. Which is the question actually asked — not "what
     PHP versions exist" but "can I still get the 8.3.20 this project is pinned
     to". Only per branch, because the archive holds three hundred-odd builds
@@ -105,14 +117,14 @@ def available(
         for name in branches(index)
     ]
 
-    if branch is None:
+    if line is None:
         return current
 
-    live = [offer for offer in current if offer.version.startswith(f"{branch}.")]
+    live = [offer for offer in current if offer.version.startswith(f"{line}.")]
     superseded = [
         Offer(version=version, note="archived, no checksum published")
         for version in archived(archive)
-        if version.rsplit(".", 1)[0] == branch
+        if version.rsplit(".", 1)[0] == line
         and version not in {offer.version for offer in live}
     ]
 

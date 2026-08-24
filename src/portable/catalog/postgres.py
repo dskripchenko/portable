@@ -33,7 +33,19 @@ def _fetch(version: str) -> dict:
     return json.loads(net.read_text(url))
 
 
-def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+def line(version: str) -> str:
+    """
+    PostgreSQL's major, and here it is not a preference.
+
+    A data directory belongs to the major that created it. 17 will not start on
+    18's files and 18 will not start on 17's; moving between them means a dump
+    and a restore. An update that crossed a major would leave a database that
+    cannot open its own data.
+    """
+    return version.split(".")[0]
+
+
+def available(releases: list[dict] | None = None, limit: int = 20, line: str | None = None) -> list[Offer]:
     """
     PostgreSQL builds published for this target: the newest of each major line.
 
@@ -59,7 +71,9 @@ def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer
         if major is not None and (major not in newest or _key(version) > _key(newest[major])):
             newest[major] = version
 
-    return [Offer(version=newest[major]) for major in sorted(newest, reverse=True)][:limit]
+    return _on_line(
+        [Offer(version=newest[major]) for major in sorted(newest, reverse=True)], line
+    )[:limit]
 
 
 def _major(version: str) -> int | None:
@@ -100,3 +114,18 @@ def resolve(version: str = "latest", release: dict | None = None) -> Build:
         checksum=None,
         variant=TARGET,
     )
+
+
+def _on_line(offers: list[Offer], wanted: str | None) -> list[Offer]:
+    """
+    Narrow a listing to one release line, when one was asked for.
+
+    Filtered here rather than by the caller so that every catalog answers the
+    same question the same way — the daemon asks "what is newest on this line"
+    of all six without knowing that a line means a branch for PHP, a series for
+    MariaDB and a major for the rest.
+    """
+    if wanted is None:
+        return offers
+
+    return [offer for offer in offers if line(offer.version) == wanted]

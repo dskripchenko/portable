@@ -44,7 +44,12 @@ def _fetch_release(version: str) -> dict:
     return json.loads(net.read_text(url))
 
 
-def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+def line(version: str) -> str:
+    """Caddy's major. Within it, releases are compatible by policy."""
+    return version.split(".")[0]
+
+
+def available(releases: list[dict] | None = None, limit: int = 20, line: str | None = None) -> list[Offer]:
     """
     Caddy releases that actually carry a Windows archive, newest first.
 
@@ -64,7 +69,7 @@ def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer
                 Offer(version=version, note="pre-release" if release.get("prerelease") else "")
             )
 
-    return offers[:limit]
+    return _on_line(offers, line)[:limit]
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:
@@ -147,3 +152,18 @@ def checksum_for(filename: str, checksums: str) -> tuple[str, str] | None:
         return digest, algorithm
 
     return None
+
+
+def _on_line(offers: list[Offer], wanted: str | None) -> list[Offer]:
+    """
+    Narrow a listing to one release line, when one was asked for.
+
+    Filtered here rather than by the caller so that every catalog answers the
+    same question the same way — the daemon asks "what is newest on this line"
+    of all six without knowing that a line means a branch for PHP, a series for
+    MariaDB and a major for the rest.
+    """
+    if wanted is None:
+        return offers
+
+    return [offer for offer in offers if line(offer.version) == wanted]

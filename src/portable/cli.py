@@ -106,6 +106,18 @@ def _parser() -> argparse.ArgumentParser:
     runtimes = add("runtimes", "What is installed.", _runtimes)
     runtimes.set_defaults(run=_runtimes)
 
+    forget = add("uninstall", "Delete an installed runtime and reclaim its disk.", _uninstall)
+    forget.add_argument("runtime", choices=catalog.names())
+    forget.add_argument("version")
+
+    update = add("update", "Newer releases on the same line as what is installed.", _update)
+    update.add_argument("runtime", nargs="?", choices=[*catalog.names(), None], default=None)
+    update.add_argument(
+        "--install",
+        action="store_true",
+        help="Install what is found, rather than only reporting it.",
+    )
+
     available = add("available", "What each publisher currently offers.", _available)
     available.add_argument("runtime", choices=catalog.names())
     available.add_argument(
@@ -458,6 +470,86 @@ def _ext_change(args, enabling: bool) -> int:
         args,
         result,
         f"{result['name']} is now {'on' if enabling else 'off'} for PHP {result['php']}.{note}",
+    )
+
+
+def _update(args) -> int:
+    query = f"?name={args.runtime}" if args.runtime else ""
+    result = Client().call("GET", f"/v1/runtimes/updates{query}", timeout=120)
+    outdated = [entry for entry in result["runtimes"] if entry["update"]]
+
+    if args.install and outdated:
+        installed = []
+
+        for entry in outdated:
+            installed.append(
+                Client().call(
+                    "POST",
+                    "/v1/runtimes/install",
+                    {"name": entry["name"], "version": entry["latest"]},
+                    timeout=900,
+                )
+            )
+
+        result["installed"] = installed
+
+        return _emit(
+            args,
+            result,
+            "\n".join(
+                f"{entry['name']} {entry['version']} installed "
+                f"(alongside what was there — nothing was replaced)."
+                for entry in installed
+            ),
+        )
+
+    if args.json:
+        return _emit(args, result, "")
+
+    lines = []
+
+    for entry in result["runtimes"]:
+        if entry.get("error"):
+            lines.append(f"  {entry['name']:<9} {entry['installed']:<12} could not ask: {entry['error']}")
+        elif not entry["managed"]:
+            # Said rather than omitted: silence about an adopted runtime reads
+            # as a claim that it is current.
+            lines.append(f"  {entry['name']:<9} {entry['installed']:<12} found on this machine, not ours to update")
+        elif entry["update"]:
+            lines.append(f"  {entry['name']:<9} {entry['installed']:<12} -> {entry['latest']}")
+        else:
+            lines.append(f"  {entry['name']:<9} {entry['installed']:<12} current")
+
+    if not lines:
+        return _emit(args, result, "Nothing is installed yet.")
+
+    tail = (
+        "\n\nportable update --install"
+        if outdated
+        else ""
+    )
+
+    return _emit(args, result, "\n".join(lines) + tail)
+
+
+def _uninstall(args) -> int:
+    result = Client().call(
+        "POST",
+        "/v1/runtimes/remove",
+        {"name": args.runtime, "version": args.version},
+    )
+
+    if not result["managed"]:
+        return _emit(
+            args,
+            result,
+            f"{result['name']} {result['version']} is no longer listed. Its files were left "
+            f"in {result['directory']} — it was found on this machine rather than installed "
+            f"here, so it is not ours to delete.",
+        )
+
+    return _emit(
+        args, result, f"{result['name']} {result['version']} removed from {result['directory']}."
     )
 
 

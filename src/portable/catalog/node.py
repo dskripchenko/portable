@@ -31,7 +31,17 @@ def _fetch_index() -> list[dict]:
     return json.loads(net.read_text(INDEX_URL))
 
 
-def available(index: list[dict] | None = None, limit: int = 8) -> list[Offer]:
+def line(version: str) -> str:
+    """
+    Node's major, which is what LTS is defined on.
+
+    Following the newest release across majors would move a project from 22 to
+    26 for having asked for an update, and take its native modules with it.
+    """
+    return version.split(".")[0]
+
+
+def available(index: list[dict] | None = None, limit: int = 8, line: str | None = None) -> list[Offer]:
     """
     Node releases carrying a Windows build, newest first.
 
@@ -61,13 +71,16 @@ def available(index: list[dict] | None = None, limit: int = 8) -> list[Offer]:
         if major not in newest or _key(version) > _key(newest[major]["version"].lstrip("v")):
             newest[major] = entry
 
-    return [
-        Offer(
-            version=newest[major]["version"].lstrip("v"),
-            note=f"LTS {newest[major]['lts']}" if newest[major].get("lts") else "",
-        )
-        for major in sorted(newest, reverse=True)
-    ][:limit]
+    return _on_line(
+        [
+            Offer(
+                version=newest[major]["version"].lstrip("v"),
+                note=f"LTS {newest[major]['lts']}" if newest[major].get("lts") else "",
+            )
+            for major in sorted(newest, reverse=True)
+        ],
+        line,
+    )[:limit]
 
 
 def _major(version: str) -> int | None:
@@ -151,3 +164,18 @@ def checksum_for(filename: str, checksums: str) -> tuple[str, str] | None:
             return match.group(1).lower(), "sha256"
 
     return None
+
+
+def _on_line(offers: list[Offer], wanted: str | None) -> list[Offer]:
+    """
+    Narrow a listing to one release line, when one was asked for.
+
+    Filtered here rather than by the caller so that every catalog answers the
+    same question the same way — the daemon asks "what is newest on this line"
+    of all six without knowing that a line means a branch for PHP, a series for
+    MariaDB and a major for the rest.
+    """
+    if wanted is None:
+        return offers
+
+    return [offer for offer in offers if line(offer.version) == wanted]
