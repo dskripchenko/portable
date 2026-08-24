@@ -175,6 +175,29 @@ def _parser() -> argparse.ArgumentParser:
 
     service.set_defaults(run=_service_help, service_command=None, json=False)
 
+    ext = subparsers.add_parser("ext", parents=[common], help="PHP extensions.")
+    ext.add_argument("--json", action="store_true", help="Machine-readable output.")
+    ext.add_argument("--php", help="Which installed PHP. Defaults to the newest.")
+    ext_commands = ext.add_subparsers(dest="ext_command")
+
+    def add_ext(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = ext_commands.add_parser(name, help=help_text, parents=[common])
+        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.add_argument("--php", help="Which installed PHP. Defaults to the newest.")
+        sub.set_defaults(run=run)
+
+        return sub
+
+    ext_enable = add_ext("enable", "Load an extension the build ships.", _ext_enable)
+    ext_enable.add_argument("name")
+
+    ext_disable = add_ext("disable", "Stop loading one.", _ext_disable)
+    ext_disable.add_argument("name")
+
+    add_ext("list", "Extensions this PHP ships, and which are loaded.", _ext_list)
+
+    ext.set_defaults(run=_ext_list, ext_command=None)
+
     home = subparsers.add_parser(
         "home",
         parents=[common],
@@ -350,6 +373,62 @@ def _daemon_environment() -> dict[str, str]:
     environment["PORTABLE_HOME"] = str(paths.root())
 
     return environment
+
+
+def _ext_list(args) -> int:
+    php = getattr(args, "php", None)
+    result = Client().call("GET", f"/v1/php/extensions{f'?php={php}' if php else ''}")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    lines = []
+
+    for entry in result["extensions"]:
+        if not entry["shipped"]:
+            # Loaded by the ini, absent from the build. PHP warns at startup, to
+            # a log, and runs without it — so this line is the only place the
+            # cause is visible before the symptom.
+            state = "MISSING — the ini loads it, this build has no such file"
+        else:
+            state = "on" if entry["enabled"] else ""
+
+        lines.append(f"  {entry['name']:<22} {state}".rstrip())
+
+    return _emit(
+        args,
+        result,
+        "\n".join([f"PHP {result['php']}  {result['ini']}", "", *lines]),
+    )
+
+
+def _ext_enable(args) -> int:
+    return _ext_change(args, enabling=True)
+
+
+def _ext_disable(args) -> int:
+    return _ext_change(args, enabling=False)
+
+
+def _ext_change(args, enabling: bool) -> int:
+    result = Client().call(
+        "POST",
+        f"/v1/php/extensions/{'enable' if enabling else 'disable'}",
+        {"name": args.name, "php": getattr(args, "php", None)},
+    )
+
+    if not result["changed"]:
+        return _emit(
+            args, result, f"{result['name']} was already {'on' if enabling else 'off'}."
+        )
+
+    note = " Workers restarted." if result["restarted"] else ""
+
+    return _emit(
+        args,
+        result,
+        f"{result['name']} is now {'on' if enabling else 'off'} for PHP {result['php']}.{note}",
+    )
 
 
 def _available(args) -> int:

@@ -27,7 +27,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, paths
+from .. import acquire, extensions, paths, pool
 from .. import catalog as catalogs
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
@@ -184,6 +184,9 @@ class ControlServer:
             ("GET", f"{API}/runtimes"): self._runtimes,
             ("POST", f"{API}/runtimes/install"): self._install,
             ("GET", f"{API}/runtimes/available"): self._available,
+            ("GET", f"{API}/php/extensions"): self._extensions,
+            ("POST", f"{API}/php/extensions/enable"): self._extension_enable,
+            ("POST", f"{API}/php/extensions/disable"): self._extension_disable,
             ("GET", f"{API}/sites"): self._sites,
             ("POST", f"{API}/sites/add"): self._site_add,
             ("POST", f"{API}/sites/remove"): self._site_remove,
@@ -254,6 +257,65 @@ class ControlServer:
                 }
                 for offer in offers
             ],
+        }
+
+    # -------------------------------------------------------------- extensions
+
+    def _php_for(self, payload: dict) -> tuple[Installed, Path]:
+        """The PHP an extension command applies to, and its ini."""
+        version = payload.get("php") or None
+
+        try:
+            runtime = self.runtimes.get("php", version)
+        except NotInstalled as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-runtime", str(error)) from error
+
+        return runtime, pool.ini_for(runtime, paths.root() / "conf")
+
+    def _extensions(self, payload: dict) -> dict:
+        runtime, ini = self._php_for(payload)
+
+        return {
+            "php": runtime.version,
+            "ini": str(ini),
+            "extensions": extensions.report(ini, runtime.directory),
+        }
+
+    def _extension_enable(self, payload: dict) -> dict:
+        return self._extension_change(payload, enabling=True)
+
+    def _extension_disable(self, payload: dict) -> dict:
+        return self._extension_change(payload, enabling=False)
+
+    def _extension_change(self, payload: dict, enabling: bool) -> dict:
+        name = str(payload.get("name") or "")
+        runtime, ini = self._php_for(payload)
+
+        try:
+            changed = (
+                extensions.enable(ini, name, runtime.directory)
+                if enabling
+                else extensions.disable(ini, name)
+            )
+        except extensions.UnknownExtension as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-extension", str(error)) from error
+
+        # The workers read the ini once, at startup. Without this the command
+        # reports success and nothing whatsoever happens, which invites the
+        # conclusion that the extension is broken rather than not yet loaded.
+        restarted = False
+
+        if changed and self.stack.reload_php(runtime.version):
+            self._reconcile()
+            restarted = True
+
+        return {
+            "php": runtime.version,
+            "name": name.lower(),
+            "enabled": enabling,
+            "changed": changed,
+            "restarted": restarted,
+            "ini": str(ini),
         }
 
     def _install(self, payload: dict) -> dict:

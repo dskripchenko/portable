@@ -315,6 +315,29 @@ class Stack:
 
         return started
 
+    def reload_php(self, version: str) -> bool:
+        """
+        Retire a version's workers so the next reconcile starts them afresh.
+
+        `php.ini` is read once, at startup, by each `php-cgi` process. Changing
+        an extension therefore does nothing at all until the workers are
+        replaced — and "nothing at all" is the worst possible outcome for a
+        command that reported success, because the natural conclusion is that
+        the extension is broken rather than that it is not loaded yet.
+
+        Replaced rather than reloaded because there is no reload: the CGI SAPI
+        has no equivalent of `php-fpm reload`, which is the same absence the
+        pool exists to work around.
+        """
+        if version not in self.pools:
+            return False
+
+        for worker in self.pools.pop(version).workers:
+            self.supervisor.stop(worker.name)
+            self.supervisor.forget(worker.name)
+
+        return True
+
     def _stop_unused_pools(self, wanted: dict[str, Installed]) -> list[str]:
         """
         Retire a pool nothing points at any more.

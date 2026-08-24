@@ -85,6 +85,9 @@ portable install caddy
 portable site add demo C:\projects\demo
                                      # -> http://demo.localhost
 
+portable ext list                    # what this PHP ships, and what is loaded
+portable ext enable sodium
+
 portable service add postgres        # 127.0.0.1:5432, user postgres
 portable service add redis
 portable install node

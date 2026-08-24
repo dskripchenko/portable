@@ -407,3 +407,44 @@ publisher's download page reads as out of date.
   loaded. Windows is unaffected — Python reads the system store there — but the
   macOS bundle can land in exactly this state.
 
+### Added — `portable ext`
+
+`ext list`, `ext enable <name>`, `ext disable <name>`, against any installed PHP
+(`--php 8.3`).
+
+Windows PHP is not built the way a Linux distribution builds it: the archive
+from php.net carries every extension it supports as a separate `php_<name>.dll`
+in `ext/`, all present and none loaded. So enabling one is not a download — it
+is a line in a file, and this is mostly about editing that file carefully.
+
+Carefully, because the file is not ours. `php.ini` is written once when a PHP is
+installed and then left alone forever, because somebody will edit it; that is
+the point of having it on disk. So each operation is a surgical edit that
+preserves comments, ordering and whitespace:
+
+- A commented-out `;extension = gd` is uncommented **where it stands** rather
+  than appended again at the bottom. Somebody who commented it put it there,
+  often under a note saying why, and two lines disagreeing about what is in
+  force resolve to "the last one" — which is what neither of them looks like.
+- Disabling comments the line rather than deleting it. Extension settings
+  usually sit around it, and somebody switching something off for an afternoon
+  should find it where they left it.
+- Zend extensions get `zend_extension`. Loading one with `extension` fails at
+  startup with a message naming the *other* directive, while the file plainly
+  says the first — which reads like the message is about somebody else.
+
+Two states are surfaced that PHP itself reports only into a log nobody reads:
+
+- **MISSING** — the ini loads something this build does not carry. PHP warns at
+  startup and runs without it, so the symptom arrives later as a function that
+  does not exist, hours from the line that caused it.
+- Enabling something the build lacks is refused outright, with what it does
+  carry, for the same reason.
+
+**Changing an extension replaces the workers.** Each `php-cgi` reads the ini
+once, at startup, so without this the command would report success and nothing
+whatsoever would happen — inviting the conclusion that the extension is broken
+rather than that it is not loaded yet. Replaced rather than reloaded because
+there is no reload: the CGI SAPI has no `php-fpm reload`, which is the same
+absence the pool exists to work around in the first place.
+
