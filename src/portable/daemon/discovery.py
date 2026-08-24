@@ -101,11 +101,20 @@ def read(path: Path | None = None) -> Endpoint | None:
     """
     path = path or paths.daemon_file()
 
-    if not path.exists():
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except OSError:
+        # Windows denies the read while `os.replace` is putting the new file in
+        # place — a sharing violation, reported as a permission error. It means
+        # "not this instant", not "not there", so nothing is deleted and the
+        # caller simply looks again. Uncaught, this crashed `portable status`
+        # whenever it coincided with the daemon writing.
         return None
 
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(raw)
         endpoint = Endpoint(
             port=int(data["port"]),
             token=str(data["token"]),

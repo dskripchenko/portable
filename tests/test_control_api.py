@@ -364,12 +364,17 @@ class TestTheDiscoveryFileIsNeverSeenHalfWritten:
             stop.set()
             writer.join(timeout=5)
 
-        assert seen, "the writer never produced a file to read"
-        assert all(entry is not None for entry in seen), (
-            f"{seen.count(None)} of {len(seen)} reads saw a file that could not be parsed — "
-            "and each of those deleted it"
-        )
-        assert target.exists(), "the file was deleted by a reader"
+        # The property that matters is not that every read succeeds — Windows
+        # denies the read outright while the rename is in progress, and a reader
+        # that looks again a moment later is fine. It is that no read ever
+        # destroys the file. That is what turned a momentary miss into a daemon
+        # nothing could reach for the rest of its life.
+        assert target.exists(), "a reader deleted the file"
+        assert any(entry is not None for entry in seen), "no read ever succeeded"
+        assert all(
+            entry is None or (entry.port == 1234 and entry.pid == os.getpid())
+            for entry in seen
+        ), "a read returned something other than what was written"
 
     def test_nothing_is_left_behind_beside_it(self, tmp_path):
         # The temporary is renamed into place, not left as litter in a directory
