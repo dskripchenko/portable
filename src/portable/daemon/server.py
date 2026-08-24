@@ -18,12 +18,11 @@ from __future__ import annotations
 
 import json
 import secrets
-import socketserver
 import threading
 from collections.abc import Callable
 from dataclasses import replace
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +30,7 @@ from .. import acquire, paths
 from ..catalog import CatalogError
 from ..catalog import caddy as caddy_catalog
 from ..catalog import php as php_catalog
+from ..http import LoopbackHTTPServer
 from ..runtimes import Installed, NotInstalled
 from ..runtimes import Registry as Runtimes
 from ..sites import InvalidSite, Site
@@ -95,7 +95,7 @@ class ControlServer:
         self.sites = Sites()
         self.stack = Stack(supervisor=self.supervisor, runtimes=self.runtimes)
         self.token = token or discovery.new_token()
-        self._http: ThreadingHTTPServer | None = None
+        self._http: LoopbackHTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._shutdown = threading.Event()
 
@@ -116,7 +116,7 @@ class ControlServer:
         like a bug.
         """
         handler = _make_handler(self)
-        self._http = _Server(("127.0.0.1", port), handler)
+        self._http = LoopbackHTTPServer(("127.0.0.1", port), handler)
         self._http.daemon_threads = True
 
         self._thread = threading.Thread(
@@ -360,30 +360,6 @@ class ControlServer:
 
     def _deferred_stop(self) -> None:
         self._shutdown.set()
-
-
-class _Server(ThreadingHTTPServer):
-    """
-    `ThreadingHTTPServer` without the reverse DNS lookup at bind time.
-
-    `HTTPServer.server_bind` calls `socket.getfqdn()` on the address it just
-    bound, to fill in `server_name`. For `127.0.0.1` that is a reverse DNS query,
-    and on a machine whose resolver is slow or filtered it takes tens of seconds
-    or never returns — the daemon starts, prints nothing further, and hangs
-    before it ever listens.
-
-    Found on CI, where macOS runners hang on it reliably. It is not a CI quirk:
-    a managed corporate network with a filtered resolver behaves the same way,
-    and that is precisely the kind of machine this tool exists for.
-
-    `server_name` only feeds CGI environment variables this server never
-    produces, so there is nothing to lose by not asking.
-    """
-
-    def server_bind(self) -> None:
-        socketserver.TCPServer.server_bind(self)
-        self.server_name = "localhost"
-        self.server_port = self.server_address[1]
 
 
 class ApiError(Exception):

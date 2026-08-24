@@ -17,7 +17,16 @@ from __future__ import annotations
 import json
 import sys
 import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from pathlib import Path
+
+# This runs as a fresh interpreter with a fresh `sys.path`, so importing the
+# package it is testing takes saying where it is. The third time that lesson has
+# been paid for in this project: the daemon needed the same, and so did the
+# runtime adopted from disk.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from portable.http import LoopbackHTTPServer
 
 STATE: dict = {"document": {}}
 
@@ -108,15 +117,13 @@ def main() -> int:
     site_port = _listen_port(STATE["document"])
     print(f"fake caddy: admin={admin_host}:{admin_port} site=127.0.0.1:{site_port}", flush=True)
 
-    admin = ThreadingHTTPServer((admin_host, admin_port), Admin)
-    admin.daemon_threads = True
+    admin = LoopbackHTTPServer((admin_host, admin_port), Admin)
     threading.Thread(target=admin.serve_forever, daemon=True).start()
 
     # Binding the site port is what can fail — a privileged port, or one already
     # held. Failing here rather than pretending is the whole point: it is what
     # makes the fallback in `Stack` reachable in a test.
-    site = ThreadingHTTPServer(("127.0.0.1", site_port), Site)
-    site.daemon_threads = True
+    site = LoopbackHTTPServer(("127.0.0.1", site_port), Site)
     print(f"fake caddy: listening on {site_port}", flush=True)
     site.serve_forever()
 
