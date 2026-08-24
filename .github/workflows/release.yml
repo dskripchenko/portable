@@ -5,6 +5,13 @@ name: release
 # One per target, each carrying its own interpreter, because the whole premise
 # is that this installs on a machine with nothing on it. Requiring Python first
 # would be the same problem the tool exists to solve, one level down.
+#
+# Windows is the product; the macOS bundle is for developing the thing. Intel
+# macOS is deliberately absent — `macos-13` runners are being retired and a leg
+# that queues forever holds `publish` forever, which is a release that silently
+# never happens. Anyone on an Intel Mac can build one: `scripts/bundle.py
+# --target x86_64-apple-darwin` runs anywhere, since it only downloads and
+# repacks.
 on:
   push:
     tags: ['v*']
@@ -23,9 +30,6 @@ jobs:
             runs-on: windows-latest
           - target: aarch64-apple-darwin
             runs-on: macos-latest
-          - target: x86_64-apple-darwin
-            runs-on: macos-13
-
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runs-on }}
 
