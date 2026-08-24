@@ -1,0 +1,110 @@
+name: release
+
+# A tagged version, built into self-contained bundles and published.
+#
+# One per target, each carrying its own interpreter, because the whole premise
+# is that this installs on a machine with nothing on it. Requiring Python first
+# would be the same problem the tool exists to solve, one level down.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            runs-on: windows-latest
+          - target: aarch64-apple-darwin
+            runs-on: macos-latest
+          - target: x86_64-apple-darwin
+            runs-on: macos-13
+
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # The tests run against the source on every push; running them again here
+      # is about the tag, which may sit on a commit the branch CI never saw.
+      - name: Test
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest -q
+
+      - name: Build the bundle
+        run: python scripts/bundle.py --target ${{ matrix.target }} --keep-tree
+
+      # Built on one machine and run on another, so the run has to happen with
+      # nothing of the build machine's Python around it. A bundle that quietly
+      # imports the builder's interpreter works exactly once.
+      - name: Run it with no Python in the environment
+        shell: python
+        run: |
+          import glob, sys
+          sys.path.insert(0, "scripts")
+          from bundle import verify
+          from pathlib import Path
+
+          tree = glob.glob("dist/portable-*-${{ matrix.target }}")
+          verify(Path(tree[0]), "${{ matrix.target }}")
+          print(f"the bundle in {tree[0]} runs")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portable-${{ matrix.target }}
+          path: |
+            dist/*.zip
+            dist/*.sha256
+
+  publish:
+    needs: bundle
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            python3 - <<'PY' > notes.md
+          import os, re, pathlib
+
+          version = os.environ['GITHUB_REF_NAME'].lstrip('v')
+          lines = pathlib.Path('CHANGELOG.md').read_text(encoding='utf-8').split('\n')
+          heads = [(i, line) for i, line in enumerate(lines) if line.startswith('## ')]
+
+          for index, (start, line) in enumerate(heads):
+              if re.match(r'^## \[?' + re.escape(version) + r'\]?( |$)', line):
+                  end = heads[index + 1][0] if index + 1 < len(heads) else len(lines)
+                  print('\n'.join(lines[start + 1:end]).strip())
+                  break
+          else:
+              raise SystemExit(f'CHANGELOG.md says nothing about {version}')
+          PY
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
+          fi
+
+          gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber

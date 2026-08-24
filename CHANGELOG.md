@@ -277,3 +277,36 @@ official archives, and a `SHASUMS256.txt` beside every version.
   directory, so with nothing installed a command run through `portable run`
   could pick up something from whichever directory it was typed in.
 
+### Added — the bundle
+
+- **`scripts/bundle.py`** builds a self-contained directory: this tool plus the
+  interpreter it runs on, from `python-build-standalone`. Unzip it anywhere and
+  run the launcher; nothing is installed, no PATH is changed, no registry key is
+  written.
+
+  It exists because of the tool's own premise. `portable` installs runtimes on a
+  machine that has none, and requiring Python first would be the same problem
+  one level down — on Windows there is no Python at all by default, only an App
+  Execution Alias that opens the Microsoft Store. So the tool bootstraps itself
+  the way it bootstraps PHP.
+
+  The interpreter version is pinned rather than tracking the newest: the bundle
+  is the one place where the Python running this is decided, and letting it
+  drift is how a build that worked in March fails in April with nothing changed.
+
+- **CI builds one bundle per target on a tag** and runs each of them with the
+  build machine's Python removed from the environment. A bundle that quietly
+  imports the builder's interpreter works exactly once, on the machine that made
+  it.
+
+### Fixed
+
+- **The launcher called `dirname`.** An external command, found on PATH — so a
+  launcher whose whole job is to work on an unprepared machine could not run
+  where PATH was the thing that was wrong. It uses shell builtins now. Found by
+  starting the bundle with `PATH` pointing at nothing, which is a fair
+  approximation of a locked-down machine.
+
+- **The bundler asked the network before looking in its own cache**, so a
+  rebuild needed connectivity to learn the name of a file already on disk.
+

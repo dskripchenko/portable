@@ -3,9 +3,9 @@
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **early**. The catalog and acquisition layer work and are tested. The
-> supervisor, the control API and the CLI are being built. Nothing here is
-> usable yet.
+> Status: **works, unreleased.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node
+> install and run; sites are served at `*.localhost`. Not yet verified on a real
+> Windows machine — see the note at the end.
 
 ## Why
 
@@ -68,10 +68,39 @@ beta version". Caddy is used instead — a maintained native binary, with an adm
 API that makes adding a site one HTTP call, and a local CA that solves HTTPS
 without touching the machine's trust store.
 
+## Using it
+
+Download the bundle for your platform from the
+[releases](https://github.com/dskripchenko/portable/releases), unzip it
+anywhere, and run the launcher beside it. There is nothing to install — the
+interpreter ships with the tool, because a program that installs runtimes on a
+machine which has none cannot sensibly require one first.
+
+```
+portable up                          # start the daemon
+portable install php                 # or: --from C:\your\own\php
+portable install caddy
+portable site add demo C:\projects\demo
+                                     # -> http://demo.localhost
+
+portable service add postgres        # 127.0.0.1:5432, user postgres
+portable service add redis
+portable install node
+portable run npm install             # with the installed runtimes reachable
+
+portable status
+portable down
+```
+
+Every command takes `--json`. The CLI holds no logic of its own: it asks the
+daemon and prints the answer, which is why an IDE plugin will be a second client
+rather than a second implementation.
+
 ## Development
 
 ```bash
 python -m pytest
+python scripts/bundle.py --target x86_64-pc-windows-msvc
 ```
 
 The tests run on any platform. Anything Windows-specific — process detachment,
@@ -82,6 +111,24 @@ Fixtures are captured from the publishers rather than written by hand. A
 hand-made fixture only proves the parser agrees with its author: Caddy publishes
 **sha512** checksums in a file that looks exactly like a sha256 listing, and
 only a real one catches that.
+
+## What has not been verified
+
+Everything here runs, and most of it has been run against the real thing: a
+`php-cgi` pool behind Caddy serving PHP, PostgreSQL initialised and queried,
+Node reached through `portable run`, and the bundle started on a machine with
+its `PATH` pointing at nothing.
+
+All of that was on macOS, which shares `php-cgi`, the FastCGI protocol and the
+archive formats with the target but not everything else. Three things can only
+be answered on Windows, and are not yet:
+
+- `php-cgi.exe`, `initdb.exe` and the rest, as actual Windows binaries;
+- port 80 without administrator rights, and whether `http.sys` has it;
+- detaching from the console, the process group and the job object.
+
+CI runs the whole suite on `windows-latest`, which covers the logic and none of
+those.
 
 ## License
 
