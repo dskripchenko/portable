@@ -47,7 +47,12 @@ jobs:
           python -m pip install --quiet pytest
           python -m pytest -q
 
+      # Authenticated, or the interpreter index is fetched anonymously and
+      # counted against sixty requests an hour for the runner's address — which
+      # is shared with everybody else using Actions. It failed exactly that way.
       - name: Build the bundle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/bundle.py --target ${{ matrix.target }} --keep-tree
 
       # Built on one machine and run on another, so the run has to happen with

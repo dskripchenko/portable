@@ -612,3 +612,24 @@ than omitted, since silence would read as "current".
   left behind, and named as they are created so the cleanup reaches for exactly
   what it made.
 
+### Fixed — GitHub's rate limit
+
+Caddy, PostgreSQL and Redis are resolved from GitHub's release API, which allows
+sixty anonymous requests an hour **per address**. Behind a corporate NAT that is
+sixty for the building, exhaustible by people who have never run this — and it
+took out a bundle build on CI, where the runner's address is shared with
+everybody using Actions.
+
+A token is now offered when one is present in `PORTABLE_GITHUB_TOKEN` or
+`GITHUB_TOKEN`, raising the limit to five thousand. Any token with no scopes at
+all will do: it needs no permissions, only an identity.
+
+Only to `api.github.com`, and dropped on a redirect that leaves it. That is not
+a precaution against a hypothetical — GitHub answers a release-asset request
+with a redirect to `objects.githubusercontent.com`, and urllib repeats every
+header it was given, so the token would be handed verbatim to a different host
+on the very first download.
+
+The refusal itself now explains what it means. "Rate limit exceeded" invites the
+reading that this tool is asking too often, when usually it is not asking at all.
+

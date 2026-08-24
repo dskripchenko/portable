@@ -256,3 +256,106 @@ class TestOneListForEverybody:
             catalog.module("oracle")
 
         assert "postgres" in str(excinfo.value)
+
+
+class TestGithubsRateLimit:
+    """
+    Three catalogs read release listings from GitHub's API.
+
+    Anonymous requests are limited to sixty an hour **per address**, so behind a
+    corporate NAT that is sixty for the building — and can be exhausted by
+    people who have never run this. It took out a bundle build on CI, where the
+    runner's address is shared with everybody else using GitHub Actions.
+    """
+
+    def test_a_token_is_offered_to_the_api(self, monkeypatch):
+        from portable import net
+
+        monkeypatch.setenv("PORTABLE_GITHUB_TOKEN", "ghp_example")
+
+        assert net._headers("https://api.github.com/repos/x/y/releases")["Authorization"] == (
+            "Bearer ghp_example"
+        )
+
+    def test_it_is_offered_to_nobody_else(self, monkeypatch):
+        # php.net and nodejs.org have no use for a GitHub token and no business
+        # being handed one.
+        from portable import net
+
+        monkeypatch.setenv("PORTABLE_GITHUB_TOKEN", "ghp_example")
+
+        for url in ("https://downloads.php.net/x", "https://nodejs.org/dist/index.json"):
+            assert "Authorization" not in net._headers(url)
+
+    def test_a_redirect_to_another_host_loses_the_token(self, monkeypatch):
+        """
+        The reason this needs a handler rather than a header.
+
+        GitHub's API answers a release asset with a redirect to
+        `objects.githubusercontent.com`, and urllib repeats every header it was
+        given — so the token would be handed, verbatim, to a different host on
+        the very first download.
+        """
+        import urllib.request
+
+        from portable import net
+
+        original = urllib.request.Request(
+            "https://api.github.com/repos/x/y/releases/assets/1",
+            headers={"Authorization": "Bearer ghp_example", "User-Agent": "x"},
+        )
+
+        monkeypatch.setattr(
+            urllib.request.HTTPRedirectHandler,
+            "redirect_request",
+            lambda self, req, fp, code, msg, headers, newurl: urllib.request.Request(
+                newurl, headers=dict(req.headers)
+            ),
+        )
+
+        redirected = net._DropAuthOnRedirect().redirect_request(
+            original, None, 302, "Found", {}, "https://objects.githubusercontent.com/thing"
+        )
+
+        assert not any(name.lower() == "authorization" for name in redirected.headers)
+
+    def test_the_same_host_keeps_it(self, monkeypatch):
+        import urllib.request
+
+        from portable import net
+
+        original = urllib.request.Request(
+            "https://api.github.com/a", headers={"Authorization": "Bearer ghp_example"}
+        )
+
+        monkeypatch.setattr(
+            urllib.request.HTTPRedirectHandler,
+            "redirect_request",
+            lambda self, req, fp, code, msg, headers, newurl: urllib.request.Request(
+                newurl, headers=dict(req.headers)
+            ),
+        )
+
+        redirected = net._DropAuthOnRedirect().redirect_request(
+            original, None, 302, "Found", {}, "https://api.github.com/b"
+        )
+
+        assert any(name.lower() == "authorization" for name in redirected.headers)
+
+    def test_the_refusal_says_what_it_means(self):
+        # "rate limit exceeded" invites the reading that this tool is asking too
+        # often. Usually it is not asking at all.
+        import urllib.error
+
+        from portable import net
+
+        message = net._rate_limit_message(
+            urllib.error.HTTPError(
+                "https://api.github.com/x", 403, "rate limit exceeded",
+                {"X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "60"}, None,
+            )
+        )
+
+        assert "per address" in message
+        assert "PORTABLE_GITHUB_TOKEN" in message
+        assert "0 of 60" in message
