@@ -294,3 +294,30 @@ def _find_handler(route: dict, handler: str) -> dict:
 
 def _has_handler(route: dict, handler: str) -> bool:
     return any(candidate.get("handler") == handler for candidate in route.get("handle", []))
+
+
+class TestOldPhpInTheIni:
+    """
+    `extension = curl` is only understood from PHP 7.2.
+
+    Before that the directive wants a filename. A bare name there is not an
+    error anybody sees: PHP warns at startup, into a log, and runs without the
+    extension — so the symptom is a missing function, hours from the cause. It
+    matters now that archived 7.0 and 7.1 builds can be installed, since the
+    reason to install one is that something old has to keep working.
+    """
+
+    def test_before_7_2_the_directive_names_the_file(self, tmp_path):
+        ini = pool.ini_for(fake_php(tmp_path, "7.1.33"), tmp_path / "conf")
+        text = ini.read_text(encoding="utf-8")
+
+        assert "extension = php_curl.dll" in text
+        assert "zend_extension = php_opcache.dll" in text
+        assert "\nextension = curl" not in text
+
+    def test_from_7_2_the_bare_name_is_used(self, tmp_path):
+        ini = pool.ini_for(fake_php(tmp_path, "7.2.34"), tmp_path / "conf")
+        text = ini.read_text(encoding="utf-8")
+
+        assert "extension = curl" in text
+        assert "php_curl.dll" not in text

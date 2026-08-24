@@ -108,6 +108,11 @@ def _parser() -> argparse.ArgumentParser:
 
     available = add("available", "What each publisher currently offers.", _available)
     available.add_argument("runtime", choices=catalog.names())
+    available.add_argument(
+        "branch",
+        nargs="?",
+        help="For PHP: a branch (8.3), to include superseded patches from the archive.",
+    )
 
     site = subparsers.add_parser("site", help="Sites served by this installation.")
     site_commands = site.add_subparsers(dest="site_command")
@@ -457,7 +462,8 @@ def _ext_change(args, enabling: bool) -> int:
 
 
 def _available(args) -> int:
-    result = Client().call("GET", f"/v1/runtimes/available?name={args.runtime}")
+    query = f"?name={args.runtime}" + (f"&branch={args.branch}" if args.branch else "")
+    result = Client().call("GET", f"/v1/runtimes/available{query}")
 
     if args.json:
         return _emit(args, result, "")

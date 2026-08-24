@@ -132,6 +132,10 @@ def _environment(max_requests: int) -> dict[str, str]:
     return environment
 
 
+def _version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
+
+
 def ini_for(runtime: Installed, into: Path) -> Path:
     """
     Write a `php.ini` for this version and return its path.
@@ -151,6 +155,18 @@ def ini_for(runtime: Installed, into: Path) -> Path:
         return target
 
     extension_dir = runtime.directory / "ext"
+
+    # `extension = curl` is only understood from PHP 7.2. Before that the
+    # directive wants a filename, and a bare name is not an error anybody sees:
+    # PHP warns at startup, into a log, and runs without the extension. Which
+    # matters now that archived 7.0 and 7.1 builds can be installed — the whole
+    # reason somebody installs one is that something old has to keep working,
+    # and it would have kept working without curl.
+    def load(name: str) -> str:
+        if _version_key(runtime.version) >= (7, 2):
+            return f"extension = {name}"
+
+        return f"extension = php_{name}.dll"
     lines = [
         "; Written by portable when this PHP was installed, and not touched again.",
         "; Edit freely — nothing here regenerates it.",
@@ -170,21 +186,28 @@ def ini_for(runtime: Installed, into: Path) -> Path:
         "max_execution_time = 300",
         "",
         "; Extensions common enough that their absence reads as a broken install.",
-        "extension = curl",
-        "extension = fileinfo",
-        "extension = gd",
-        "extension = intl",
-        "extension = mbstring",
-        "extension = openssl",
-        "extension = pdo_mysql",
-        "extension = pdo_pgsql",
-        "extension = pdo_sqlite",
-        "extension = zip",
+        *(
+            load(name)
+            for name in (
+                "curl",
+                "fileinfo",
+                "gd",
+                "intl",
+                "mbstring",
+                "openssl",
+                "pdo_mysql",
+                "pdo_pgsql",
+                "pdo_sqlite",
+                "zip",
+            )
+        ),
         "",
         "[opcache]",
         "; On, because a request that recompiles every file on every hit is the",
         "; difference between local development being pleasant and not.",
-        "zend_extension = opcache",
+        "zend_extension = opcache"
+        if _version_key(runtime.version) >= (7, 2)
+        else "zend_extension = php_opcache.dll",
         "opcache.enable = 1",
         "opcache.enable_cli = 0",
         "; Revalidate on every request: correctness beats speed when the files",

@@ -238,8 +238,10 @@ class ControlServer:
         except CatalogError as error:
             raise ApiError(HTTPStatus.BAD_REQUEST, "unknown-runtime", str(error)) from error
 
+        branch = payload.get("branch") or None
+
         try:
-            offers = catalog.available()
+            offers = catalog.available(branch=branch) if branch else catalog.available()
         except CatalogError as error:
             raise ApiError(HTTPStatus.BAD_GATEWAY, "catalog-unavailable", str(error)) from error
 

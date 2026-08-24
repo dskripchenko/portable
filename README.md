@@ -80,6 +80,7 @@ machine which has none cannot sensibly require one first.
 ```
 portable up                          # start the daemon
 portable available php               # what the publisher currently offers
+portable available php 8.3           # including superseded patches, from the archive
 portable install php                 # or: --from C:\your\own\php
 portable install caddy
 portable site add demo C:\projects\demo

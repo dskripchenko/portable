@@ -127,11 +127,19 @@ def resolve(
 
         tried.append(candidate)
 
+    # Two opposite situations, and naming only one of them misdiagnoses the
+    # other. A PHP newer than the extension's last build looks identical from
+    # here to a PHP so old the extension dropped it — and the second is the
+    # common case, because installing an archived PHP is what people do when
+    # something old has to keep working. Xdebug 3 does not build for PHP 7.2 and
+    # never will; xdebug 2.9.8 does, and is one argument away.
     raise CatalogError(
         f"No {name} build for PHP {php} {variant}.\n"
-        f"Looked at {name} {', '.join(tried) or version}. The maintainer publishes "
-        f"a Windows build per PHP branch when they build one, and this PHP may be "
-        f"newer than the last of them.\n"
+        f"Looked at the {len(tried)} newest: {', '.join(tried) or version}.\n\n"
+        f"Either this PHP is newer than the last build the maintainer made, or it "
+        f"is old enough that {name} has dropped it — in which case an older "
+        f"{name} still supports it and can be named:\n\n"
+        f"    portable ext install {name} <version> --php {php}\n\n"
         f"Everything on offer: {BASE}/{name}/"
     )
 

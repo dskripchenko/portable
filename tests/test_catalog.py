@@ -77,15 +77,69 @@ class TestPhp:
 
         assert php.resolve(latest.version, php_index) == latest
 
-    def test_a_superseded_version_is_refused_by_name(self, php_index):
-        # Not silently upgraded to the current patch release: someone who asked
-        # for 8.4.1 has a reason, and handing back 8.4.24 while saying nothing
-        # is the worst of the available answers.
-        with pytest.raises(CatalogError) as excinfo:
-            php.resolve("8.4.1", php_index)
+    def test_a_superseded_version_comes_from_the_archive(self, php_index):
+        """
+        `8.3.20` is not in the index and is still downloadable.
 
-        assert "8.4.1" in str(excinfo.value)
-        assert "archive" in str(excinfo.value).lower()
+        The index carries the current release of each branch and nothing else,
+        so without this the versions a project is actually pinned to — always
+        superseded, that being what pinning means — could not be installed at
+        all.
+        """
+        listing = (FIXTURES / "php-archives.html").read_text(encoding="utf-8")
+        build = php.resolve("8.3.20", php_index, archive=listing)
+
+        assert build.version == "8.3.20"
+        assert build.url.endswith("php-8.3.20-nts-Win32-vs16-x64.zip")
+
+        # php.net publishes digests for current releases and none for archived
+        # Windows builds. Said rather than quietly left empty: this is an
+        # interpreter about to run everything on the machine.
+        assert build.checksum is None
+
+    def test_the_compilers_two_spellings_are_one_thing(self, php_index):
+        """
+        The listing has both `vc15` and `VC15`, for different releases.
+
+        The variant is what PECL matches an extension against, so two spellings
+        would mean `ext install xdebug` finding nothing for half the versions on
+        offer — while the filename must still be used exactly as published or
+        the download 404s.
+        """
+        listing = (FIXTURES / "php-archives.html").read_text(encoding="utf-8")
+
+        upper = php.resolve("7.2.34", php_index, archive=listing)
+        lower = php.resolve("7.4.30", php_index, archive=listing)
+
+        assert upper.variant == "nts-vc15-x64"
+        assert lower.variant == "nts-vc15-x64"
+        assert "VC15" in upper.filename, "the published name must survive verbatim"
+        assert "vc15" in lower.filename
+
+    def test_a_version_that_never_existed_says_what_the_branch_has(self, php_index):
+        listing = (FIXTURES / "php-archives.html").read_text(encoding="utf-8")
+
+        with pytest.raises(CatalogError) as excinfo:
+            php.resolve("8.3.999", php_index, archive=listing)
+
+        message = str(excinfo.value)
+
+        assert "8.3.999" in message
+        # What that branch does have, newest first — the useful reply to a typo
+        # or a version somebody half-remembers.
+        assert "Archived in 8.3" in message
+        assert message.count("8.3.") > 5
+
+    def test_archived_patches_are_offered_per_branch(self, php_index):
+        # Not all at once: the archive reaches back to 5.2 and holds three
+        # hundred-odd builds, which answers nobody's question.
+        listing = (FIXTURES / "php-archives.html").read_text(encoding="utf-8")
+        offers = php.available(php_index, branch="8.3", archive=listing)
+        versions = [offer.version for offer in offers]
+
+        assert versions[0] == "8.3.33", "the current release comes first"
+        assert "8.3.20" in versions
+        assert all(version.startswith("8.3.") for version in versions)
 
     def test_the_slug_distinguishes_variants(self, php_index):
         build = php.resolve("latest", php_index)

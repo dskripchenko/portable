@@ -516,3 +516,50 @@ well as POSIX, so a reader sees either the previous file or the complete new
 one. The test races a reader against a writer for two seconds; against the old
 implementation every single read saw an unparseable file.
 
+### Added — superseded PHP versions, and 7.x
+
+php.net's index lists the current release of each branch and nothing else.
+Everything it supersedes moves to an archive, which this now reads — so
+`portable install php 8.3.20` works eighteen months after 8.3.20 stopped being
+current, which is the only kind of version a pinned project ever names.
+
+`portable available php 8.3` lists that branch's current release and every
+archived patch of it. Per branch on purpose: the archive reaches back to 5.2 and
+holds three hundred-odd builds, and listing them all answers nobody's question.
+
+7.4.33 is still in the index and installs verified. 7.0 through 7.3 come from
+the archive.
+
+Three things the real listing settled, none of which a hand-written fixture
+would have:
+
+- **The compiler token is spelled in two cases.** `php-7.4.30-nts-Win32-vc15-x64.zip`
+  and `php-7.2.34-nts-Win32-VC15-x64.zip` — the same compiler, in the same
+  archive. The filename is used exactly as published, or the download 404s;
+  the variant is lowercased, or PECL matches nothing for half the versions on
+  offer. Both, and they are not the same operation.
+- **Archived builds carry no digest.** `archives/sha1sum.txt` covers
+  twenty-six files from the 5.2 era and the sha256 list covers only what is
+  current. So these install unverified and say so — this is an interpreter about
+  to run everything on the machine, and quietly reporting it as checked would be
+  worse than not checking.
+- **Versions sort numerically or the answer is wrong.** As text, `7.0.9` is the
+  newest 7.0 and `7.0.33` is not.
+
+### Fixed
+
+- **`extension = curl` is only understood from PHP 7.2.** Before that the
+  directive wants a filename, and a bare name is not an error anybody sees: PHP
+  warns at startup, into a log, and runs without the extension — so the symptom
+  is a missing function, hours from the cause. It went unnoticed while nothing
+  older than 8.0 could be installed. The generated ini now writes
+  `extension = php_curl.dll` for 7.0 and 7.1, which is exactly the case the
+  archive introduced.
+
+- **"No build for this PHP" named only one of the two reasons.** A PHP newer
+  than the extension's last build looks identical, from inside, to a PHP so old
+  the extension dropped it — and the second is the common one, since installing
+  an archived PHP is what people do when something old has to keep working.
+  Xdebug 3 does not build for PHP 7.2 and never will; xdebug 2.9.8 does. The
+  failure now says so and shows the command that names a version.
+
