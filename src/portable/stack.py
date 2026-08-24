@@ -20,6 +20,7 @@ the first.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -53,6 +54,17 @@ class Stack:
     pools: dict[str, pool.Pool] = field(default_factory=dict)
     """Keyed by resolved PHP version, not by what a site asked for: two sites
     saying `8.4` and `8.4.24` share one pool rather than starting two."""
+
+    router_command: Callable[[Path, Path], list[str]] = caddy.command
+    """
+    How the router is started, given its executable and its configuration file.
+
+    A seam, and not only for the tests. It is the exact boundary between "how
+    the router is configured" and "how it is launched", which is what anyone
+    swapping Caddy for nginx would need to replace — and what lets the suite run
+    a stand-in without depending on shebang lines, which Windows does not have
+    at all.
+    """
 
     candidate_ports: tuple[int, ...] = (PREFERRED_PORT, FALLBACK_PORT)
     """
@@ -213,7 +225,7 @@ class Stack:
             config_file = self._write_config(sites, candidate)
             spec = Spec(
                 name="caddy",
-                argv=caddy.command(runtime.executable("caddy"), config_file),
+                argv=self.router_command(runtime.executable("caddy"), config_file),
                 log=paths.logs() / "caddy.log",
                 restart=True,
             )

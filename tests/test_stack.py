@@ -38,15 +38,13 @@ def runtimes(tmp_path) -> Runtimes:
         _stub(directory / "php-cgi", "import time; time.sleep(60)")
         registry.add(Installed(name="php", version=version, directory=directory, managed=True))
 
-    # A Caddy that obeys the same configuration document — see fake_caddy.py for
-    # what it does and, more importantly, what it does not.
+    # A placeholder binary: the stand-in is launched through `router_command`
+    # below, so nothing here needs to be executable. Relying on a shebang worked
+    # on the author's machine and on neither CI platform — Windows has no such
+    # thing, and the failure was a process that died writing nothing at all.
     router = tmp_path / "caddy"
     router.mkdir()
-    _stub(
-        router / "caddy",
-        f"import runpy, sys; sys.argv[0] = {str(FAKE_CADDY)!r}; "
-        f"runpy.run_path({str(FAKE_CADDY)!r}, run_name='__main__')",
-    )
+    (router / "caddy").write_text("", encoding="utf-8")
     registry.add(Installed(name="caddy", version="2.11.4", directory=router, managed=True))
 
     return registry
@@ -55,6 +53,11 @@ def runtimes(tmp_path) -> Runtimes:
 def _stub(path: Path, body: str) -> None:
     path.write_text(f"#!{sys.executable}\n{body}\n", encoding="utf-8")
     path.chmod(0o755)
+
+
+def _fake_router(_executable: Path, config_file: Path) -> list[str]:
+    """The stand-in, started the way Caddy would be but through the interpreter."""
+    return [sys.executable, str(FAKE_CADDY), "run", "--config", str(config_file), "--adapter", ""]
 
 
 @pytest.fixture
@@ -67,6 +70,7 @@ def stack(runtimes) -> Stack:
     instance = Stack(
         supervisor=Supervisor(),
         runtimes=runtimes,
+        router_command=_fake_router,
         candidate_ports=tuple(port_finder.find(2, candidates=range(9600, 9700))),
     )
 
