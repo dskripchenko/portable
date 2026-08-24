@@ -126,6 +126,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except BaseException as error:  # noqa: BLE001
+    except BaseException as error:
         print(f"fake caddy failed: {type(error).__name__}: {error}", flush=True)
         raise

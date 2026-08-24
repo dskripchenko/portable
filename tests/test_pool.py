@@ -63,10 +63,16 @@ class TestPorts:
 
         assert "5" in str(excinfo.value)
 
-    def test_the_pool_range_avoids_the_dynamic_client_range(self):
-        # Windows hands out 49152-65535 for outgoing connections. A pool member
-        # placed there can find its port taken while it is being restarted.
+    def test_the_ranges_avoid_the_dynamic_client_range(self):
+        # Windows hands out 49152-65535 for outgoing connections. Anything
+        # placed there can find its port taken between being chosen and being
+        # bound — which is not hypothetical: the router's admin port was
+        # allocated that way and lost the race on CI.
         assert ports.POOL_RANGE.stop <= 49152
+        assert ports.ADMIN_RANGE.stop <= 49152
+
+    def test_the_pool_and_the_admin_endpoint_cannot_collide(self):
+        assert not set(ports.POOL_RANGE) & set(ports.ADMIN_RANGE)
 
 
 class TestRuntimeRegistry:

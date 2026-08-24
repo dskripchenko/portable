@@ -216,7 +216,10 @@ class Stack:
             raise StackError(f"Caddy is not installed. {error}") from error
 
         if self.admin is None:
-            self.admin = f"127.0.0.1:{ports.ephemeral()}"
+            # From a fixed range rather than the ephemeral one: Caddy binds this
+            # a moment after we choose it, and a number from the OS's dynamic
+            # range can be taken in between.
+            self.admin = f"127.0.0.1:{ports.find(1, candidates=ports.ADMIN_RANGE)[0]}"
 
         # Attempted and observed, rather than predicted: `http.sys` reserves
         # ports on Windows without listening on them, so nothing short of trying

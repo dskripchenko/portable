@@ -21,6 +21,17 @@ import socket
 #: pool member that is about to restart.
 POOL_RANGE = range(9000, 9500)
 
+#: Where the router's admin endpoint goes. A separate range so a pool cannot
+#: take it, and — like the pool — **not** the operating system's ephemeral range.
+#:
+#: `ephemeral()` looks like the obvious choice and is the wrong one for anything
+#: that will be bound later: it binds, reads the number and lets go, and on a
+#: busy machine the port can be handed to an outgoing connection before the
+#: process that was going to use it gets there. That is exactly what happened
+#: here, on CI, after this file had already explained why the pool avoids that
+#: range.
+ADMIN_RANGE = range(9500, 9600)
+
 
 class NoFreePort(RuntimeError):
     """Every candidate was taken."""
@@ -78,8 +89,10 @@ def ephemeral() -> int:
     """
     One port from the operating system's own free range.
 
-    For the daemon's control API, where the number matters to nobody: it goes
-    into the discovery file, and clients read it from there.
+    Only safe where the socket is bound **by the caller, immediately** — the
+    daemon's own control API asks the OS for port 0 and keeps the socket. Do not
+    use it to pick a number for something else to bind later: between the two
+    the port can be given away. Use `find()` for that.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         probe.bind(("127.0.0.1", 0))

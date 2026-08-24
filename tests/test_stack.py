@@ -71,7 +71,7 @@ def stack(runtimes) -> Stack:
         supervisor=Supervisor(),
         runtimes=runtimes,
         router_command=_fake_router,
-        candidate_ports=tuple(port_finder.find(2, candidates=range(9600, 9700))),
+        candidate_ports=tuple(port_finder.find(2, candidates=range(9700, 9800))),
     )
 
     yield instance
