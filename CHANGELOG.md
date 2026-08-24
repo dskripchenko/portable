@@ -82,3 +82,48 @@ inferred from the digest's length, rather than assumed.
 - **A leaked file handle per supervised restart.** The log was opened for the
   child and never closed in the parent; a pool member recycling once a minute
   would exhaust the process's handles days later, far from the cause.
+
+### Added — the pool and the router
+
+- **A pool of `php-cgi` workers**, which is what Windows has instead of php-fpm.
+  Each worker binds its own port with `-b` and serves one request at a time;
+  concurrency is the pool size. `PHP_FCGI_CHILDREN` is deliberately not set — it
+  needs `fork()`, and setting it would suggest PHP manages the pool when this
+  tool does.
+
+- **A generated `php.ini` per version.** A fresh PHP archive contains
+  `php.ini-development` and `php.ini-production` and no `php.ini` at all, so
+  every extension is off until one exists. Written once and then never touched:
+  it is meant to be edited.
+
+- **Ports allocated by binding, not by scanning.** A socket in `TIME_WAIT` is
+  not listening and cannot be bound either, and a port reserved by Windows'
+  dynamic range is invisible to any listing but refuses a bind. The pool range
+  stops below 49152 so an outgoing connection cannot take a port from under a
+  worker that is restarting.
+
+- **A registry of runtimes, downloaded and discovered alike.** The supervisor
+  cannot tell them apart and does not need to. Not a fallback: statically built
+  PHP cannot load extensions at runtime, so pointing at your own build is the
+  only way to stay unblocked when a prebuilt binary lacks one.
+
+- **Caddy configured as JSON**, which is what its admin API speaks — adding a
+  site becomes one HTTP call instead of rewriting a file and hoping the reload
+  took. There is also no generated file for anyone to edit, so there is nothing
+  for this tool to overwrite.
+
+### Fixed — found by running the whole stack
+
+- **One dead worker returned 502 while the rest of the pool sat idle.** A worker
+  retires itself every `PHP_FCGI_MAX_REQUESTS`, so with four workers and a limit
+  of 500 this happens constantly. Retries across the pool and passive health
+  checks were added; verified against a running stack — 15 requests during a
+  worker replacement, all 200, none failed.
+
+  Measured while diagnosing it: a replacement binds its port in about a quarter
+  of a second, so the suspicion that `TIME_WAIT` was to blame was wrong.
+
+- **A hostname no site claimed got an empty `200`.** Caddy's default, and the
+  least useful answer available: a blank page that cannot be told apart from a
+  broken site. It is now a 404 that names what *is* configured.
+
