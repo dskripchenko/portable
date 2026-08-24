@@ -21,6 +21,7 @@ Two consequences worth naming, because they look like bugs otherwise:
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -62,6 +63,22 @@ class Pool:
         return [worker.spec for worker in self.workers]
 
 
+def worker_command(executable: Path, port: int, ini: Path) -> list[str]:
+    """
+    How one worker is started.
+
+    `-b` is what turns `php-cgi` into a FastCGI server; without it the process
+    reads a single request from standard input and exits.
+
+    A named function rather than an inline list because it is the seam between
+    "how the pool is shaped" and "what binary is run" — the same boundary
+    `router_command` draws for Caddy. Anyone wrapping `php-cgi` in something,
+    and the tests that must run where `php-cgi.exe` does not exist, replace
+    exactly this.
+    """
+    return [str(executable), "-b", f"127.0.0.1:{port}", "-c", str(ini)]
+
+
 def build(
     runtime: Installed,
     ini: Path,
@@ -69,6 +86,7 @@ def build(
     workers: int = DEFAULT_WORKERS,
     max_requests: int = DEFAULT_MAX_REQUESTS,
     reserved: set[int] | None = None,
+    command: Callable[[Path, int, Path], list[str]] = worker_command,
 ) -> Pool:
     """
     Describe a pool. Nothing is started here.
@@ -91,7 +109,7 @@ def build(
                 port=port,
                 spec=Spec(
                     name=f"php-{runtime.version}-{index}",
-                    argv=[str(executable), "-b", f"127.0.0.1:{port}", "-c", str(ini)],
+                    argv=command(executable, port, ini),
                     env=_environment(max_requests),
                     log=logs / f"php-{runtime.version}-{index}.log",
                     restart=True,

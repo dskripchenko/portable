@@ -34,8 +34,10 @@ def runtimes(tmp_path) -> Runtimes:
     for version in ("8.3.33", "8.4.24"):
         directory = tmp_path / "php" / version
         directory.mkdir(parents=True)
-        # A stand-in that stays up when started, so a "pool" behaves like one.
-        _stub(directory / "php-cgi", "import time; time.sleep(60)")
+        # A placeholder only. The workers are started through `worker_command`
+        # below — a shebang script is not executable on Windows, and the failure
+        # there is `WinError 193`, which says nothing about shebangs.
+        (directory / "php-cgi.exe").write_text("", encoding="utf-8")
         registry.add(Installed(name="php", version=version, directory=directory, managed=True))
 
     # A placeholder binary: the stand-in is launched through `router_command`
@@ -50,9 +52,9 @@ def runtimes(tmp_path) -> Runtimes:
     return registry
 
 
-def _stub(path: Path, body: str) -> None:
-    path.write_text(f"#!{sys.executable}\n{body}\n", encoding="utf-8")
-    path.chmod(0o755)
+def _fake_worker(_executable: Path, _port: int, _ini: Path) -> list[str]:
+    """A worker that stays up, so a pool behaves like one on every platform."""
+    return [sys.executable, "-c", "import time; time.sleep(60)"]
 
 
 def _fake_router(_executable: Path, config_file: Path) -> list[str]:
@@ -70,6 +72,7 @@ def stack(runtimes) -> Stack:
     instance = Stack(
         supervisor=Supervisor(),
         runtimes=runtimes,
+        worker_command=_fake_worker,
         router_command=_fake_router,
         candidate_ports=tuple(port_finder.find(2, candidates=range(9700, 9800))),
     )

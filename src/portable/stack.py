@@ -55,6 +55,9 @@ class Stack:
     """Keyed by resolved PHP version, not by what a site asked for: two sites
     saying `8.4` and `8.4.24` share one pool rather than starting two."""
 
+    worker_command: Callable[[Path, int, Path], list[str]] = pool.worker_command
+    """How one pool worker is started. See `pool.worker_command`."""
+
     router_command: Callable[[Path, Path], list[str]] = caddy.command
     """
     How the router is started, given its executable and its configuration file.
@@ -149,7 +152,13 @@ class Stack:
 
             ini = pool.ini_for(runtime, paths.root() / "conf")
             reserved = {worker.port for existing in self.pools.values() for worker in existing.workers}
-            built = pool.build(runtime, ini=ini, logs=paths.logs(), reserved=reserved)
+            built = pool.build(
+                runtime,
+                ini=ini,
+                logs=paths.logs(),
+                reserved=reserved,
+                command=self.worker_command,
+            )
 
             for spec in built.specs:
                 self.supervisor.add(spec)
