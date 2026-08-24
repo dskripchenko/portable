@@ -42,3 +42,43 @@ getting that artifact onto disk without trusting it.
 Caddy publishes **sha512** checksums in a file indistinguishable at a glance
 from a sha256 listing. The digest algorithm is therefore carried per build and
 inferred from the digest's length, rather than assumed.
+
+### Added — the supervisor and the control API
+
+- **A supervisor that treats an exiting process as normal.** `PHP_FCGI_MAX_REQUESTS`
+  makes `php-cgi` terminate on purpose after N requests, so restarting is the
+  main loop here rather than error handling. A process that exits five times
+  within ten seconds is given up on instead, and says why — otherwise a
+  misconfigured pool member is restarted thousands of times a second and buries
+  the one log line explaining itself.
+
+- **A control API on the loopback, token-authenticated.** Everything the tool
+  does is done through it; the CLI is its first client and holds no logic of its
+  own. An IDE plugin becomes the second client of an API that already exists.
+
+  The token is not ceremony: this API starts processes and is reachable by
+  anything running as the same user. It is compared in constant time, and
+  authorisation is checked before routing so an unauthenticated caller cannot
+  map the routes by reading which ones answer 404.
+
+- **`portable up`, `down`, `status`**, each with `--json`. The daemon survives
+  the terminal that started it — on POSIX by a new session, on Windows by
+  detaching from the console, the process group and, where the job permits it,
+  the job object.
+
+### Fixed
+
+- **A detached child that exited was reported as running forever.** It became a
+  zombie: still this process's child, never waited on, and a zombie answers
+  `kill(pid, 0)`. Invisible from a terminal, because the shell exits straight
+  after launching and init reaps the daemon — it only appeared once the launcher
+  outlived the child, and then `down` sat waiting ten seconds for a process that
+  had already gone.
+
+- **`down` promised more than it checked.** It reported success as soon as the
+  discovery file disappeared, which the daemon removes *before* exiting — so the
+  ports could still be held. It now waits for the process.
+
+- **A leaked file handle per supervised restart.** The log was opened for the
+  child and never closed in the parent; a pool member recycling once a minute
+  would exhaust the process's handles days later, far from the cause.
