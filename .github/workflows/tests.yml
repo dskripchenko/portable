@@ -1,0 +1,33 @@
+name: tests
+
+# Windows is not one platform among several here — it is the target. The suite
+# runs on macOS too, because that is where it is written, and a failure there
+# usually means something was assumed about paths or line endings.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        python: ['3.11', '3.13']
+
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install test dependencies
+        run: python -m pip install --quiet pytest
+
+      - name: Test
+        run: python -m pytest -q

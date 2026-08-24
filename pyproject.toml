@@ -1,0 +1,22 @@
+[project]
+name = "portable"
+version = "0.0.1"
+description = "A development environment for Windows that installs beside the system, not into it"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

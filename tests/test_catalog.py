@@ -1,0 +1,143 @@
+"""
+Resolving a version to something concrete enough to download.
+
+Every test here runs against an index captured from the publisher, not a
+hand-written one. A fixture invented by the author only proves the parser agrees
+with the author's idea of the format — which is exactly the mistake that cost an
+hour when Caddy's checksums turned out to be sha512 while looking like sha256.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from portable.catalog import CatalogError, caddy, php
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def php_index() -> dict:
+    return json.loads((FIXTURES / "php-releases.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def caddy_release() -> dict:
+    return json.loads((FIXTURES / "caddy-release.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def caddy_checksums() -> str:
+    return (FIXTURES / "caddy-checksums.txt").read_text(encoding="utf-8")
+
+
+class TestPhp:
+    def test_it_resolves_a_branch_to_a_concrete_version(self, php_index):
+        build = php.resolve("8.4", php_index)
+
+        assert build.version.startswith("8.4.")
+        assert build.version != "8.4", "a branch is not a version — it has to be resolved"
+        assert build.url.endswith(".zip")
+
+    def test_latest_is_the_newest_branch_not_the_first_key(self, php_index):
+        # The index is a JSON object; relying on key order would work until the
+        # day it does not.
+        assert php.resolve("latest", php_index).version == php.resolve(
+            php.branches(php_index)[0], php_index
+        ).version
+
+    def test_it_always_picks_the_non_thread_safe_build(self, php_index):
+        # FastCGI runs one request per process, so thread safety costs
+        # performance and buys nothing. Picking `ts` here would be invisible
+        # until someone measured.
+        for branch in php.branches(php_index):
+            assert php.resolve(branch, php_index).variant.startswith("nts-")
+
+    def test_it_reads_the_compiler_from_the_index_rather_than_assuming(self, php_index):
+        # PHP 7.4 is vc15, 8.1 is vs16, 8.4 is vs17. A hardcoded `vs17` would
+        # silently fail on the older branches — and the failure would surface as
+        # an extension that will not load, far from its cause.
+        compilers = {php.resolve(branch, php_index).variant for branch in php.branches(php_index)}
+
+        assert len(compilers) > 1, "the fixture no longer covers more than one compiler"
+
+    def test_every_build_carries_a_checksum(self, php_index):
+        for branch in php.branches(php_index):
+            build = php.resolve(branch, php_index)
+
+            assert build.checksum, f"PHP {branch} resolved without a checksum"
+            assert build.algorithm == "sha256"
+            assert len(build.checksum) == 64
+
+    def test_an_exact_version_resolves_to_itself(self, php_index):
+        latest = php.resolve("latest", php_index)
+
+        assert php.resolve(latest.version, php_index) == latest
+
+    def test_a_superseded_version_is_refused_by_name(self, php_index):
+        # Not silently upgraded to the current patch release: someone who asked
+        # for 8.4.1 has a reason, and handing back 8.4.24 while saying nothing
+        # is the worst of the available answers.
+        with pytest.raises(CatalogError) as excinfo:
+            php.resolve("8.4.1", php_index)
+
+        assert "8.4.1" in str(excinfo.value)
+        assert "archive" in str(excinfo.value).lower()
+
+    def test_the_slug_distinguishes_variants(self, php_index):
+        build = php.resolve("latest", php_index)
+
+        assert build.version in build.slug
+        assert build.variant in build.slug
+
+
+class TestCaddy:
+    def test_it_resolves_the_windows_archive(self, caddy_release):
+        build = caddy.resolve(release=caddy_release)
+
+        assert build.filename.endswith("_windows_amd64.zip")
+        assert build.url.startswith("https://github.com/caddyserver/caddy/releases/download/")
+
+    def test_the_version_is_the_tag_without_its_v(self, caddy_release):
+        assert not caddy.resolve(release=caddy_release).version.startswith("v")
+
+    def test_checksums_are_sha512_not_sha256(self, caddy_release, caddy_checksums):
+        # The listing is indistinguishable from a sha256 one at a glance. It is
+        # not one, and assuming otherwise produces a verification that never
+        # matches and an error that reads like a corrupt download.
+        build = caddy.resolve(release=caddy_release)
+        found = caddy.checksum_for(build.filename, caddy_checksums)
+
+        assert found is not None, "the published archive is absent from its own checksum file"
+
+        checksum, algorithm = found
+
+        assert algorithm == "sha512"
+        assert len(checksum) == 128
+        assert build.algorithm == algorithm, "the build and its digest disagree about the algorithm"
+
+    def test_a_file_absent_from_the_listing_is_none_not_an_error(self, caddy_checksums):
+        # "Cannot be verified" is a decision for the caller, not a crash here.
+        assert caddy.checksum_for("caddy_9.9.9_windows_amd64.zip", caddy_checksums) is None
+
+    def test_a_weak_digest_is_refused(self):
+        listing = "da39a3ee5e6b4b0d3255bfef95601890afd80709  thing.zip"
+
+        with pytest.raises(CatalogError):
+            caddy.checksum_for("thing.zip", listing)
+
+    def test_a_missing_windows_archive_names_what_was_offered(self):
+        release = {
+            "tag_name": "v9.9.9",
+            "assets": [
+                {"name": "caddy_9.9.9_linux_amd64.tar.gz", "browser_download_url": "https://x/"},
+            ],
+        }
+
+        with pytest.raises(CatalogError) as excinfo:
+            caddy.resolve(release=release)
+
+        assert "linux_amd64" in str(excinfo.value) or "no caddy_9.9.9_windows" in str(excinfo.value)
