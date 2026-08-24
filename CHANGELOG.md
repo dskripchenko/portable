@@ -448,3 +448,47 @@ rather than that it is not loaded yet. Replaced rather than reloaded because
 there is no reload: the CGI SAPI has no `php-fpm reload`, which is the same
 absence the pool exists to work around in the first place.
 
+### Added — `portable ext install`
+
+Extensions PHP does not ship — xdebug, redis, imagick and the rest of PECL —
+downloaded, put where PHP will find them, switched on, and the workers replaced.
+
+An extension is loaded into the running process, so four things must agree with
+the build or it does not load at all: the PHP branch, thread safety, compiler
+and architecture. None of them is guessed. All four come from the installed
+build's own recorded variant — `nts-vs17-x64` — which is the same string PECL
+puts in the filename, because both sides took it from php.net's index. They
+match because they have a common source, not because this tool assembles
+something that looks right.
+
+**Xdebug comes from PECL, not from xdebug.org.** Xdebug publishes Windows builds
+itself, and the filenames changed shape between its own releases: 3.4.0 is
+`php_xdebug-3.4.0-8.4-vs17-nts-x86_64.dll`, 3.4.1 is
+`php_xdebug-3.4.1-8.4-nts-vs17-x86_64.dll` — the compiler and thread-safety
+tokens swapped places, and the architecture is spelled unlike anywhere else. A
+parser written against either silently finds nothing for the other. The same
+builds are on PECL under the uniform name, so the whole class of problem does
+not arise.
+
+Details that came out of the real listings:
+
+- Pre-releases are excluded. `5.3.7RC1` is in the directory and is never what
+  `latest` should mean.
+- Versions sort numerically. As text, 3.10 sorts before 3.5 — invisible until an
+  extension reaches its tenth minor, then `latest` quietly hands out a build a
+  year old.
+- If the newest release has no build for this PHP, it walks back, bounded. The
+  maintainer builds when they build, and the failure names which versions were
+  examined so it reads as "nobody built this yet" rather than as a broken tool.
+- Dependencies travel with the module: imagick brings some 180 ImageMagick DLLs
+  and does not load without them.
+
+**An adopted PHP is refused.** A runtime found on this machine rather than
+installed here is read and never written to — dropping a DLL into a PHP that
+Homebrew, ServBay or a colleague's installer manages would be a surprising thing
+to do, and their next update would remove it with neither side knowing why.
+
+PECL publishes no digests for these, and this is a library about to be loaded
+into every PHP process, so the install says so plainly rather than staying quiet
+about it.
+

@@ -188,6 +188,12 @@ def _parser() -> argparse.ArgumentParser:
 
         return sub
 
+    ext_install = add_ext(
+        "install", "Download one PHP does not ship — xdebug, redis, imagick.", _ext_install
+    )
+    ext_install.add_argument("name")
+    ext_install.add_argument("version", nargs="?", default="latest")
+
     ext_enable = add_ext("enable", "Load an extension the build ships.", _ext_enable)
     ext_enable.add_argument("name")
 
@@ -399,6 +405,25 @@ def _ext_list(args) -> int:
         args,
         result,
         "\n".join([f"PHP {result['php']}  {result['ini']}", "", *lines]),
+    )
+
+
+def _ext_install(args) -> int:
+    result = Client().call(
+        "POST",
+        "/v1/php/extensions/install",
+        {"name": args.name, "version": args.version, "php": getattr(args, "php", None)},
+        timeout=300,
+    )
+
+    unverified = "" if result["verified"] else "\n(PECL publishes no checksum for it.)"
+    restarted = " Workers restarted." if result["restarted"] else ""
+
+    return _emit(
+        args,
+        result,
+        f"{result['name']} {result['version']} installed for PHP {result['php']} "
+        f"and switched on.{restarted}{unverified}",
     )
 
 

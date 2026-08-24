@@ -27,7 +27,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, extensions, paths, pool
+from .. import acquire, extensions, paths, pecl, pool
 from .. import catalog as catalogs
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
@@ -185,6 +185,7 @@ class ControlServer:
             ("POST", f"{API}/runtimes/install"): self._install,
             ("GET", f"{API}/runtimes/available"): self._available,
             ("GET", f"{API}/php/extensions"): self._extensions,
+            ("POST", f"{API}/php/extensions/install"): self._extension_install,
             ("POST", f"{API}/php/extensions/enable"): self._extension_enable,
             ("POST", f"{API}/php/extensions/disable"): self._extension_disable,
             ("GET", f"{API}/sites"): self._sites,
@@ -279,6 +280,70 @@ class ControlServer:
             "php": runtime.version,
             "ini": str(ini),
             "extensions": extensions.report(ini, runtime.directory),
+        }
+
+    def _extension_install(self, payload: dict) -> dict:
+        """
+        Fetch an extension the build does not ship, and switch it on.
+
+        Downloading is only half of it. An extension installed and not loaded
+        looks exactly like one that failed to install, so this ends with the
+        line in the ini and the workers replaced — otherwise the command is
+        finished and PHP still has no xdebug.
+        """
+        name = str(payload.get("name") or "").lower()
+        runtime, ini = self._php_for(payload)
+
+        # Adopted runtimes are read and never written to. Dropping a DLL into a
+        # PHP that Homebrew, ServBay or a colleague's installer manages would be
+        # a surprising thing for this to do, and their next update would remove
+        # it without either side knowing why.
+        if not runtime.managed:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "not-ours",
+                f"PHP {runtime.version} at {runtime.directory} was found on this machine "
+                f"rather than installed here, and is never modified. Install a PHP with "
+                f"`portable install php` to add extensions to it.",
+            )
+
+        if not runtime.variant:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "unknown-variant",
+                f"PHP {runtime.version} has no recorded build variant, so there is nothing "
+                f"to match an extension against.",
+            )
+
+        branch = ".".join(runtime.version.split(".")[:2])
+
+        try:
+            build = pecl.resolve(
+                name,
+                php=branch,
+                variant=runtime.variant,
+                version=str(payload.get("version") or "latest"),
+            )
+            installed = pecl.install(build, runtime.directory)
+        except CatalogError as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-extension", str(error)) from error
+
+        extensions.enable(ini, name, runtime.directory)
+        restarted = self.stack.reload_php(runtime.version)
+
+        if restarted:
+            self._reconcile()
+
+        return {
+            "php": runtime.version,
+            "name": name,
+            "version": build.version,
+            "file": str(installed),
+            "enabled": True,
+            "restarted": restarted,
+            # PECL publishes its Windows builds without digests, and this is a
+            # library about to be loaded into every PHP process. Said plainly.
+            "verified": build.checksum is not None,
         }
 
     def _extension_enable(self, payload: dict) -> dict:
