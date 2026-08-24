@@ -29,6 +29,12 @@ EXECUTABLES = {
     "php": ("php-cgi.exe", "php-cgi"),
     "php-cli": ("php.exe", "php"),
     "caddy": ("caddy.exe", "caddy"),
+    # The databases' *primary* binary — enough to answer "is this really a
+    # PostgreSQL in here". The dozen others each ships are reached by name
+    # through `executable_named`, because listing them all here would be a table
+    # nobody keeps current.
+    "postgres": ("postgres.exe", "postgres"),
+    "mariadb": ("mariadbd.exe", "mariadbd"),
 }
 
 
@@ -98,6 +104,34 @@ class Installed:
             f"{self.name} {self.version} is installed at {self.directory}, but none of "
             f"{', '.join(names)} is in it. The archive may have unpacked into an "
             f"unexpected shape."
+        )
+
+
+    def executable_named(self, stem: str) -> Path:
+        """
+        A binary by its bare name — `initdb`, `mariadbd`, `psql`.
+
+        Separate from `executable()`, which resolves a *role* through a table of
+        known names. A database ships a dozen binaries and the caller knows which
+        one it wants; enumerating them all in that table would be a list nobody
+        keeps current.
+        """
+        for candidate in (f"{stem}.exe", stem):
+            for location in (self.directory / candidate, self.directory / "bin" / candidate):
+                if location.is_file():
+                    return location
+
+        for candidate in (f"{stem}.exe", stem):
+            found = next(
+                (match for match in self.directory.rglob(candidate) if match.is_file()),
+                None,
+            )
+
+            if found is not None:
+                return found
+
+        raise NotInstalled(
+            f"{self.name} {self.version} at {self.directory} contains no {stem}."
         )
 
 

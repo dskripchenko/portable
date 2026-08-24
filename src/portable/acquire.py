@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+import tarfile
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -135,9 +136,7 @@ def unpack(build: Build, archive: Path, into: Path | None = None) -> Path:
         shutil.rmtree(staging)
 
     staging.mkdir(parents=True)
-
-    with zipfile.ZipFile(archive) as bundle:
-        _extract_safely(bundle, staging)
+    _extract(archive, staging)
 
     entries = list(staging.iterdir())
 
@@ -150,26 +149,68 @@ def unpack(build: Build, archive: Path, into: Path | None = None) -> Path:
     return into
 
 
-def _extract_safely(bundle: zipfile.ZipFile, into: Path) -> None:
+def _extract(archive: Path, into: Path) -> None:
     """
-    Extract, refusing paths that climb out of the destination.
+    Unpack a zip or a gzipped tar, refusing entries that escape.
 
-    `zipfile.extractall` sanitises names, but only as an implementation detail
-    and only for absolute paths and `..` — an archive is untrusted input that
-    this tool then runs, so the check is made here and made explicit.
+    Both, because publishers disagree and the disagreement is not negotiable:
+    PHP, Caddy and MariaDB ship `.zip`, the portable PostgreSQL builds ship
+    `.tar.gz`. Guessing from the extension rather than from content, because the
+    extension is what the publisher's index promised and a mismatch is itself
+    worth failing on.
+    """
+    name = archive.name.lower()
+
+    if name.endswith(".zip"):
+        with zipfile.ZipFile(archive) as bundle:
+            _refuse_escapes(bundle.namelist(), into, archive)
+            bundle.extractall(into)
+
+        return
+
+    if name.endswith((".tar.gz", ".tgz")):
+        with tarfile.open(archive, "r:gz") as bundle:
+            names = bundle.getnames()
+            _refuse_escapes(names, into, archive)
+
+            # Links are refused outright rather than sanitised. A symlink inside
+            # an archive can point anywhere once unpacked, and nothing this tool
+            # downloads has a reason to contain one.
+            for member in bundle.getmembers():
+                if member.issym() or member.islnk():
+                    raise VerificationError(
+                        f"{archive.name} contains a link ({member.name!r}). "
+                        f"It has not been unpacked."
+                    )
+
+            bundle.extractall(into)
+
+        return
+
+    raise VerificationError(
+        f"{archive.name} is neither a zip nor a gzipped tar, and nothing here "
+        f"knows how to unpack it."
+    )
+
+
+def _refuse_escapes(names: list[str], into: Path, archive: Path) -> None:
+    """
+    Refuse any entry that would be written outside [into].
+
+    The standard extractors sanitise names, but as an implementation detail and
+    only for the obvious cases. An archive is untrusted input that this tool then
+    executes, so the check is made here and made explicit.
     """
     root = into.resolve()
 
-    for member in bundle.infolist():
-        target = (root / member.filename).resolve()
+    for name in names:
+        target = (root / name).resolve()
 
         if not target.is_relative_to(root):
             raise VerificationError(
-                f"The archive contains an entry that would be written outside "
-                f"its directory: {member.filename!r}. It has not been unpacked."
+                f"{archive.name} contains an entry that would be written outside "
+                f"its directory: {name!r}. It has not been unpacked."
             )
-
-    bundle.extractall(into)
 
 
 def install(build: Build, on_progress: Callable[[int, int | None], None] | None = None) -> Acquired:

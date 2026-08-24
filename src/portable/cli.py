@@ -62,7 +62,7 @@ def _parser() -> argparse.ArgumentParser:
     add("status", "What is running.", _status)
 
     install = add("install", "Download a runtime — php, caddy.", _install)
-    install.add_argument("runtime", choices=("php", "caddy"))
+    install.add_argument("runtime", choices=("php", "caddy", "postgres", "mariadb"))
     install.add_argument(
         "version",
         nargs="?",
@@ -105,6 +105,29 @@ def _parser() -> argparse.ArgumentParser:
     add_site("list", "Sites and their addresses.", _site_list)
 
     site.set_defaults(run=_site_help, site_command=None, json=False)
+
+    service = subparsers.add_parser("service", help="Databases run by this installation.")
+    service_commands = service.add_subparsers(dest="service_command")
+
+    def add_service(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = service_commands.add_parser(name, help=help_text)
+        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.set_defaults(run=run)
+
+        return sub
+
+    service_add = add_service("add", "Start a database.", _service_add)
+    service_add.add_argument("kind", choices=("postgres", "mariadb"))
+    service_add.add_argument("--name", help="Defaults to the kind. A second instance needs one.")
+    service_add.add_argument("--version")
+    service_add.add_argument("--port", type=int, help="Defaults to the conventional one, if free.")
+
+    service_remove = add_service("remove", "Stop a database. Its data is kept.", _service_remove)
+    service_remove.add_argument("name")
+
+    add_service("list", "Databases and how to reach them.", _service_list)
+
+    service.set_defaults(run=_service_help, service_command=None, json=False)
 
     return parser
 
@@ -193,7 +216,7 @@ def _status(args) -> int:
     served = f"  ·  port {status['port']}" if status.get("port") else ""
     lines = [
         f"portable {status['version']}  ·  {status['home']}{served}",
-        f"{status.get('sites', 0)} site(s)",
+        f"{status.get('sites', 0)} site(s), {status.get('services', 0)} database(s)",
     ]
     processes = status.get("processes", [])
 
@@ -330,6 +353,63 @@ def _site_list(args) -> int:
         print(f"  {site['url']:<40} {site['root']}{pinned}")
 
     return 0
+
+
+def _service_add(args) -> int:
+    result = Client().call(
+        "POST",
+        "/v1/services/add",
+        {
+            "kind": args.kind,
+            "name": args.name or args.kind,
+            "version": args.version,
+            "port": args.port,
+        },
+        # First start initialises the data directory, which is not quick.
+        timeout=600,
+    )
+
+    return _emit(
+        args,
+        result,
+        f"{result['kind']} on 127.0.0.1:{result['port']} as {result['user']}\n"
+        f"data: {result['data']}",
+    )
+
+
+def _service_remove(args) -> int:
+    result = Client().call("POST", "/v1/services/remove", {"name": args.name}, timeout=60)
+
+    return _emit(
+        args,
+        result,
+        f"Stopped {result['removed']}. Its data is still at {result['data_kept']}.",
+    )
+
+
+def _service_list(args) -> int:
+    result = Client().call("GET", "/v1/services")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    if not result["services"]:
+        print("No databases. Add one with `portable service add postgres`.")
+
+        return 0
+
+    for service in result["services"]:
+        state = f"127.0.0.1:{service['port']}" if service["running"] else "stopped"
+
+        print(f"  {service['name']:<12} {service['kind']:<10} {state:<20} user {service['user']}")
+
+    return 0
+
+
+def _service_help(args) -> int:
+    print("Usage: portable service {add,remove,list}")
+
+    return 2
 
 
 def _site_help(args) -> int:

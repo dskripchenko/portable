@@ -25,9 +25,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import paths, pool, ports
+from . import services as services_module
 from .router import caddy
 from .runtimes import Installed, NotInstalled
 from .runtimes import Registry as Runtimes
+from .services import Service
 from .sites import Site
 from .supervisor import Spec, Supervisor
 
@@ -79,6 +81,9 @@ class Stack:
     depend on what happens to be listening on 80.
     """
 
+    services: dict[str, tuple[Service, int]] = field(default_factory=dict)
+    """Running databases, keyed by name, with the port each ended up on."""
+
     port: int | None = None
     admin: str | None = None
     """
@@ -91,17 +96,30 @@ class Stack:
 
     caddy_running: bool = False
 
-    def reconcile(self, sites: list[Site]) -> dict:
+    def reconcile(self, sites: list[Site], services: list[Service] | None = None) -> dict:
         """
-        Bring the processes into line with [sites]. Returns what changed.
+        Bring the processes into line with what is declared. Returns what changed.
 
         Safe to call repeatedly: it starts what is missing and stops what is no
         longer wanted, and doing nothing is the normal outcome.
-        """
-        if not sites:
-            self._stop_everything()
 
-            return {"sites": 0, "pools": [], "port": None}
+        Databases are handled first and separately from the web stack, because
+        they are independent of it: a machine can run Postgres and no sites at
+        all, and removing the last site should not take the database with it.
+        """
+        started_services = self._ensure_services(services or [])
+        self._stop_unwanted_services(services or [])
+
+        if not sites:
+            self._stop_web()
+
+            return {
+                "sites": 0,
+                "pools": [],
+                "port": None,
+                "services": self.service_report(),
+                "services_started": started_services,
+            }
 
         wanted = self._versions_for(sites)
         started = self._ensure_pools(wanted)
@@ -115,7 +133,131 @@ class Stack:
             "pools_started": started,
             "pools_stopped": stopped,
             "port": self.port,
+            "services": self.service_report(),
+            "services_started": started_services,
         }
+
+    # ---------------------------------------------------------------- services
+
+    def _ensure_services(self, wanted: list[Service]) -> list[str]:
+        """
+        Initialise and start each declared database.
+
+        Initialisation runs once and is detected by the data directory rather
+        than by a flag: a flag can say "done" about a directory somebody has
+        since deleted, and the server then fails with something about corruption.
+        """
+        started = []
+
+        for service in wanted:
+            if service.name in self.services:
+                continue
+
+            runtime = self._runtime_for(service)
+            binaries = {
+                role: runtime.executable_named(name)
+                for role, name in services_module.EXECUTABLES[service.kind].items()
+            }
+
+            if not service.initialised:
+                self._initialise(service, binaries)
+
+            port = service.port or self._port_for(service)
+            spec = Spec(
+                name=service.name,
+                argv=services_module.start_command(
+                    service.kind, binaries, service.data, port
+                ),
+                log=paths.logs() / f"{service.name}.log",
+                restart=True,
+            )
+
+            try:
+                self.supervisor.add(spec)
+            except ValueError:
+                self.supervisor.forget(service.name)
+                self.supervisor.add(spec)
+
+            self.supervisor.start(service.name)
+            self.services[service.name] = (service, port)
+            started.append(service.name)
+
+        return started
+
+    def _initialise(self, service: Service, binaries: dict) -> None:
+        """
+        Create the data directory, once, and fail loudly if it does not take.
+
+        Run to completion here rather than supervised: it is one-shot work that
+        must finish before the server starts, and a half-initialised directory
+        is worse than none — the server starts and then reports damage.
+        """
+        import subprocess
+
+        service.data.parent.mkdir(parents=True, exist_ok=True)
+        command = services_module.init_command(service.kind, binaries, service.data)
+        log = paths.logs() / f"{service.name}-init.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+
+        result = subprocess.run(
+            command, capture_output=True, text=True, timeout=300, check=False
+        )
+        log.write_text(result.stdout + result.stderr, encoding="utf-8")
+
+        if result.returncode != 0 or not service.initialised:
+            # Anything left behind is removed: a partial data directory would be
+            # taken for an initialised one on the next attempt.
+            if service.data.exists():
+                import shutil
+
+                shutil.rmtree(service.data, ignore_errors=True)
+
+            raise StackError(
+                f"Could not initialise {service.name}.\n{paths.tail(log)}"
+            )
+
+    def _stop_unwanted_services(self, wanted: list[Service]) -> None:
+        """Stop what is no longer declared. The data directory is left alone."""
+        names = {service.name for service in wanted}
+
+        for name in list(self.services):
+            if name in names:
+                continue
+
+            self.supervisor.stop(name)
+            self.supervisor.forget(name)
+            self.services.pop(name)
+
+    def _runtime_for(self, service: Service) -> Installed:
+        try:
+            return self.runtimes.get(service.kind, service.version)
+        except NotInstalled as error:
+            raise StackError(
+                f"{service.name} needs {service.kind} {service.version or '(any)'}, "
+                f"which is not installed. {error}"
+            ) from error
+
+    def _port_for(self, service: Service) -> int:
+        preferred = services_module.DEFAULT_PORTS[service.kind]
+
+        if ports.is_free(preferred):
+            return preferred
+
+        # The conventional port is a preference, not a promise: another database
+        # of the same kind, or somebody's Docker, may already have it.
+        return ports.find(1, candidates=range(preferred + 1, preferred + 100))[0]
+
+    def service_report(self) -> list[dict]:
+        return [
+            {
+                "name": service.name,
+                "kind": service.kind,
+                "port": port,
+                "user": service.superuser,
+                "data": str(service.data),
+            }
+            for service, port in self.services.values()
+        ]
 
     # ------------------------------------------------------------------- pools
 
@@ -354,7 +496,7 @@ class Stack:
 
         return False
 
-    def _stop_everything(self) -> None:
+    def _stop_web(self) -> None:
         for version in list(self.pools):
             for worker in self.pools.pop(version).workers:
                 self.supervisor.stop(worker.name)

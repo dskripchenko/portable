@@ -33,6 +33,9 @@ from ..catalog import php as php_catalog
 from ..http import LoopbackHTTPServer
 from ..runtimes import Installed, NotInstalled
 from ..runtimes import Registry as Runtimes
+from ..services import InvalidService
+from ..services import Registry as Services
+from ..services import Service as ServiceRecord
 from ..sites import InvalidSite, Site
 from ..sites import Registry as Sites
 from ..stack import Stack, StackError
@@ -93,6 +96,7 @@ class ControlServer:
         self.supervisor = supervisor or Supervisor()
         self.runtimes = Runtimes()
         self.sites = Sites()
+        self.services_registry = Services()
         self.stack = Stack(supervisor=self.supervisor, runtimes=self.runtimes)
         self.token = token or discovery.new_token()
         self._http: LoopbackHTTPServer | None = None
@@ -158,6 +162,9 @@ class ControlServer:
             ("GET", f"{API}/sites"): self._sites,
             ("POST", f"{API}/sites/add"): self._site_add,
             ("POST", f"{API}/sites/remove"): self._site_remove,
+            ("GET", f"{API}/services"): self._services_list,
+            ("POST", f"{API}/services/add"): self._service_add,
+            ("POST", f"{API}/services/remove"): self._service_remove,
         }
 
     def _ping(self, _payload: dict) -> dict:
@@ -171,6 +178,7 @@ class ControlServer:
             "home": str(paths.root()),
             "port": self.stack.port,
             "sites": len(self.sites.all()),
+            "services": len(self.services_registry.all()),
             "processes": self.supervisor.status(),
         }
 
@@ -332,6 +340,83 @@ class ControlServer:
 
         return {"removed": name}
 
+    def _services_list(self, _payload: dict) -> dict:
+        declared = {service.name: service for service in self.services_registry.all()}
+        running = {entry["name"]: entry for entry in self.stack.service_report()}
+
+        return {
+            "services": [
+                {
+                    "name": name,
+                    "kind": service.kind,
+                    "version": service.version,
+                    "running": name in running,
+                    "port": running.get(name, {}).get("port", service.port),
+                    "user": service.superuser,
+                    "data": str(service.data),
+                }
+                for name, service in sorted(declared.items())
+            ]
+        }
+
+    def _service_add(self, payload: dict) -> dict:
+        kind = str(payload.get("kind") or "")
+        name = str(payload.get("name") or kind)
+
+        service = ServiceRecord(
+            name=name,
+            kind=kind,
+            version=payload.get("version") or None,
+            port=payload.get("port") or None,
+        )
+
+        try:
+            self.services_registry.add(service)
+        except InvalidService as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "invalid-service", str(error)) from error
+
+        try:
+            self._reconcile()
+        except ApiError:
+            # The declaration is withdrawn again. Otherwise a failed `add` — a
+            # missing runtime, an initialisation that would not complete —
+            # leaves a service that `list` reports as merely "stopped", which
+            # invites starting it and being confused twice.
+            self.services_registry.remove(service.name)
+
+            raise
+
+        running = {entry["name"]: entry for entry in self.stack.service_report()}
+        port = running.get(name, {}).get("port")
+
+        # Remembered so a connection string does not change on the next restart.
+        if port and service.port != port:
+            self.services_registry.add(replace(service, port=port))
+
+        return {
+            "name": name,
+            "kind": kind,
+            "port": port,
+            "user": service.superuser,
+            "data": str(service.data),
+        }
+
+    def _service_remove(self, payload: dict) -> dict:
+        name = str(payload.get("name") or "")
+        removed = self.services_registry.remove(name)
+
+        if removed is None:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-service", f"No service called {name!r}.")
+
+        self._reconcile()
+
+        return {
+            "removed": name,
+            # Said explicitly, every time. Somebody will eventually run this
+            # expecting a clean slate, and the difference matters.
+            "data_kept": str(removed.data),
+        }
+
     def _reconcile(self) -> dict:
         """
         Make the processes match the sites, turning refusals into API errors.
@@ -340,7 +425,7 @@ class ControlServer:
         stopping things itself: one path means one way for it to be half-done.
         """
         try:
-            return self.stack.reconcile(self.sites.all())
+            return self.stack.reconcile(self.sites.all(), self.services_registry.all())
         except (StackError, NotInstalled) as error:
             raise ApiError(HTTPStatus.CONFLICT, "cannot-serve", str(error)) from error
 

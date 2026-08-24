@@ -179,3 +179,51 @@ inferred from the digest's length, rather than assumed.
   terminating proxy — the machines this tool exists for — that is the likeliest
   failure of all, and the message said nothing about `PORTABLE_CA_BUNDLE`.
 
+### Added — databases
+
+- **`portable service add postgres|mariadb`**, `service list`, `service remove`.
+  A database is initialised once — `initdb`, `mariadb-install-db` — and then
+  supervised like everything else.
+
+- **Removing a service never removes its data.** `service remove` stops the
+  server, forgets the declaration and says where the directory still is.
+  Anything else turns a routine command into a way of losing work, and there is
+  no undo for that. Verified by doing it: removed, re-added, and the row
+  inserted before was still there.
+
+- **Both bind `127.0.0.1` and nothing else.** Authentication is trusting,
+  because a password prompt buys nothing when anything running as that user can
+  read the data directory anyway — the protection is that nothing off the
+  machine can reach it.
+
+- **PostgreSQL is initialised with `--locale=C`.** A database whose collation
+  follows the developer's regional settings sorts differently from production
+  and finds out in a test that passes for one person.
+
+- **The conventional port, when it is free.** 5432 and 3306 so a connection
+  string copied from anywhere works — and the next one up when something already
+  has it, reported rather than assumed. Once chosen it is remembered: a
+  connection string that changed on every restart would be useless.
+
+- **`.tar.gz` archives.** The portable PostgreSQL builds ship one where
+  everything else here ships zip. Links inside a tarball are refused outright —
+  a symlink can point anywhere once unpacked, and nothing downloaded here has a
+  reason to contain one.
+
+### Notes on the publishers
+
+MariaDB's API advertises its downloads over plain **http**, and files the digest
+under `sha256sum` rather than `sha256`. The URL is upgraded to TLS — it
+redirects to a community mirror, so the bytes come from a third party and the
+digest is what makes that acceptable — and reading the wrong key would have been
+a silent downgrade from verified to unverified.
+
+The portable PostgreSQL builds publish no digests at all. Recorded as absent
+rather than glossed over.
+
+### Fixed
+
+- **A service that could not start left its declaration behind**, so `list`
+  reported it as merely "stopped" — inviting somebody to start it and be
+  confused a second time. A failed `add` now withdraws it.
+
