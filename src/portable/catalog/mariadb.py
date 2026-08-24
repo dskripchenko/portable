@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 
 from .. import net
-from . import Build, CatalogError
+from . import Build, CatalogError, Offer
 
 API = "https://downloads.mariadb.org/rest-api/mariadb"
 
@@ -43,6 +43,31 @@ def series(index: dict | None = None) -> list[str]:
     ]
 
     return sorted(stable, key=_key, reverse=True)
+
+
+def available(index: dict | None = None) -> list[Offer]:
+    """
+    MariaDB series, newest first — not individual patch releases.
+
+    That is how the API is organised and how the project talks about itself, so
+    a listing of patch versions would be this tool inventing a shape the
+    publisher does not use.
+
+    Unstable series are listed and marked rather than hidden. They install
+    perfectly well, somebody occasionally wants one, and a listing that silently
+    omits what is plainly on the download page reads as out of date.
+    """
+    index = index if index is not None else json.loads(net.read_text(f"{API}/"))
+    entries = [
+        (str(entry.get("release_id")), str(entry.get("release_status") or ""))
+        for entry in index.get("major_releases", [])
+        if entry.get("release_id")
+    ]
+
+    return [
+        Offer(version=release_id, note="" if status == "Stable" else status.lower())
+        for release_id, status in sorted(entries, key=lambda pair: _key(pair[0]), reverse=True)
+    ]
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:

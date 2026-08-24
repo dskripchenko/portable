@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 
 from .. import net
-from . import Build, CatalogError
+from . import Build, CatalogError, Offer
 
 INDEX_URL = "https://downloads.php.net/~windows/releases/releases.json"
 DOWNLOAD_BASE = "https://downloads.php.net/~windows/releases"
@@ -43,6 +43,23 @@ def branches(index: dict | None = None) -> list[str]:
         key=_version_key,
         reverse=True,
     )
+
+
+def available(index: dict | None = None) -> list[Offer]:
+    """
+    The releases currently published, newest first.
+
+    One per branch, and that is the index's doing rather than a limit imposed
+    here: php.net lists the current release of each supported branch and moves
+    superseded patches to an archive this does not read. A listing that implied
+    otherwise would offer versions that cannot then be installed.
+    """
+    index = index if index is not None else _fetch_index()
+
+    return [
+        Offer(version=str(index[branch].get("version") or branch), note=f"branch {branch}")
+        for branch in branches(index)
+    ]
 
 
 def resolve(version: str = "latest", index: dict | None = None) -> Build:

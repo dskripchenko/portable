@@ -21,7 +21,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import paths, spawn
+from . import catalog, paths, spawn
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -87,9 +87,9 @@ def _parser() -> argparse.ArgumentParser:
     add("status", "What is running.", _status)
 
     install = add("install", "Download a runtime — php, caddy.", _install)
-    install.add_argument(
-        "runtime", choices=("php", "caddy", "postgres", "mariadb", "node", "redis")
-    )
+    # From the catalog rather than typed out again. The two lists were separate
+    # once and drifted: this one offered four runtimes the daemon then refused.
+    install.add_argument("runtime", choices=catalog.names())
     install.add_argument(
         "version",
         nargs="?",
@@ -105,6 +105,9 @@ def _parser() -> argparse.ArgumentParser:
 
     runtimes = add("runtimes", "What is installed.", _runtimes)
     runtimes.set_defaults(run=_runtimes)
+
+    available = add("available", "What each publisher currently offers.", _available)
+    available.add_argument("runtime", choices=catalog.names())
 
     site = subparsers.add_parser("site", help="Sites served by this installation.")
     site_commands = site.add_subparsers(dest="site_command")
@@ -347,6 +350,28 @@ def _daemon_environment() -> dict[str, str]:
     environment["PORTABLE_HOME"] = str(paths.root())
 
     return environment
+
+
+def _available(args) -> int:
+    result = Client().call("GET", f"/v1/runtimes/available?name={args.runtime}")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    lines = []
+
+    for entry in result["versions"]:
+        marks = [part for part in (entry["note"], "installed" if entry["installed"] else "") if part]
+        lines.append(f"  {entry['version']:<12} {'  '.join(marks)}".rstrip())
+
+    if not lines:
+        return _fail(args, "nothing-offered", f"The publisher lists no {args.runtime} builds.")
+
+    return _emit(
+        args,
+        result,
+        "\n".join([*lines, "", f"portable install {args.runtime} <version>"]),
+    )
 
 
 def _install(args) -> int:

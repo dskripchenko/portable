@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import secrets
 import threading
+import urllib.parse
 from collections.abc import Callable
 from dataclasses import replace
 from http import HTTPStatus
@@ -27,9 +28,8 @@ from pathlib import Path
 from typing import Any
 
 from .. import acquire, paths
+from .. import catalog as catalogs
 from ..catalog import CatalogError
-from ..catalog import caddy as caddy_catalog
-from ..catalog import php as php_catalog
 from ..http import LoopbackHTTPServer
 from ..runtimes import Installed, NotInstalled
 from ..runtimes import Registry as Runtimes
@@ -183,6 +183,7 @@ class ControlServer:
             ("POST", f"{API}/shutdown"): self._shutdown_route,
             ("GET", f"{API}/runtimes"): self._runtimes,
             ("POST", f"{API}/runtimes/install"): self._install,
+            ("GET", f"{API}/runtimes/available"): self._available,
             ("GET", f"{API}/sites"): self._sites,
             ("POST", f"{API}/sites/add"): self._site_add,
             ("POST", f"{API}/sites/remove"): self._site_remove,
@@ -224,6 +225,37 @@ class ControlServer:
             ]
         }
 
+    def _available(self, payload: dict) -> dict:
+        """What each publisher currently offers, and what is already here."""
+        name = str(payload.get("name") or "").lower()
+
+        try:
+            catalog = catalogs.module(name)
+        except CatalogError as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "unknown-runtime", str(error)) from error
+
+        try:
+            offers = catalog.available()
+        except CatalogError as error:
+            raise ApiError(HTTPStatus.BAD_GATEWAY, "catalog-unavailable", str(error)) from error
+
+        installed = {entry.version for entry in self.runtimes.all() if entry.name == name}
+
+        return {
+            "name": name,
+            "versions": [
+                {
+                    "version": offer.version,
+                    "note": offer.note,
+                    # So a listing can be read without cross-referencing
+                    # `portable runtimes`, which is the whole reason somebody
+                    # runs this before installing anything.
+                    "installed": offer.version in installed,
+                }
+                for offer in offers
+            ],
+        }
+
     def _install(self, payload: dict) -> dict:
         name = str(payload.get("name") or "").lower()
         version = str(payload.get("version") or "latest")
@@ -232,23 +264,25 @@ class ControlServer:
         if existing:
             return self._adopt(name, Path(str(existing)).expanduser().resolve(), version)
 
-        if name not in ("php", "caddy"):
-            raise ApiError(
-                HTTPStatus.BAD_REQUEST,
-                "unknown-runtime",
-                f"Nothing is known about {name!r}. Installable: php, caddy.",
-            )
+        try:
+            catalog = catalogs.module(name)
+        except CatalogError as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "unknown-runtime", str(error)) from error
 
         try:
-            build = (php_catalog if name == "php" else caddy_catalog).resolve(version)
+            build = catalog.resolve(version)
 
-            if name == "caddy" and build.checksum is None:
-                # Caddy lists its digests in a separate file, so resolution
-                # leaves the field empty rather than costing every caller a
-                # second request. Fetched here, where the file is about to be
-                # verified.
-                found = caddy_catalog.checksum_for(
-                    build.filename, net_read(caddy_catalog.checksum_url(build.version))
+            if build.checksum is None and hasattr(catalog, "checksum_url"):
+                # Caddy and Node both publish digests in a separate file, so
+                # resolution leaves the field empty rather than costing every
+                # caller a second request for a value most never use. Fetched
+                # here, where the archive is about to be verified.
+                #
+                # Asked of the module rather than of the name: a publisher that
+                # starts or stops doing this should be a change in its own
+                # catalog, not a new branch in the daemon.
+                found = catalog.checksum_for(
+                    build.filename, net_read(catalog.checksum_url(build.version))
                 )
 
                 if found is not None:
@@ -569,13 +603,29 @@ def _make_handler(server: ControlServer):
                 )
 
         def _payload(self) -> dict:
+            """
+            The request's parameters, from the query string or the body.
+
+            A GET carrying a body is a thing servers and proxies are entitled to
+            drop, so a read that takes an argument — "what versions of PHP are
+            there" — has to take it in the URL. Merged into the same dictionary
+            the handlers already read, so no handler needs to know or care which
+            way it arrived.
+            """
+            query = urllib.parse.urlparse(self.path).query
+            parameters = {
+                key: values[-1]
+                for key, values in urllib.parse.parse_qs(query).items()
+                if values
+            }
+
             length = int(self.headers.get("Content-Length") or 0)
 
             if not length:
-                return {}
+                return parameters
 
             try:
-                return json.loads(self.rfile.read(length).decode("utf-8"))
+                return {**parameters, **json.loads(self.rfile.read(length).decode("utf-8"))}
             except (json.JSONDecodeError, UnicodeDecodeError) as error:
                 raise ApiError(
                     HTTPStatus.BAD_REQUEST, "malformed-body", f"The body is not JSON: {error}"

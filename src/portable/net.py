@@ -64,16 +64,37 @@ def open_url(url: str, timeout: int = TIMEOUT):
         if not isinstance(error.reason, ssl.SSLCertVerificationError):
             raise
 
-        # The likeliest cause on the machines this tool is written for, and the
-        # raw message says nothing a person can act on.
-        raise TrustError(
-            f"The certificate for {url} could not be verified.\n\n"
-            f"On a managed network this usually means TLS is being terminated by "
-            f"a proxy whose authority this machine does not trust. Export the "
-            f"proxy's root certificate and point at it:\n\n"
-            f"    PORTABLE_CA_BUNDLE=C:\\path\\to\\corporate-root.pem\n\n"
-            f"Underlying error: {error.reason}"
-        ) from error
+        raise TrustError(f"{_why(url)}\n\nUnderlying error: {error.reason}") from error
+
+
+def _why(url: str) -> str:
+    """
+    A diagnosis, not a guess.
+
+    These are two different failures wearing the same message. An empty trust
+    store fails against every host on the internet, and being told to go and
+    find the corporate proxy's root certificate — when there is no proxy —
+    sends somebody looking for a thing that does not exist. The two are told
+    apart by counting what was loaded, which costs nothing and is exact.
+    """
+    if not context().get_ca_certs():
+        return (
+            f"The certificate for {url} could not be verified, and this Python "
+            f"has no trusted root certificates at all — not one. So this is not "
+            f"about that host: nothing would verify.\n\n"
+            f"That is the interpreter's own trust store being empty rather than "
+            f"anything to do with the network. Point at a bundle of roots:\n\n"
+            f"    PORTABLE_CA_BUNDLE=$(python -c 'import certifi; print(certifi.where())')\n\n"
+            f"On Windows this does not happen: Python reads the system store."
+        )
+
+    return (
+        f"The certificate for {url} could not be verified.\n\n"
+        f"On a managed network this usually means TLS is being terminated by a "
+        f"proxy whose authority this machine does not trust. Export the proxy's "
+        f"root certificate and point at it:\n\n"
+        f"    PORTABLE_CA_BUNDLE=C:\\path\\to\\corporate-root.pem"
+    )
 
 
 def read_text(url: str, timeout: int = TIMEOUT) -> str:

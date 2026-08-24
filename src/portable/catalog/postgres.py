@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 
 from .. import net
-from . import Build, CatalogError
+from . import Build, CatalogError, Offer
 
 RELEASES_URL = "https://api.github.com/repos/theseus-rs/postgresql-binaries/releases"
 
@@ -23,10 +23,53 @@ RELEASES_URL = "https://api.github.com/repos/theseus-rs/postgresql-binaries/rele
 TARGET = "x86_64-pc-windows-msvc"
 
 
+def _fetch_releases() -> list[dict]:
+    return json.loads(net.read_text(f"{RELEASES_URL}?per_page=30"))
+
+
 def _fetch(version: str) -> dict:
     url = RELEASES_URL + ("/latest" if version == "latest" else f"/tags/{version}")
 
     return json.loads(net.read_text(url))
+
+
+def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+    """
+    PostgreSQL builds published for this target: the newest of each major line.
+
+    Sorted by version rather than by date, and one per major. GitHub returns
+    releases in the order they were cut, and this project cuts a build for every
+    supported major on the same day — so the raw order reads `18.6, 17.11, 16.15,
+    15.19, 14.24, 18.4, 17.10`, with each line appearing again a few entries
+    down at an older patch. Offering the same major twice, out of order, invites
+    picking the older one by accident.
+    """
+    releases = releases if releases is not None else _fetch_releases()
+    newest: dict[int, str] = {}
+
+    for release in releases:
+        version = str(release.get("tag_name") or "").lstrip("v")
+        names = {str(asset.get("name")) for asset in release.get("assets", [])}
+
+        if not version or f"postgresql-{version}-{TARGET}.tar.gz" not in names:
+            continue
+
+        major = _major(version)
+
+        if major is not None and (major not in newest or _key(version) > _key(newest[major])):
+            newest[major] = version
+
+    return [Offer(version=newest[major]) for major in sorted(newest, reverse=True)][:limit]
+
+
+def _major(version: str) -> int | None:
+    head = version.split(".")[0]
+
+    return int(head) if head.isdigit() else None
+
+
+def _key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:

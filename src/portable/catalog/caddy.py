@@ -26,7 +26,7 @@ import json
 import re
 
 from .. import net
-from . import Build, CatalogError
+from . import Build, CatalogError, Offer
 
 RELEASES_URL = "https://api.github.com/repos/caddyserver/caddy/releases"
 
@@ -34,10 +34,37 @@ RELEASES_URL = "https://api.github.com/repos/caddyserver/caddy/releases"
 _ARCH = "amd64"
 
 
+def _fetch_releases() -> list[dict]:
+    return json.loads(net.read_text(f"{RELEASES_URL}?per_page=30"))
+
+
 def _fetch_release(version: str) -> dict:
     url = RELEASES_URL + ("/latest" if version == "latest" else f"/tags/v{version.lstrip('v')}")
 
     return json.loads(net.read_text(url))
+
+
+def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+    """
+    Caddy releases that actually carry a Windows archive, newest first.
+
+    The filter is not defensive tidying. GitHub's release list includes tags cut
+    for other reasons, and a version offered here that has no archive behind it
+    is an install that fails after the choice has been made.
+    """
+    releases = releases if releases is not None else _fetch_releases()
+    offers = []
+
+    for release in releases:
+        version = str(release.get("tag_name") or "").lstrip("v")
+        names = {asset.get("name") for asset in release.get("assets", [])}
+
+        if version and f"caddy_{version}_windows_{_ARCH}.zip" in names:
+            offers.append(
+                Offer(version=version, note="pre-release" if release.get("prerelease") else "")
+            )
+
+    return offers[:limit]
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:

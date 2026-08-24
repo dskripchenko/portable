@@ -208,9 +208,13 @@ class TestNodeCatalog:
         build = node.resolve("lts", index=self.node_index())
 
         assert node.checksum_url(build.version).endswith("SHASUMS256.txt")
+
+        # The algorithm comes back with the digest, the same shape Caddy's
+        # returns. Two publishers with two return types means the caller grows a
+        # branch per publisher, and the next one to join adds a third.
         assert node.checksum_for(
             build.filename, f"{'a' * 64}  {build.filename}\n"
-        ) == "a" * 64
+        ) == ("a" * 64, "sha256")
 
 
 class TestRedisCatalog:

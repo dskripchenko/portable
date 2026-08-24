@@ -26,7 +26,7 @@ import json
 import re
 
 from .. import net
-from . import Build, CatalogError
+from . import Build, CatalogError, Offer
 
 RELEASES_URL = "https://api.github.com/repos/redis-windows/redis-windows/releases"
 
@@ -35,10 +35,38 @@ RELEASES_URL = "https://api.github.com/repos/redis-windows/redis-windows/release
 FLAVOUR = "msys2"
 
 
+def _fetch_releases() -> list[dict]:
+    return json.loads(net.read_text(f"{RELEASES_URL}?per_page=30"))
+
+
 def _fetch(version: str) -> dict:
     url = RELEASES_URL + ("/latest" if version == "latest" else f"/tags/{version}")
 
     return json.loads(net.read_text(url))
+
+
+def available(releases: list[dict] | None = None, limit: int = 20) -> list[Offer]:
+    """
+    Redis versions this rebuild offers, newest first.
+
+    The version reported is the upstream one, not the rebuild's tag. Somebody
+    choosing between these is choosing a Redis, and the packaging is our problem
+    rather than theirs.
+    """
+    releases = releases if releases is not None else _fetch_releases()
+    offers = []
+
+    for release in releases:
+        tag = str(release.get("tag_name") or "")
+        usable = any(
+            name and FLAVOUR in name and name.endswith(".zip") and "with-Service" not in name
+            for name in (asset.get("name") for asset in release.get("assets", []))
+        )
+
+        if tag and usable:
+            offers.append(Offer(version=_upstream_version(tag)))
+
+    return offers[:limit]
 
 
 def resolve(version: str = "latest", release: dict | None = None) -> Build:

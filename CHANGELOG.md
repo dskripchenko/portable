@@ -346,3 +346,64 @@ official archives, and a `SHASUMS256.txt` beside every version.
   leave a daemon still holding ports 80 and 5432 that nothing can reach, `down`
   included.
 
+### Fixed — the databases could not be installed at all
+
+`portable install postgres`, `mariadb`, `node` and `redis` were accepted by the
+command line and refused by the daemon, which knew only PHP and Caddy. Since
+`service add postgres` requires its runtime to be installed already, and the
+only command that could install it rejected the name, the databases and Redis
+were unreachable by any documented route.
+
+Two lists, written at different times, that quietly stopped agreeing. There is
+one now — `catalog.modules()` — read by the parser for what it offers and by the
+daemon for what it accepts, and a test asserts the two sides still match. Adding
+a runtime is one entry.
+
+The same generalisation fixed a second thing on the way past. Fetching a digest
+published in a separate file was written for Caddy and hardcoded to it; Node
+does the same and was silently installed unverified. It is now asked of the
+module rather than of the name, and Node installs verified. Node's
+`checksum_for` returned a bare string where Caddy's returned `(digest,
+algorithm)` — one shape now, since two would have meant a branch per publisher
+and a third when the next one joins.
+
+### Added — `portable available <runtime>`
+
+What each publisher currently offers, with what is already installed marked, so
+choosing a version does not mean cross-referencing a second command.
+
+Real listings from the publishers found two defects that hand-written fixtures
+would not have:
+
+- **PostgreSQL** cuts a release for every supported major on the same day, and
+  GitHub returns them in that order — so the raw list read `18.6, 17.11, 16.15,
+  15.19, 14.24, 18.4, 17.10`, each major appearing again a few rows down at an
+  older patch. Offering the same major twice, out of order, invites picking the
+  older one by accident.
+- **Node** ships every couple of weeks, so a newest-first list was a screenful
+  of one current major, with the LTS lines — the ones most people want — off the
+  end and their labels unread. That is the exact mistake the listing exists to
+  prevent.
+
+Both now list the newest release of each major line. Node's index reaches back
+to 2015, so it shows the newest eight, which covers every LTS anybody still
+starts a project on.
+
+MariaDB's unstable series are listed and marked rather than hidden: they install
+perfectly well, and a listing that silently omits what is plainly on the
+publisher's download page reads as out of date.
+
+### Changed
+
+- **GET routes take query parameters.** A read that needs an argument — which
+  versions of PHP exist — had nowhere to put one, and a GET carrying a body is
+  something servers and proxies may drop. Merged into the same dictionary
+  handlers already read, so none of them needs to know which way it arrived.
+
+- **An empty trust store is diagnosed as itself.** Verification failing because
+  the interpreter has no root certificates at all is a different failure from a
+  corporate proxy, and the message that names the proxy sends somebody looking
+  for a thing that does not exist. The two are told apart by counting what was
+  loaded. Windows is unaffected — Python reads the system store there — but the
+  macOS bundle can land in exactly this state.
+

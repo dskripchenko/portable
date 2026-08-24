@@ -141,3 +141,64 @@ class TestCaddy:
             caddy.resolve(release=release)
 
         assert "linux_amd64" in str(excinfo.value) or "no caddy_9.9.9_windows" in str(excinfo.value)
+
+
+class TestOneListForEverybody:
+    """
+    The command line and the daemon must offer the same runtimes.
+
+    They did not. `portable install postgres` was accepted by the parser and
+    refused by the daemon, which knew only PHP and Caddy — so the databases
+    could not be installed at all, and `service add postgres` then failed on a
+    runtime there was no way to obtain. Two lists, edited at different times.
+    """
+
+    def test_everything_the_cli_offers_has_a_catalog(self):
+        from portable import catalog, cli
+
+        parser = cli._parser()
+        commands = parser._subparsers._group_actions[0].choices
+
+        for command in ("install", "available"):
+            offered = next(
+                action.choices
+                for action in commands[command]._actions
+                if action.dest == "runtime"
+            )
+
+            assert sorted(offered) == catalog.names(), f"`{command}` offers something else"
+
+    def test_every_catalog_can_resolve_and_list(self):
+        # The two things the daemon asks of a module. A catalog missing either
+        # is one that fails at the moment somebody uses it rather than here.
+        from portable import catalog
+
+        for name, module in catalog.modules().items():
+            assert callable(getattr(module, "resolve", None)), f"{name} cannot resolve"
+            assert callable(getattr(module, "available", None)), f"{name} cannot list"
+
+    def test_a_separately_published_digest_comes_back_the_same_shape(self):
+        # Caddy and Node both publish digests in a second file, and the daemon
+        # has one code path for that. A module returning a bare string instead
+        # of (digest, algorithm) unpacks into two characters and verification
+        # then fails against a checksum of "a".
+        from portable import catalog
+
+        for name, module in catalog.modules().items():
+            if not hasattr(module, "checksum_url"):
+                continue
+
+            digest = "b" * 64
+            found = module.checksum_for("thefile.zip", f"{digest}  thefile.zip\n")
+
+            assert found is not None, f"{name} did not find a digest it published"
+            assert isinstance(found, tuple) and len(found) == 2, f"{name} returned {found!r}"
+
+    def test_an_unknown_name_lists_what_there_is(self):
+        from portable import catalog
+        from portable.catalog import CatalogError
+
+        with pytest.raises(CatalogError) as excinfo:
+            catalog.module("oracle")
+
+        assert "postgres" in str(excinfo.value)
