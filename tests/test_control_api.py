@@ -564,3 +564,75 @@ class TestAFailedSiteAddLeavesNothingBehind:
             server._site_add({"name": "demo", "root": str(tmp_path), "php": "7.1"})
 
         assert [site.name for site in server.sites.all()] == ["demo"]
+
+
+class TestAnAnswerThatBreaksOff:
+    """
+    A truncated response is "not answering", not a traceback.
+
+    `IncompleteRead` is an `http.client.HTTPException` and not a `URLError`, so
+    it escaped both the client and the retry loop in `portable up` — and reached
+    the person as a stack trace about bytes, during startup, which is exactly
+    when a client should simply look again.
+    """
+
+    def test_it_is_reported_as_not_running(self, monkeypatch):
+        import http.client
+        import urllib.request
+
+        from portable.daemon.client import Client, NotRunning
+
+        client = Client(endpoint=discovery.Endpoint(port=1, token="t", pid=os.getpid()))
+
+        def truncated(*_args, **_kwargs):
+            raise http.client.IncompleteRead(b"", 18)
+
+        monkeypatch.setattr(urllib.request, "urlopen", truncated)
+
+        with pytest.raises(NotRunning) as excinfo:
+            client.call("GET", "/v1/ping")
+
+        assert "broke off" in str(excinfo.value)
+
+    def test_a_reset_connection_is_too(self, monkeypatch):
+        import urllib.request
+
+        from portable.daemon.client import Client, NotRunning
+
+        client = Client(endpoint=discovery.Endpoint(port=1, token="t", pid=os.getpid()))
+        monkeypatch.setattr(
+            urllib.request,
+            "urlopen",
+            lambda *a, **k: (_ for _ in ()).throw(ConnectionResetError("reset by peer")),
+        )
+
+        with pytest.raises(NotRunning):
+            client.call("GET", "/v1/ping")
+
+    def test_the_startup_wait_keeps_waiting_through_one(self, monkeypatch):
+        # The property that matters: a truncated answer during startup must not
+        # end the wait, because the daemon is very likely about to be ready.
+        from portable import cli
+
+        endpoint = discovery.Endpoint(port=1, token="t", pid=os.getpid())
+        attempts = []
+
+        monkeypatch.setattr(cli.spawn, "is_running", lambda pid: True)
+        monkeypatch.setattr(cli.discovery, "read", lambda: endpoint)
+
+        class Flaky:
+            def __init__(self, endpoint=None):
+                pass
+
+            def ping(self):
+                attempts.append(1)
+
+                if len(attempts) < 3:
+                    raise cli.NotRunning("the answer broke off")
+
+                return {"ok": True}
+
+        monkeypatch.setattr(cli, "Client", Flaky)
+
+        assert cli._await_daemon(pid=1, timeout=5) is endpoint
+        assert len(attempts) == 3, "it gave up on the first truncated answer"

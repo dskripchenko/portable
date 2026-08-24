@@ -8,6 +8,7 @@ token, and turns a non-2xx into an exception carrying the key the server sent.
 
 from __future__ import annotations
 
+import http.client
 import json
 import urllib.error
 import urllib.request
@@ -67,6 +68,20 @@ class Client:
         except urllib.error.URLError as error:
             # The discovery file said a daemon was there and nothing answered.
             raise NotRunning(f"The daemon did not answer on {self.endpoint.url}: {error.reason}") from error
+        except (http.client.HTTPException, ConnectionError, TimeoutError) as error:
+            # An answer that started and stopped — a truncated body, a reset
+            # connection. `IncompleteRead` is an `HTTPException` and not a
+            # `URLError`, so it used to escape both this and the loop in
+            # `portable up` that retries while the daemon is starting, and
+            # arrived at the person as a traceback about bytes.
+            #
+            # Treated as "not answering", which is what it is: the caller that
+            # was polling keeps polling, and the caller that was not gets a
+            # sentence instead of a stack.
+            raise NotRunning(
+                f"The daemon answered on {self.endpoint.url} and the answer broke off: "
+                f"{type(error).__name__}: {error}"
+            ) from error
 
     def ping(self) -> dict:
         return self.call("GET", "/v1/ping")

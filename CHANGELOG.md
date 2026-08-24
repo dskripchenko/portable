@@ -696,3 +696,13 @@ somebody's business to know — otherwise the first surprise is editing an
   line that said what went wrong under a screenful of things that went right,
   which is how a failure message stops being read.
 
+- **A truncated answer reached the person as a traceback.**
+  `http.client.IncompleteRead` is an `HTTPException`, not a `URLError`, so it
+  escaped both the client's error handling and the retry loop in `portable up` —
+  during startup, which is precisely when a client should simply look again. It
+  showed up once on CI as `IncompleteRead(0 bytes read, 18 more expected)` and
+  did not reproduce in thirty local runs; why the response broke off is still
+  unexplained, but nothing about it should ever have ended a wait. Truncated
+  bodies, reset connections and read timeouts are now all "not answering",
+  which is what they are.
+
