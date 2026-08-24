@@ -29,7 +29,13 @@ Every one of these is a design constraint, not an aspiration:
   survives closing the terminal and the IDE; it does not survive a reboot, and
   that is the trade being made deliberately.
 - **No registry, no PATH, no system directories.** Everything lives under one
-  directory. Deleting it uninstalls the tool completely.
+  directory. Deleting it uninstalls the tool completely — Caddy's certificate
+  authority and keys included, which takes telling Caddy: its own default is to
+  keep them under `%AppData%`.
+- **HTTPS without elevation.** The local authority's root goes into the *user's*
+  trust store, which needs no administrator. Caddy would install it itself, into
+  the machine's, warning that it "might prompt for password" — that is switched
+  off, and `portable trust` is a separate, deliberate act.
 - **That directory is yours to choose.** `%LOCALAPPDATA%\portable` is only the
   default — see below.
 
@@ -88,6 +94,7 @@ portable site add demo C:\projects\demo
                                      # serves public/ if the front controller
                                      # is there; --exact to take the path as given
 portable port 8888                   # when 80 and 8080 are both taken
+portable trust                       # -> https://demo.localhost works
 
 portable update                      # newer releases on the same line
 portable update --install

@@ -375,3 +375,78 @@ class TestReadingCaddysLog:
         log.write_text('{"level":"info","msg":"serving initial configuration"}\n', encoding="utf-8")
 
         assert "serving initial configuration" in caddy.complaints(log)
+
+
+class TestTheWholeDocumentLoads:
+    """
+    Caddy refuses a configuration where any `@id` repeats.
+
+    Refuses it entirely, not partially: `duplicate ID` and nothing starts, plain
+    HTTP included. Handing the TLS server the same route objects as the plain
+    one did exactly that, and no test on the dictionary would have noticed —
+    only the binary did.
+    """
+
+    def sites(self) -> list[caddy.Site]:
+        return [
+            caddy.Site(name="app", root=Path("/srv/app"), upstreams=["127.0.0.1:9001"]),
+            caddy.Site(name="blog", root=Path("/srv/blog"), upstreams=["127.0.0.1:9001"]),
+        ]
+
+    def ids(self, document: dict) -> list[str]:
+        found = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                if "@id" in node:
+                    found.append(node["@id"])
+
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        walk(document)
+
+        return found
+
+    def test_no_identifier_repeats_with_tls_configured(self):
+        found = self.ids(caddy.config(self.sites(), listen=80, tls_listen=443))
+
+        assert len(found) == len(set(found)), f"repeated: {found}"
+
+    def test_nor_without_it(self):
+        found = self.ids(caddy.config(self.sites(), listen=80))
+
+        assert len(found) == len(set(found))
+
+    def test_the_certificates_are_named_or_none_are_issued(self):
+        # With automatic_https disabled — and it must be, or Caddy answers any
+        # Host with the first matching route — nothing tells Caddy which names
+        # to issue for, and the TLS listener comes up holding no certificates.
+        # Which looks like a broken TLS setup and is really an empty one.
+        document = caddy.config(self.sites(), listen=80, tls_listen=443)
+
+        assert document["apps"]["tls"]["certificates"]["automate"] == [
+            "app.localhost",
+            "blog.localhost",
+        ]
+
+    def test_caddy_is_told_not_to_touch_the_system_trust_store(self):
+        # Its default is to install its root itself, warning that it "might
+        # prompt for password" — a system change needing administrator rights on
+        # Windows, which this tool does not make.
+        document = caddy.config(self.sites(), listen=80, tls_listen=443)
+
+        assert (
+            document["apps"]["pki"]["certificate_authorities"]["local"]["install_trust"] is False
+        )
+
+    def test_its_keys_live_inside_the_installation(self, tmp_path):
+        # Caddy's own default is %AppData%\Caddy, outside this directory
+        # entirely — so deleting the installation would leave its certificate
+        # authority and private keys behind.
+        document = caddy.config(self.sites(), listen=80, storage=tmp_path / "caddy")
+
+        assert document["storage"]["root"] == str(tmp_path / "caddy")

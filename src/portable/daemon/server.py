@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, extensions, paths, pecl, pool, settings
+from .. import acquire, extensions, paths, pecl, pool, settings, trust
 from .. import catalog as catalogs
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
@@ -197,6 +197,9 @@ class ControlServer:
             ("GET", f"{API}/runtimes/available"): self._available,
             ("GET", f"{API}/runtimes/updates"): self._updates,
             ("GET", f"{API}/port"): self._port,
+            ("GET", f"{API}/trust"): self._trust_state,
+            ("POST", f"{API}/trust"): self._trust_add,
+            ("POST", f"{API}/trust/forget"): self._trust_forget,
             ("POST", f"{API}/port"): self._port_set,
             ("POST", f"{API}/runtimes/remove"): self._runtime_remove,
             ("GET", f"{API}/php/extensions"): self._extensions,
@@ -228,6 +231,7 @@ class ControlServer:
             "router_error": self.router_error,
             "home": str(paths.root()),
             "port": self.stack.port,
+            "https_port": self.stack.tls_port,
             "sites": len(self.sites.all()),
             "services": len(self.services_registry.all()),
             "processes": self.supervisor.status(),
@@ -282,6 +286,29 @@ class ControlServer:
                 for offer in offers
             ],
         }
+
+    def _trust_state(self, _payload: dict) -> dict:
+        return {
+            "certificate": str(trust.root_certificate()),
+            "ready": trust.is_ready(),
+            "https": self.stack.tls_port,
+        }
+
+    def _trust_add(self, _payload: dict) -> dict:
+        try:
+            ran = trust.install()
+        except trust.TrustFailed as error:
+            raise ApiError(HTTPStatus.CONFLICT, "trust-failed", str(error)) from error
+
+        return {"trusted": True, "certificate": str(trust.root_certificate()), "ran": ran}
+
+    def _trust_forget(self, _payload: dict) -> dict:
+        try:
+            ran = trust.forget()
+        except trust.TrustFailed as error:
+            raise ApiError(HTTPStatus.CONFLICT, "trust-failed", str(error)) from error
+
+        return {"trusted": False, "ran": ran}
 
     def _port(self, _payload: dict) -> dict:
         return {
@@ -762,6 +789,7 @@ class ControlServer:
             "name": site.name,
             "hostname": site.hostname,
             "url": self._url_for(site.hostname),
+            "https": self._https_url_for(site.hostname),
             "root": str(site.root),
             # Reported, always. Serving a directory other than the one that was
             # named is right far more often than not, and still has to be said
@@ -906,6 +934,14 @@ class ControlServer:
             return self.stack.reconcile(self.sites.all(), self.services_registry.all())
         except (StackError, NotInstalled) as error:
             raise ApiError(HTTPStatus.CONFLICT, "cannot-serve", str(error)) from error
+
+    def _https_url_for(self, hostname: str) -> str | None:
+        if self.stack.tls_port is None:
+            return None
+
+        port = "" if self.stack.tls_port == 443 else f":{self.stack.tls_port}"
+
+        return f"https://{hostname}{port}"
 
     def _url_for(self, hostname: str) -> str:
         port = self.stack.port

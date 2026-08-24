@@ -19,6 +19,7 @@ minus the parts a local development environment does not need.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -64,17 +65,44 @@ class Site:
         return f"{self.name}.localhost"
 
 
-def config(sites: list[Site], listen: int = 80, admin: str = DEFAULT_ADMIN) -> dict:
+#: The TLS server's name, beside `SERVER`.
+TLS_SERVER = "portable-tls"
+
+
+def config(
+    sites: list[Site],
+    listen: int = 80,
+    admin: str = DEFAULT_ADMIN,
+    storage: Path | None = None,
+    tls_listen: int | None = None,
+) -> dict:
     """The whole configuration document."""
-    return {
-        "admin": {"listen": admin},
+    routes = [*[route_for(site) for site in sites], _unmatched(sites)]
+    # The TLS server gets its own copies. `@id` has to be unique across the
+    # whole document — Caddy refuses to load one where it is not, with
+    # "duplicate ID", and refuses entirely rather than partially — so handing
+    # both servers the same route objects means nothing starts at all.
+    secure_routes = [
+        *[route_for(site, suffix="-tls") for site in sites],
+        _unmatched(sites, suffix="-tls"),
+    ]
+    document = {
+        "admin": {
+            "listen": admin,
+            # Caddy otherwise writes every configuration it loads to
+            # `autosave.json` under `%AppData%`, outside this installation — so
+            # deleting the directory would leave a file behind describing what
+            # used to be here. It also exists to be resumed with `--resume`,
+            # which is a way for a stale configuration to come back.
+            "config": {"persist": False},
+        },
         "logging": {"logs": {"default": {"level": "INFO"}}},
         "apps": {
             "http": {
                 "servers": {
                     SERVER: {
                         "listen": [f":{listen}"],
-                        "routes": [*[route_for(site) for site in sites], _unmatched(sites)],
+                        "routes": routes,
                         # Otherwise Caddy answers `Host: anything` with the first
                         # matching route, and a request meant for one site is
                         # quietly served by another.
@@ -85,8 +113,48 @@ def config(sites: list[Site], listen: int = 80, admin: str = DEFAULT_ADMIN) -> d
         },
     }
 
+    if storage is not None:
+        # Caddy's own default is `%AppData%\Caddy`, outside this installation
+        # entirely — so its certificate authority, private keys and issued
+        # certificates would survive deleting the directory that is supposed to
+        # be the whole of it. Pointed here instead, and the promise holds.
+        document["storage"] = {"module": "file_system", "root": str(storage)}
 
-def route_for(site: Site) -> dict:
+    if tls_listen is not None:
+        document["apps"]["pki"] = {
+            # Caddy installs its root into the operating system's trust store on
+            # its own, and says so: "you might be prompted for password". That
+            # is a system change requiring administrator rights on Windows, and
+            # this tool does not make those. Trusting the root is a separate,
+            # explicit act — see `portable trust`.
+            "certificate_authorities": {"local": {"install_trust": False}}
+        }
+        subjects = [site.hostname for site in sites]
+        document["apps"]["tls"] = {
+            # Named explicitly. With `automatic_https` disabled — and it has to
+            # be, or Caddy answers any Host with the first matching route —
+            # nothing tells Caddy which names to issue for, and the TLS listener
+            # comes up holding no certificates at all. Which looks exactly like
+            # a broken TLS setup and is really an empty one.
+            "certificates": {"automate": subjects},
+            "automation": {
+                "policies": [{"subjects": subjects, "issuers": [{"module": "internal"}]}]
+            },
+        }
+        document["apps"]["http"]["servers"][TLS_SERVER] = {
+            "listen": [f":{tls_listen}"],
+            "routes": secure_routes,
+            "automatic_https": {"disable": True},
+            # A separate server rather than a second port on the first: TLS
+            # policies apply to every listener a server has, so one server on
+            # both ports would offer TLS on the plain one too.
+            "tls_connection_policies": [{}],
+        }
+
+    return document
+
+
+def route_for(site: Site, suffix: str = "") -> dict:
     """
     One site: match the hostname, serve files, hand `.php` to the pool.
 
@@ -97,7 +165,7 @@ def route_for(site: Site) -> dict:
     root = str(site.root)
 
     return {
-        "@id": _route_id(site.name),
+        "@id": _route_id(site.name) + suffix,
         "match": [{"host": [site.hostname]}],
         "handle": [
             {
@@ -187,7 +255,7 @@ def route_for(site: Site) -> dict:
     }
 
 
-def _unmatched(sites: list[Site]) -> dict:
+def _unmatched(sites: list[Site], suffix: str = "") -> dict:
     """
     The answer for a hostname no site claims.
 
@@ -200,7 +268,7 @@ def _unmatched(sites: list[Site]) -> dict:
     known = ", ".join(sorted(site.hostname for site in sites)) or "nothing yet"
 
     return {
-        "@id": "portable-unmatched",
+        "@id": f"portable-unmatched{suffix}",
         "handle": [
             {
                 "handler": "static_response",
@@ -224,6 +292,28 @@ def _route_id(name: str) -> str:
     sending the whole document and racing anything else that is doing the same.
     """
     return f"portable-site-{name}"
+
+
+def environment(storage: Path) -> dict[str, str]:
+    """
+    Where Caddy keeps the few things it writes outside its storage.
+
+    `instance.uuid` goes to the operating system's application-data directory
+    whatever the configured storage says — ``%AppData%\\Caddy`` on Windows,
+    `~/Library/Application Support/Caddy` here. Small, but the promise is that
+    deleting one directory removes this tool without a trace, and a file left
+    under the user's profile is a trace.
+
+    Redirected by the variables each platform's convention reads, since there is
+    no setting for it.
+    """
+    return {
+        **os.environ,
+        "XDG_CONFIG_HOME": str(storage),
+        "XDG_DATA_HOME": str(storage),
+        "APPDATA": str(storage),
+        "LOCALAPPDATA": str(storage),
+    }
 
 
 def command(executable: Path, config_file: Path) -> list[str]:

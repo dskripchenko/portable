@@ -706,3 +706,42 @@ somebody's business to know — otherwise the first surprise is editing an
   bodies, reset connections and read timeouts are now all "not answering",
   which is what they are.
 
+### Added — HTTPS
+
+Sites are served over TLS as well as plain HTTP, from a certificate authority
+Caddy runs locally. `portable trust` puts that authority's root into the trust
+store so browsers stop warning.
+
+**Into the current user's store, never the machine's.** `certutil -user` on
+Windows and the login keychain on macOS — the only ones reachable without
+elevation, and enough: a certificate trusted for the person at the machine is
+exactly the scope this deserves. Caddy installs its root by itself given the
+chance, warning that it "might prompt for password", and that is switched off in
+the configuration: a system change is a thing to be asked for, not a side effect
+of adding a site.
+
+**HTTPS never takes HTTP down.** The TLS port is chosen from 443 and 8443 by
+what is free, and when neither is, TLS is simply not configured. A TLS listener
+on a port something else holds makes Caddy fail to start *entirely* — plain HTTP
+with it — and HTTP is the product while HTTPS is a convenience.
+
+Three things the real binary settled that the configuration alone would not:
+
+- **`@id` must be unique across the whole document.** Giving the TLS server the
+  same route objects as the plain one produced `duplicate ID` and Caddy refused
+  to load anything at all — not the TLS half, all of it. There is now a test
+  that walks the document and checks.
+- **With `automatic_https` disabled, nothing tells Caddy which names to issue
+  for.** The TLS listener comes up holding no certificates, which looks like a
+  broken TLS setup and is really an empty one. The names are listed explicitly.
+- **Caddy writes outside its configured storage.** `autosave.json` and
+  `instance.uuid` go to `%AppData%\Caddy` regardless — so deleting this
+  installation would have left files behind describing it. Autosave is turned
+  off (it is also how a stale configuration comes back, via `--resume`) and the
+  rest is redirected by the variables each platform reads.
+
+Firefox keeps its own trust store and will still warn. It reads the Windows
+store only when `security.enterprise_roots.enabled` is on, which is a setting in
+somebody's profile and not this tool's business to change — so it is said rather
+than worked around.
+

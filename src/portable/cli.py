@@ -110,6 +110,13 @@ def _parser() -> argparse.ArgumentParser:
     forget.add_argument("runtime", choices=catalog.names())
     forget.add_argument("version")
 
+    trust_it = add("trust", "Trust the local certificate authority, for HTTPS.", _trust)
+    trust_it.add_argument(
+        "--forget",
+        action="store_true",
+        help="Remove it from the trust store again.",
+    )
+
     port = add("port", "The port sites are served on.", _port)
     port.add_argument(
         "number",
@@ -491,6 +498,35 @@ def _ext_change(args, enabling: bool) -> int:
     )
 
 
+def _trust(args) -> int:
+    if args.forget:
+        result = Client().call("POST", "/v1/trust/forget", {}, timeout=180)
+
+        return _emit(args, result, "The local authority is no longer trusted.")
+
+    state = Client().call("GET", "/v1/trust")
+
+    if not state["ready"]:
+        return _fail(
+            args,
+            "not-ready",
+            f"There is no root certificate yet at {state['certificate']}.\n"
+            f"Caddy creates its authority the first time it serves a site over HTTPS. "
+            f"Add a site, then run this again.",
+        )
+
+    result = Client().call("POST", "/v1/trust", {}, timeout=180)
+
+    return _emit(
+        args,
+        result,
+        "Trusted. https:// now works in Chrome, Edge and anything else that reads "
+        "the system store.\n"
+        "Firefox keeps its own and will still warn — it is the one browser this "
+        "cannot reach without changing a setting in your profile.",
+    )
+
+
 def _port(args) -> int:
     if args.number is None:
         result = Client().call("GET", "/v1/port")
@@ -700,7 +736,9 @@ def _site_add(args) -> int:
         else ""
     )
 
-    return _emit(args, result, f"{result['url']}  ->  {result['root']}{note}")
+    secure = f"\n{result['https']}" if result.get("https") else ""
+
+    return _emit(args, result, f"{result['url']}{secure}  ->  {result['root']}{note}")
 
 
 def _site_remove(args) -> int:

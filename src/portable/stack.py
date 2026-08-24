@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import paths, pool, ports, settings
+from . import paths, pool, ports, settings, trust
 from . import services as services_module
 from .router import caddy
 from .runtimes import Installed, NotInstalled
@@ -94,6 +94,18 @@ class Stack:
     """
 
     caddy_running: bool = False
+
+    tls_port: int | None = None
+    """
+    Where HTTPS is served, or None when no port for it was free.
+
+    None rather than a failure. HTTP is the product and HTTPS is a convenience,
+    so a machine where 443 and 8443 are both taken loses the convenience and
+    keeps the product — putting the two on one listener would let the second
+    take down the first.
+    """
+
+    tls_candidates: tuple[int, ...] = (443, 8443)
 
     def reconcile(self, sites: list[Site], services: list[Service] | None = None) -> dict:
         """
@@ -425,6 +437,15 @@ class Stack:
             # range can be taken in between.
             self.admin = f"127.0.0.1:{ports.find(1, candidates=ports.ADMIN_RANGE)[0]}"
 
+        # Chosen before the configuration is written, and allowed to come to
+        # nothing. A TLS listener on a port something else holds makes Caddy
+        # fail to start at all — taking plain HTTP with it, for the sake of a
+        # convenience.
+        self.tls_port = next(
+            (candidate for candidate in self.tls_candidates if ports.is_free(candidate)),
+            None,
+        )
+
         # Attempted and observed, rather than predicted: `http.sys` reserves
         # ports on Windows without listening on them, so nothing short of trying
         # tells you whether one is yours.
@@ -433,6 +454,7 @@ class Stack:
             spec = Spec(
                 name="caddy",
                 argv=self.router_command(runtime.executable("caddy"), config_file),
+                env=caddy.environment(trust.storage()),
                 log=paths.logs() / "caddy.log",
                 restart=True,
             )
@@ -478,7 +500,13 @@ class Stack:
         target = directory / "caddy.json"
         target.write_text(
             json.dumps(
-                caddy.config(sites, listen=port, admin=self.admin or caddy.DEFAULT_ADMIN),
+                caddy.config(
+                    sites,
+                    listen=port,
+                    admin=self.admin or caddy.DEFAULT_ADMIN,
+                    storage=trust.storage(),
+                    tls_listen=self.tls_port,
+                ),
                 indent=2,
             ),
             encoding="utf-8",
@@ -498,6 +526,8 @@ class Stack:
             sites,
             listen=self.port or self.candidate_ports[0],
             admin=self.admin or caddy.DEFAULT_ADMIN,
+            storage=trust.storage(),
+            tls_listen=self.tls_port,
         )
         self._write_config(sites, self.port or self.candidate_ports[0])
 
@@ -573,3 +603,4 @@ class Stack:
             self.supervisor.forget("caddy")
             self.caddy_running = False
             self.port = None
+            self.tls_port = None
