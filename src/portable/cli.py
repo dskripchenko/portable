@@ -89,13 +89,18 @@ def _up(args) -> int:
     endpoint = _await_daemon()
 
     if endpoint is None:
+        # Whether it is still there decides what to look at next: a process that
+        # exited has a reason in its log, one that is running and silent is
+        # stuck somewhere else entirely.
+        alive = "still running" if spawn.is_running(pid) else "no longer running"
+
         # The log is shown, not pointed at. "See the log file" asks a person to
         # go and look for a traceback the tool has already read — and on a CI
         # runner, or any machine somebody else is holding, nobody goes.
         return _fail(
             args,
             "daemon-did-not-start",
-            f"The daemon was started as pid {pid} and never answered.\n"
+            f"The daemon was started as pid {pid} ({alive}) and never answered.\n"
             f"{_log_tail(paths.logs() / 'daemon.log')}",
         )
 

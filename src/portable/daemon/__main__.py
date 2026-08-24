@@ -18,6 +18,12 @@ from .server import ControlServer
 
 
 def main() -> int:
+    # Before anything that can fail, and flushed immediately. An empty log is
+    # otherwise indistinguishable between "never ran", "died during import" and
+    # "started and vanished" — three different problems with three different
+    # fixes.
+    print(f"portable daemon starting: pid={os.getpid()} python={sys.executable}", flush=True)
+
     paths.ensure_layout()
 
     server = ControlServer()
@@ -42,11 +48,17 @@ def main() -> int:
                 # still works, which is the path that matters.
                 pass
 
+    print(f"listening on 127.0.0.1:{port}", flush=True)
+
     try:
         server.wait()
+    except BaseException as error:
+        print(f"daemon failed: {type(error).__name__}: {error}", flush=True)
+        raise
     finally:
         server.stop()
         discovery.clear()
+        print("daemon stopped", flush=True)
 
     return 0
 
