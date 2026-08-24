@@ -73,8 +73,23 @@ class Installed:
             if direct.is_file():
                 return direct
 
+            # Publishers that keep binaries in `bin/` — every unix-shaped tree,
+            # and some Windows ones. Checked before the recursive search so the
+            # obvious place wins over whatever `rglob` happens to reach first.
+            nested = self.directory / "bin" / candidate
+
+            if nested.is_file():
+                return nested
+
         for candidate in names:
-            found = next(self.directory.rglob(candidate), None)
+            # `is_file()` and not merely "exists": a PHP tree contains a
+            # *directory* called `php`, and `rglob` matched it happily. The
+            # result was a runtime recorded with version "unknown", because
+            # asking a directory for its version does not go well.
+            found = next(
+                (match for match in self.directory.rglob(candidate) if match.is_file()),
+                None,
+            )
 
             if found is not None:
                 return found

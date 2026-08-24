@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import ssl
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -49,11 +50,30 @@ def context() -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
+class TrustError(RuntimeError):
+    """The certificate could not be verified, with something to do about it."""
+
+
 def open_url(url: str, timeout: int = TIMEOUT):
     """A GET with our user agent, verified. The caller closes it."""
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
 
-    return urllib.request.urlopen(request, timeout=timeout, context=context())
+    try:
+        return urllib.request.urlopen(request, timeout=timeout, context=context())
+    except urllib.error.URLError as error:
+        if not isinstance(error.reason, ssl.SSLCertVerificationError):
+            raise
+
+        # The likeliest cause on the machines this tool is written for, and the
+        # raw message says nothing a person can act on.
+        raise TrustError(
+            f"The certificate for {url} could not be verified.\n\n"
+            f"On a managed network this usually means TLS is being terminated by "
+            f"a proxy whose authority this machine does not trust. Export the "
+            f"proxy's root certificate and point at it:\n\n"
+            f"    PORTABLE_CA_BUNDLE=C:\\path\\to\\corporate-root.pem\n\n"
+            f"Underlying error: {error.reason}"
+        ) from error
 
 
 def read_text(url: str, timeout: int = TIMEOUT) -> str:

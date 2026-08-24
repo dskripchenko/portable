@@ -179,6 +179,21 @@ class Supervisor:
         self._watcher = None
         self._stopping.clear()
 
+    def forget(self, name: str) -> None:
+        """
+        Stop supervising something, having stopped it.
+
+        Needed because a pool is not permanent: the last site using PHP 8.3 goes
+        away, its workers are stopped, and their entries have to go too — an
+        entry left behind would keep reporting a version nothing runs, and would
+        collide when the same name was added again.
+        """
+        with self._lock:
+            managed = self._managed.pop(name, None)
+
+        if managed is not None and managed.process is not None:
+            raise RuntimeError(f"{name} is still running — stop it before forgetting it.")
+
     def status(self) -> list[dict]:
         """A snapshot, shaped for the control API to hand to a client."""
         with self._lock:

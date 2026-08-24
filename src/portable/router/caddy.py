@@ -21,10 +21,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-#: Where Caddy's own admin API listens. Fixed rather than ephemeral because
-#: Caddy is told it on the command line and it is only ever reached from this
-#: machine; the daemon's own API is the one that must not collide.
-ADMIN = "127.0.0.1:2019"
+#: Caddy's own default admin address, and the reason this is not hardcoded:
+#: anything else on the machine running Caddy — another tool, a project's own
+#: stack — is already on it, and the second one to start simply fails. The port
+#: is allocated like every other and passed in.
+DEFAULT_ADMIN = "127.0.0.1:2019"
 
 #: The server key inside Caddy's config. Everything this tool creates lives
 #: under one server, so a site can be added or removed without touching the rest.
@@ -60,10 +61,10 @@ class Site:
         return f"{self.name}.localhost"
 
 
-def config(sites: list[Site], listen: int = 80) -> dict:
+def config(sites: list[Site], listen: int = 80, admin: str = DEFAULT_ADMIN) -> dict:
     """The whole configuration document."""
     return {
-        "admin": {"listen": ADMIN},
+        "admin": {"listen": admin},
         "logging": {"logs": {"default": {"level": "INFO"}}},
         "apps": {
             "http": {

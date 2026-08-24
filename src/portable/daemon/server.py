@@ -21,13 +21,63 @@ import secrets
 import socketserver
 import threading
 from collections.abc import Callable
+from dataclasses import replace
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 
-from .. import paths
+from .. import acquire, paths
+from ..catalog import CatalogError
+from ..catalog import caddy as caddy_catalog
+from ..catalog import php as php_catalog
+from ..runtimes import Installed, NotInstalled
+from ..runtimes import Registry as Runtimes
+from ..sites import InvalidSite, Site
+from ..sites import Registry as Sites
+from ..stack import Stack, StackError
 from ..supervisor import Supervisor
 from . import discovery
+
+
+def _version_of(name: str, directory: Path) -> str:
+    """
+    Ask an adopted runtime what version it is.
+
+    Guessing from the directory name works until it does not: a PHP unpacked
+    into `php-latest` would be recorded as version `latest` and sort below
+    everything.
+    """
+    import re
+    import subprocess
+
+    entry = Installed(name=name, version="0", directory=directory, managed=False)
+
+    try:
+        executable = entry.executable("php-cli" if name == "php" else name)
+        output = subprocess.run(
+            [str(executable), "--version"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            # A non-zero exit is not fatal here: some builds print their version
+            # and exit oddly, and the version is a label, not a gate.
+            check=False,
+        ).stdout
+    except (NotInstalled, OSError, subprocess.SubprocessError):
+        return "unknown"
+
+    found = re.search(r"(\d+\.\d+\.\d+)", output)
+
+    return found.group(1) if found else "unknown"
+
+
+def net_read(url: str) -> str:
+    """Indirection for the tests, which have no business reaching the network."""
+    from .. import net
+
+    return net.read_text(url)
+
 
 VERSION = "0.0.1"
 
@@ -41,6 +91,9 @@ class ControlServer:
 
     def __init__(self, supervisor: Supervisor | None = None, token: str | None = None) -> None:
         self.supervisor = supervisor or Supervisor()
+        self.runtimes = Runtimes()
+        self.sites = Sites()
+        self.stack = Stack(supervisor=self.supervisor, runtimes=self.runtimes)
         self.token = token or discovery.new_token()
         self._http: ThreadingHTTPServer | None = None
         self._thread: threading.Thread | None = None
@@ -100,6 +153,11 @@ class ControlServer:
             ("GET", f"{API}/ping"): self._ping,
             ("GET", f"{API}/status"): self._status,
             ("POST", f"{API}/shutdown"): self._shutdown_route,
+            ("GET", f"{API}/runtimes"): self._runtimes,
+            ("POST", f"{API}/runtimes/install"): self._install,
+            ("GET", f"{API}/sites"): self._sites,
+            ("POST", f"{API}/sites/add"): self._site_add,
+            ("POST", f"{API}/sites/remove"): self._site_remove,
         }
 
     def _ping(self, _payload: dict) -> dict:
@@ -111,8 +169,187 @@ class ControlServer:
         return {
             "version": VERSION,
             "home": str(paths.root()),
+            "port": self.stack.port,
+            "sites": len(self.sites.all()),
             "processes": self.supervisor.status(),
         }
+
+    def _runtimes(self, _payload: dict) -> dict:
+        return {
+            "runtimes": [
+                {
+                    "name": entry.name,
+                    "version": entry.version,
+                    "variant": entry.variant,
+                    "directory": str(entry.directory),
+                    # Whether this tool may replace it. A runtime found on the
+                    # machine is used and never modified — deleting somebody
+                    # else's PHP would be a surprising thing for this to do.
+                    "managed": entry.managed,
+                }
+                for entry in self.runtimes.all()
+            ]
+        }
+
+    def _install(self, payload: dict) -> dict:
+        name = str(payload.get("name") or "").lower()
+        version = str(payload.get("version") or "latest")
+        existing = payload.get("from")
+
+        if existing:
+            return self._adopt(name, Path(str(existing)).expanduser().resolve(), version)
+
+        if name not in ("php", "caddy"):
+            raise ApiError(
+                HTTPStatus.BAD_REQUEST,
+                "unknown-runtime",
+                f"Nothing is known about {name!r}. Installable: php, caddy.",
+            )
+
+        try:
+            build = (php_catalog if name == "php" else caddy_catalog).resolve(version)
+
+            if name == "caddy" and build.checksum is None:
+                # Caddy lists its digests in a separate file, so resolution
+                # leaves the field empty rather than costing every caller a
+                # second request. Fetched here, where the file is about to be
+                # verified.
+                found = caddy_catalog.checksum_for(
+                    build.filename, net_read(caddy_catalog.checksum_url(build.version))
+                )
+
+                if found is not None:
+                    digest, algorithm = found
+                    build = replace(build, checksum=digest, algorithm=algorithm)
+
+            acquired = acquire.install(build)
+        except CatalogError as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-version", str(error)) from error
+        except acquire.VerificationError as error:
+            raise ApiError(HTTPStatus.BAD_GATEWAY, "verification-failed", str(error)) from error
+
+        entry = Installed(
+            name=name,
+            version=acquired.build.version,
+            directory=acquired.directory,
+            managed=True,
+            variant=acquired.build.variant,
+        )
+        self.runtimes.add(entry)
+
+        return {
+            "name": entry.name,
+            "version": entry.version,
+            "directory": str(entry.directory),
+            "verified": acquired.verified,
+        }
+
+    def _adopt(self, name: str, directory: Path, version: str) -> dict:
+        """
+        Register something already on this machine.
+
+        Not a fallback for a failed download. Statically built PHP cannot load
+        extensions at runtime, so anyone who needs one the prebuilt binaries
+        lack has exactly this way of staying unblocked — and a machine that
+        already has a working PHP should not be made to fetch a second one.
+
+        Adopted, never modified: this tool will not update it and will not
+        delete it. Removing a PHP that Homebrew or another tool installed would
+        be a surprising thing for a program called `portable` to do.
+        """
+        if not directory.is_dir():
+            raise ApiError(
+                HTTPStatus.BAD_REQUEST,
+                "no-such-directory",
+                f"{directory} is not a directory.",
+            )
+
+        entry = Installed(
+            name=name,
+            version=version if version != "latest" else _version_of(name, directory),
+            directory=directory,
+            managed=False,
+        )
+
+        try:
+            executable = entry.executable(name)
+        except NotInstalled as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "no-executable", str(error)) from error
+
+        self.runtimes.add(entry)
+
+        return {
+            "name": entry.name,
+            "version": entry.version,
+            "directory": str(entry.directory),
+            "executable": str(executable),
+            "managed": False,
+            "verified": False,
+        }
+
+    def _sites(self, _payload: dict) -> dict:
+        return {
+            "port": self.stack.port,
+            "sites": [
+                {
+                    "name": site.name,
+                    "hostname": site.hostname,
+                    "url": self._url_for(site.hostname),
+                    "root": str(site.root),
+                    "php": site.php,
+                }
+                for site in self.sites.all()
+            ],
+        }
+
+    def _site_add(self, payload: dict) -> dict:
+        name = str(payload.get("name") or "")
+        root = Path(str(payload.get("root") or "")).expanduser()
+
+        site = Site(name=name, root=root, php=payload.get("php") or None)
+
+        try:
+            self.sites.add(site)
+        except InvalidSite as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "invalid-site", str(error)) from error
+
+        self._reconcile()
+
+        return {
+            "name": site.name,
+            "hostname": site.hostname,
+            "url": self._url_for(site.hostname),
+            "root": str(site.root),
+        }
+
+    def _site_remove(self, payload: dict) -> dict:
+        name = str(payload.get("name") or "")
+
+        if not self.sites.remove(name):
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-site", f"No site called {name!r}.")
+
+        self._reconcile()
+
+        return {"removed": name}
+
+    def _reconcile(self) -> dict:
+        """
+        Make the processes match the sites, turning refusals into API errors.
+
+        Every route that changes something ends here rather than starting and
+        stopping things itself: one path means one way for it to be half-done.
+        """
+        try:
+            return self.stack.reconcile(self.sites.all())
+        except (StackError, NotInstalled) as error:
+            raise ApiError(HTTPStatus.CONFLICT, "cannot-serve", str(error)) from error
+
+    def _url_for(self, hostname: str) -> str:
+        port = self.stack.port
+
+        # Port 80 is left off: `demo.localhost` is the address, and printing
+        # `demo.localhost:80` invites someone to think the port matters.
+        return f"http://{hostname}" if port in (None, 80) else f"http://{hostname}:{port}"
 
     def _shutdown_route(self, _payload: dict) -> dict:
         # Answered before anything is torn down, so the caller gets a reply

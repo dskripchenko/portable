@@ -127,3 +127,55 @@ inferred from the digest's length, rather than assumed.
   least useful answer available: a blank page that cannot be told apart from a
   broken site. It is now a 404 that names what *is* configured.
 
+### Added — sites, and the commands that make them
+
+- **`portable install php|caddy [version]`** — resolved against the publisher's
+  index, verified against the publisher's digest.
+
+- **`portable install <runtime> --from <path>`** — adopt one already on the
+  machine. Used and never modified: this tool will not update or delete a PHP
+  that Homebrew or another program installed. Not a fallback for a failed
+  download — statically built PHP cannot load extensions at runtime, so this is
+  the only way to stay unblocked when a prebuilt binary lacks one.
+
+- **`portable site add <name> [dir]`**, `site list`, `site remove`. A site is
+  served at `<name>.localhost`, which Windows and macOS both resolve to the
+  loopback with nothing written to a hosts file and no administrator involved.
+
+- **A reconcile, rather than start and stop commands.** Adding a site, removing
+  one and recovering after a crash all take the same path: work out which pools
+  should exist for the sites that are declared, start what is missing, retire
+  what nothing points at. Calling it twice changes nothing, which is what makes
+  it safe to run from every route that modifies anything.
+
+- **Caddy is reconfigured live** through its admin API rather than restarted.
+  Verified: adding a second site leaves the first one's connections alone and
+  Caddy keeps the same pid.
+
+### Fixed — found by running the thing
+
+- **The check after starting Caddy asked the wrong question.** It confirmed
+  Caddy's admin endpoint was answering, which it does on its own port and keeps
+  doing when the site listener fails to bind. A port held by IIS or `http.sys`
+  would therefore be reported as ours, and the fallback to 8080 would never
+  happen.
+
+  Found on a machine where another tool's nginx already held port 80: both
+  processes were listening, on different address families, and only asking the
+  port itself could tell which one would answer. The probe now sends a hostname
+  no site can have and looks for the signature of our own unmatched-host route.
+
+- **Caddy's admin port was hardcoded to 2019**, which is Caddy's own default —
+  so any other Caddy on the machine already had it, and the second to start
+  would fail with a message about a port rather than about a conflict. It is
+  allocated now, like every other port here.
+
+- **Locating an executable matched directories.** A PHP tree contains a
+  *directory* called `php`, `rglob` matched it happily, and the runtime was
+  recorded with version "unknown" because asking a directory for its version
+  does not go well.
+
+- **A TLS failure printed the raw error.** On a managed network with a
+  terminating proxy — the machines this tool exists for — that is the likeliest
+  failure of all, and the message said nothing about `PORTABLE_CA_BUNDLE`.
+

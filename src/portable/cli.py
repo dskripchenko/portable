@@ -61,6 +61,51 @@ def _parser() -> argparse.ArgumentParser:
     add("down", "Stop the daemon and everything it supervises.", _down)
     add("status", "What is running.", _status)
 
+    install = add("install", "Download a runtime — php, caddy.", _install)
+    install.add_argument("runtime", choices=("php", "caddy"))
+    install.add_argument(
+        "version",
+        nargs="?",
+        default="latest",
+        help="A branch (8.4), an exact version, or latest.",
+    )
+    install.add_argument(
+        "--from",
+        dest="existing",
+        metavar="PATH",
+        help="Adopt a runtime already on this machine instead of downloading one.",
+    )
+
+    runtimes = add("runtimes", "What is installed.", _runtimes)
+    runtimes.set_defaults(run=_runtimes)
+
+    site = subparsers.add_parser("site", help="Sites served by this installation.")
+    site_commands = site.add_subparsers(dest="site_command")
+
+    def add_site(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = site_commands.add_parser(name, help=help_text)
+        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.set_defaults(run=run)
+
+        return sub
+
+    add_it = add_site("add", "Serve a directory at <name>.localhost.", _site_add)
+    add_it.add_argument("name")
+    add_it.add_argument(
+        "root",
+        nargs="?",
+        default=".",
+        help="The directory to serve. Defaults to the current one.",
+    )
+    add_it.add_argument("--php", help="Pin a PHP version. Defaults to the newest installed.")
+
+    remove = add_site("remove", "Stop serving a site.", _site_remove)
+    remove.add_argument("name")
+
+    add_site("list", "Sites and their addresses.", _site_list)
+
+    site.set_defaults(run=_site_help, site_command=None, json=False)
+
     return parser
 
 
@@ -145,7 +190,11 @@ def _status(args) -> int:
     if args.json:
         return _emit(args, status, "")
 
-    lines = [f"portable {status['version']}  ·  {status['home']}"]
+    served = f"  ·  port {status['port']}" if status.get("port") else ""
+    lines = [
+        f"portable {status['version']}  ·  {status['home']}{served}",
+        f"{status.get('sites', 0)} site(s)",
+    ]
     processes = status.get("processes", [])
 
     if not processes:
@@ -205,6 +254,103 @@ def _daemon_environment() -> dict[str, str]:
     environment["PYTHONPATH"] = os.pathsep.join(dict.fromkeys([package_root, *existing]))
 
     return environment
+
+
+def _install(args) -> int:
+    """
+    Ask the daemon to fetch a runtime.
+
+    The daemon does the work rather than the CLI, even though the CLI could
+    manage a download perfectly well — the rule is that the API can do
+    everything, and every exception to it becomes a gap in the IDE plugin later.
+    """
+    result = Client().call(
+        "POST",
+        "/v1/runtimes/install",
+        {
+            "name": args.runtime,
+            "version": args.version,
+            "from": getattr(args, "existing", None),
+        },
+        # A PHP archive is thirty-odd megabytes and Postgres is far larger; the
+        # default timeout is sized for questions, not for transfers.
+        timeout=600,
+    )
+
+    if result.get("managed") is False:
+        return _emit(
+            args,
+            result,
+            f"Adopted {result['name']} {result['version']} at {result['directory']}.\n"
+            f"It will be used but never modified or removed.",
+        )
+
+    note = "" if result.get("verified") else "  (the publisher listed no checksum)"
+
+    return _emit(args, result, f"Installed {result['name']} {result['version']}.{note}")
+
+
+def _runtimes(args) -> int:
+    result = Client().call("GET", "/v1/runtimes")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    entries = result["runtimes"]
+
+    if not entries:
+        print("Nothing installed. Try `portable install php`.")
+
+        return 0
+
+    for entry in entries:
+        origin = "" if entry["managed"] else "  (found on this machine, not managed)"
+        print(f"  {entry['name']:<8} {entry['version']:<12} {entry['directory']}{origin}")
+
+    return 0
+
+
+def _site_add(args) -> int:
+    root = Path(args.root).expanduser().resolve()
+    result = Client().call(
+        "POST",
+        "/v1/sites/add",
+        {"name": args.name, "root": str(root), "php": args.php},
+        # Adding the first site starts a pool and the router.
+        timeout=120,
+    )
+
+    return _emit(args, result, f"{result['url']}  ->  {result['root']}")
+
+
+def _site_remove(args) -> int:
+    result = Client().call("POST", "/v1/sites/remove", {"name": args.name}, timeout=60)
+
+    return _emit(args, result, f"Removed {result['removed']}.")
+
+
+def _site_list(args) -> int:
+    result = Client().call("GET", "/v1/sites")
+
+    if args.json:
+        return _emit(args, result, "")
+
+    if not result["sites"]:
+        print("No sites. Add one with `portable site add <name>`.")
+
+        return 0
+
+    for site in result["sites"]:
+        pinned = f"  php {site['php']}" if site["php"] else ""
+        print(f"  {site['url']:<40} {site['root']}{pinned}")
+
+    return 0
+
+
+def _site_help(args) -> int:
+    print("Usage: portable site {add,remove,list}")
+
+    return 2
 
 
 def _await_daemon(timeout: float = 15.0) -> discovery.Endpoint | None:
