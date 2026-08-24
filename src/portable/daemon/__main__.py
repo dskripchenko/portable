@@ -8,6 +8,7 @@ finds a discovery file can trust that something is listening behind it.
 
 from __future__ import annotations
 
+import json
 import os
 import signal
 import sys
@@ -49,6 +50,13 @@ def main() -> int:
                 pass
 
     print(f"listening on 127.0.0.1:{port}", flush=True)
+
+    # After the discovery file, deliberately. Restoring touches ports and starts
+    # processes, which is the part most likely to fail on a machine that has
+    # changed since last time — and if it does, the daemon must already be
+    # reachable so that it can be told to do something else.
+    restored = server.restore()
+    print(f"restored: {json.dumps(restored, default=str)}", flush=True)
 
     try:
         server.wait()
