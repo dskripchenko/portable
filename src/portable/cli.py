@@ -110,6 +110,13 @@ def _parser() -> argparse.ArgumentParser:
     forget.add_argument("runtime", choices=catalog.names())
     forget.add_argument("version")
 
+    port = add("port", "The port sites are served on.", _port)
+    port.add_argument(
+        "number",
+        nargs="?",
+        help="A port, or `auto` to try 80 and then 8080. Omit to show the current one.",
+    )
+
     update = add("update", "Newer releases on the same line as what is installed.", _update)
     update.add_argument("runtime", nargs="?", choices=[*catalog.names(), None], default=None)
     update.add_argument(
@@ -145,6 +152,11 @@ def _parser() -> argparse.ArgumentParser:
         help="The directory to serve. Defaults to the current one.",
     )
     add_it.add_argument("--php", help="Pin a PHP version. Defaults to the newest installed.")
+    add_it.add_argument(
+        "--exact",
+        action="store_true",
+        help="Serve exactly this directory, without looking for public/ inside it.",
+    )
 
     remove = add_site("remove", "Stop serving a site.", _site_remove)
     remove.add_argument("name")
@@ -337,6 +349,12 @@ def _down(args) -> int:
 def _status(args) -> int:
     status = Client().status()
 
+    if not args.json and status.get("router_error") and not status.get("port"):
+        # Printed before the rest. Everything below it will look normal — the
+        # sites are listed, the workers are running — and none of it is being
+        # served.
+        print(f"Nothing is being served.\n{status['router_error']}\n", file=sys.stderr)
+
     if args.json:
         return _emit(args, status, "")
 
@@ -470,6 +488,33 @@ def _ext_change(args, enabling: bool) -> int:
         args,
         result,
         f"{result['name']} is now {'on' if enabling else 'off'} for PHP {result['php']}.{note}",
+    )
+
+
+def _port(args) -> int:
+    if args.number is None:
+        result = Client().call("GET", "/v1/port")
+        chosen = result["chosen"]
+        where = f"serving on {result['serving']}" if result["serving"] else "nothing running"
+
+        return _emit(
+            args,
+            result,
+            f"{chosen} (chosen)" if chosen else f"trying {', '.join(map(str, result['candidates']))}"
+            f" — {where}",
+        )
+
+    result = Client().call("POST", "/v1/port", {"port": args.number}, timeout=120)
+
+    if result["serving"]:
+        return _emit(args, result, f"Serving on {result['serving']}.")
+
+    # Nothing is running to move, which is not a failure — the setting is stored
+    # and the next site to be added lands on it.
+    return _emit(
+        args,
+        result,
+        f"Set to {result['chosen'] or 'automatic'}. Nothing is being served yet.",
     )
 
 
@@ -635,12 +680,27 @@ def _site_add(args) -> int:
     result = Client().call(
         "POST",
         "/v1/sites/add",
-        {"name": args.name, "root": str(root), "php": args.php},
+        {
+            "name": args.name,
+            "root": str(root),
+            "php": args.php,
+            "exact": getattr(args, "exact", False),
+        },
         # Adding the first site starts a pool and the router.
         timeout=120,
     )
 
-    return _emit(args, result, f"{result['url']}  ->  {result['root']}")
+    # Said out loud when the directory served is not the one that was named.
+    # Right far more often than not, and still somebody's business to know —
+    # otherwise the first surprise is editing an index.php that changes nothing.
+    note = (
+        f"\n(served from {Path(result['root']).name}/ — the front controller is there, "
+        f"not at {root.name}/. Use --exact to override.)"
+        if result.get("detected")
+        else ""
+    )
+
+    return _emit(args, result, f"{result['url']}  ->  {result['root']}{note}")
 
 
 def _site_remove(args) -> int:

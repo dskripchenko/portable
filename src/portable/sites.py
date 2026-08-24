@@ -25,6 +25,53 @@ class InvalidSite(ValueError):
     """The name or the directory will not do."""
 
 
+#: Subdirectories a PHP project puts its front controller in, most common first.
+#:
+#: A list of directory names rather than a list of frameworks, and the
+#: difference matters: `public` is Laravel, Symfony, Laminas and half of
+#: everything else, `web` is Craft and older Symfony, `webroot` is CakePHP — and
+#: the next framework to appear will use one of these without this tool needing
+#: to have heard of it. Nothing here identifies a framework, so nothing here can
+#: identify one wrongly.
+FRONT_CONTROLLER_DIRECTORIES = ("public", "web", "webroot", "public_html", "htdocs", "www")
+
+
+def document_root(given: Path, index: str = "index.php") -> tuple[Path, bool]:
+    """
+    Where a project's front controller actually is. Returns it and whether it
+    was found rather than given.
+
+    Pointing a site at the repository root instead of `public/` serves the
+    source of the application over HTTP — `.env` included — and does it while
+    appearing to work, because the framework's own router never runs and the
+    browser shows a directory listing or a blank page.
+
+    Two rules keep this from ever being clever at somebody's expense:
+
+    - **A directory that has the index file is used as given.** WordPress and
+      anything with a front controller at its root are answered correctly by
+      doing nothing.
+    - **Only one level down, only these names, and only when the file is really
+      there.** Existence of a `public` directory is not enough; it must hold the
+      index. A project with a `public` full of images and its front controller
+      at the root would otherwise be served from the wrong place — which is the
+      same mistake, arrived at from the other side.
+    """
+    if (given / index).is_file():
+        return given, False
+
+    for name in FRONT_CONTROLLER_DIRECTORIES:
+        candidate = given / name
+
+        if (candidate / index).is_file():
+            return candidate, True
+
+    # No front controller anywhere obvious. Left exactly as given: a directory
+    # of static files is a perfectly ordinary thing to serve, and guessing
+    # further would mean guessing.
+    return given, False
+
+
 @dataclass(frozen=True)
 class Site:
     name: str

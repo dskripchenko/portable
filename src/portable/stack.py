@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import paths, pool, ports
+from . import paths, pool, ports, settings
 from . import services as services_module
 from .router import caddy
 from .runtimes import Installed, NotInstalled
@@ -71,14 +71,13 @@ class Stack:
     at all.
     """
 
-    candidate_ports: tuple[int, ...] = (PREFERRED_PORT, FALLBACK_PORT)
+    candidate_ports: tuple[int, ...] = field(default_factory=settings.candidate_ports)
     """
     Ports to try, in order.
 
-    80 first because `demo.localhost` reads better than `demo.localhost:8080`,
-    and on Windows an ordinary user may bind it. A field rather than a constant
-    so a machine that wants a fixed port can have one — and so the tests do not
-    depend on what happens to be listening on 80.
+    Read from the settings each time a Stack is built, so `portable port 8888`
+    survives a restart — a preference that does not is not a preference. A field
+    rather than a constant also keeps the tests off whatever is listening on 80.
     """
 
     services: dict[str, tuple[Service, int]] = field(default_factory=dict)

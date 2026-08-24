@@ -16,6 +16,7 @@ from the discovery file. See `discovery.py` for why that is not ceremony.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import secrets
 import shutil
@@ -28,7 +29,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, extensions, paths, pecl, pool
+from .. import acquire, extensions, paths, pecl, pool, settings
 from .. import catalog as catalogs
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
@@ -37,7 +38,7 @@ from ..runtimes import Registry as Runtimes
 from ..services import InvalidService
 from ..services import Registry as Services
 from ..services import Service as ServiceRecord
-from ..sites import InvalidSite, Site
+from ..sites import InvalidSite, Site, document_root
 from ..sites import Registry as Sites
 from ..stack import Stack, StackError
 from ..supervisor import Supervisor
@@ -100,6 +101,7 @@ class ControlServer:
         self.services_registry = Services()
         self.stack = Stack(supervisor=self.supervisor, runtimes=self.runtimes)
         self.token = token or discovery.new_token()
+        self.router_error: str | None = None
         self._http: LoopbackHTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._shutdown = threading.Event()
@@ -119,12 +121,20 @@ class ControlServer:
         can reach to fix it, including the command that would move the port.
         """
         try:
-            return self.stack.reconcile(self.sites.all(), self.services_registry.all())
+            restored = self.stack.reconcile(self.sites.all(), self.services_registry.all())
+            self.router_error = None
+
+            return restored
         # Deliberately everything. Narrowing this to the failures thought of
         # today is how an unforeseen one takes the daemon down with it, and the
         # whole point here is that nothing restoring can do that.
         except Exception as error:  # noqa: BLE001
             print(f"restore failed: {type(error).__name__}: {error}", flush=True)
+
+            # Kept so `status` can say why nothing is being served. The log line
+            # above is the only other record, and nobody has reason to open it
+            # when the daemon is up and answering.
+            self.router_error = str(error)
 
             return {"restored": False, "error": str(error)}
 
@@ -186,6 +196,8 @@ class ControlServer:
             ("POST", f"{API}/runtimes/install"): self._install,
             ("GET", f"{API}/runtimes/available"): self._available,
             ("GET", f"{API}/runtimes/updates"): self._updates,
+            ("GET", f"{API}/port"): self._port,
+            ("POST", f"{API}/port"): self._port_set,
             ("POST", f"{API}/runtimes/remove"): self._runtime_remove,
             ("GET", f"{API}/php/extensions"): self._extensions,
             ("POST", f"{API}/php/extensions/install"): self._extension_install,
@@ -208,6 +220,12 @@ class ControlServer:
     def _status(self, _payload: dict) -> dict:
         return {
             "version": VERSION,
+            # Why nothing is being served, when nothing is. A daemon that is up,
+            # lists its sites and answers every question except the one that
+            # matters is worse company than one that is down: the failure
+            # happened at startup and was recorded in a log nobody has reason to
+            # open.
+            "router_error": self.router_error,
             "home": str(paths.root()),
             "port": self.stack.port,
             "sites": len(self.sites.all()),
@@ -263,6 +281,58 @@ class ControlServer:
                 }
                 for offer in offers
             ],
+        }
+
+    def _port(self, _payload: dict) -> dict:
+        return {
+            "candidates": list(settings.candidate_ports()),
+            "chosen": settings.read().get("port"),
+            "serving": self.stack.port,
+        }
+
+    def _port_set(self, payload: dict) -> dict:
+        """
+        Choose the port sites are served on, and move them to it now.
+
+        Applied immediately rather than at the next start. A setting that takes
+        effect later is a setting somebody sets, tests, sees no change from, and
+        sets again differently.
+        """
+        raw = payload.get("port")
+        wanted = None if raw in (None, "", "auto") else raw
+        was = settings.read().get("port")
+
+        try:
+            candidates = settings.set_port(None if wanted is None else int(wanted))
+        except (TypeError, ValueError) as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "bad-port", str(error)) from error
+
+        self.stack.candidate_ports = candidates
+
+        # The router binds its port once, at startup, so it has to be replaced
+        # rather than reconfigured — the admin API can change routes on a
+        # running Caddy and cannot move it to a different socket.
+        self.stack._stop_web()
+
+        try:
+            self._reconcile()
+        except ApiError:
+            # A port that cannot be bound is not stored. Keeping it would leave
+            # a machine that fails to serve anything at every start from now on,
+            # for a reason recorded only in the daemon's log — the setting
+            # having been accepted, reported as set, and then quietly wrong.
+            settings.set_port(was)
+            self.stack.candidate_ports = settings.candidate_ports()
+
+            with contextlib.suppress(Exception):
+                self._reconcile()
+
+            raise
+
+        return {
+            "candidates": list(candidates),
+            "chosen": settings.read().get("port"),
+            "serving": self.stack.port,
         }
 
     def _updates(self, payload: dict) -> dict:
@@ -655,6 +725,15 @@ class ControlServer:
         name = str(payload.get("name") or "")
         root = Path(str(payload.get("root") or "")).expanduser()
 
+        detected = False
+
+        # Only when the caller has not said otherwise. `--exact` exists because
+        # somebody who typed a path meant it, and a tool that quietly serves a
+        # different directory than the one it was handed is worse than one that
+        # serves the wrong one obediently.
+        if root.is_dir() and not payload.get("exact"):
+            root, detected = document_root(root)
+
         site = Site(name=name, root=root, php=payload.get("php") or None)
         previous = {existing.name for existing in self.sites.all()}
 
@@ -684,6 +763,11 @@ class ControlServer:
             "hostname": site.hostname,
             "url": self._url_for(site.hostname),
             "root": str(site.root),
+            # Reported, always. Serving a directory other than the one that was
+            # named is right far more often than not, and still has to be said
+            # out loud — otherwise the first surprise is somebody wondering why
+            # their edits to the wrong index.php change nothing.
+            "detected": detected,
         }
 
     def _site_remove(self, payload: dict) -> dict:

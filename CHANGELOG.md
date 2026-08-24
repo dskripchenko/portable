@@ -633,3 +633,66 @@ on the very first download.
 The refusal itself now explains what it means. "Rate limit exceeded" invites the
 reading that this tool is asking too often, when usually it is not asking at all.
 
+### Added — `portable port`
+
+`portable port 8888` chooses the port sites are served on; `port auto` goes back
+to trying 80 and then 8080. Until now those two were the only candidates, so a
+machine where both were taken had no way forward at all.
+
+A chosen port is the **only** candidate. Falling back to 8080 after somebody
+asked for 8888 would put the site at an address they did not pick and were not
+told about — and the reason for choosing is that the defaults were not usable.
+
+Refused: the ranges this tool hands out to PHP workers and the router's admin
+endpoint, since a site there takes a number from under a worker about to ask for
+it, intermittently and under load; and 49152 and above, which Windows uses for
+outgoing connections, so the port can be taken between being chosen and being
+bound.
+
+Applied immediately rather than at the next start. The router is replaced rather
+than reconfigured — Caddy's admin API can change routes on a running server and
+cannot move it to a different socket.
+
+### Added — the document root is found rather than assumed
+
+`portable site add app C:\projects\app` serves `app\public` when the front
+controller is there. `--exact` takes the path exactly as given.
+
+Pointing a site at a repository root instead of `public/` serves the source of
+the application over HTTP, `.env` included — and does it while appearing to
+merely not work, since the framework's own router never runs.
+
+Two rules keep it from ever being clever at somebody's expense. A directory that
+holds the index file is used as given, so WordPress and anything with a front
+controller at its root are answered correctly by doing nothing. And a
+subdirectory is only taken when it really holds the index — the existence of a
+`public` full of images is not evidence, and taking it would be the same mistake
+from the other side.
+
+The list is directory names, not frameworks: `public` is Laravel, Symfony and
+Laminas, `web` is Craft and older Symfony, `webroot` is CakePHP — and the next
+framework to appear will use one of these without this tool having heard of it.
+Nothing here identifies a framework, so nothing here can identify one wrongly.
+
+It is always reported when it happens. Right far more often than not, and still
+somebody's business to know — otherwise the first surprise is editing an
+`index.php` that changes nothing.
+
+### Fixed
+
+- **A port that could not be bound was stored anyway.** `port 8899` was taken by
+  another program, the change failed — and the value stayed, so every later
+  start tried it, failed, and served nothing, for a reason recorded only in the
+  daemon's log. The previous port is put back and the sites returned to it.
+
+- **`status` now says why nothing is being served.** A restore that fails leaves
+  a daemon that is up, lists its sites, runs its workers and answers every
+  question except the one that matters. Worse company than a daemon that is
+  down.
+
+- **Caddy's log is filtered before it is shown.** It logs structured JSON and
+  most of it is `info` — the config file it read, that HTTP/3 needs TLS, that
+  certificate maintenance began. Tailing twenty-five of those buried the one
+  line that said what went wrong under a screenful of things that went right,
+  which is how a failure message stops being read.
+

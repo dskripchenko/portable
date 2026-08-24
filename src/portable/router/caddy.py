@@ -18,8 +18,11 @@ minus the parts a local development environment does not need.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
+
+from .. import paths
 
 #: Caddy's own default admin address, and the reason this is not hardcoded:
 #: anything else on the machine running Caddy — another tool, a project's own
@@ -238,3 +241,41 @@ def command(executable: Path, config_file: Path) -> list[str]:
         "--adapter",
         "",
     ]
+
+
+def complaints(log: Path, lines: int = 8) -> str:
+    """
+    The end of Caddy's log, with the routine chatter dropped.
+
+    Caddy logs structured JSON and most of it is `info`: which config file it
+    read, that HTTP/3 needs TLS, that certificate maintenance started. A plain
+    tail of twenty-five of those buries the one line that says what went wrong
+    under a screenful of things that went right — which is how a failure message
+    stops being read at all.
+
+    Anything above `info` is kept. When there is nothing above it, the plain
+    tail comes back: silence would be worse than noise, and a Caddy that failed
+    without complaining is itself worth seeing.
+    """
+    if not log.exists():
+        return paths.tail(log, lines)
+
+    text = log.read_text(encoding="utf-8", errors="replace")
+    notable = []
+
+    for line in text.splitlines():
+        try:
+            level = json.loads(line).get("level")
+        except (json.JSONDecodeError, AttributeError):
+            # Not JSON — a crash, a panic, or something writing to the same
+            # file. Exactly the sort of thing worth keeping.
+            notable.append(line)
+            continue
+
+        if level not in (None, "info", "debug"):
+            notable.append(line)
+
+    if not notable:
+        return paths.tail(log, lines)
+
+    return f"From {log}:\n" + "\n".join(notable[-lines:])

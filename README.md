@@ -85,6 +85,9 @@ portable install php                 # or: --from C:\your\own\php
 portable install caddy
 portable site add demo C:\projects\demo
                                      # -> http://demo.localhost
+                                     # serves public/ if the front controller
+                                     # is there; --exact to take the path as given
+portable port 8888                   # when 80 and 8080 are both taken
 
 portable update                      # newer releases on the same line
 portable update --install

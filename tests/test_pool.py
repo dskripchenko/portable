@@ -321,3 +321,57 @@ class TestOldPhpInTheIni:
 
         assert "extension = curl" in text
         assert "php_curl.dll" not in text
+
+
+class TestReadingCaddysLog:
+    """
+    A failure message nobody reads has failed.
+
+    Caddy logs structured JSON and most of it is `info`: the config file it
+    read, that HTTP/3 needs TLS, that certificate maintenance started. Tailing
+    twenty-five of those buried the line that said what went wrong under a
+    screenful of things that went right.
+    """
+
+    def test_the_routine_chatter_is_dropped(self, tmp_path):
+        import json as json_module
+
+        log = tmp_path / "caddy.log"
+        log.write_text(
+            "\n".join(
+                [
+                    json_module.dumps({"level": "info", "msg": "using config from file"}),
+                    json_module.dumps({"level": "info", "msg": "serving initial configuration"}),
+                    json_module.dumps({"level": "error", "msg": "address already in use"}),
+                    json_module.dumps({"level": "info", "msg": "shutdown complete"}),
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        shown = caddy.complaints(log)
+
+        assert "address already in use" in shown
+        assert "serving initial configuration" not in shown
+
+    def test_a_line_that_is_not_json_is_kept(self, tmp_path):
+        # A panic, or something else writing to the same file. Exactly what is
+        # worth seeing.
+        log = tmp_path / "caddy.log"
+        log.write_text('{"level":"info","msg":"fine"}\npanic: runtime error\n', encoding="utf-8")
+
+        assert "panic" in caddy.complaints(log)
+
+    def test_a_quiet_failure_still_shows_something(self, tmp_path):
+        """
+        Silence is worse than noise here.
+
+        A Caddy that failed without complaining is itself worth seeing — an
+        empty message would read as the tool having nothing to say about its own
+        failure.
+        """
+        log = tmp_path / "caddy.log"
+        log.write_text('{"level":"info","msg":"serving initial configuration"}\n', encoding="utf-8")
+
+        assert "serving initial configuration" in caddy.complaints(log)
