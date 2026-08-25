@@ -13,6 +13,8 @@ aus.
 | `portable status` | Was läuft, auf welchem Port, und warum nichts ausgeliefert wird, falls nichts ausgeliefert wird. |
 | `portable version` | Dieser Build, der Interpreter dahinter, wo die Daten liegen, und die Version des laufenden Daemons. |
 | `portable help` | Alle Befehle, gruppiert, mit je einem Beispiel. |
+| `portable shell` | Befehle nacheinander ausführen, ohne jedes Mal `portable` zu tippen. |
+| `portable logs [name] [-f]` | Was die beaufsichtigten Prozesse schreiben. Ein Name oder dessen Anfang. |
 | `portable upgrade [--check]` | Dieses Werkzeug durch die neueste Ausgabe ersetzen. |
 
 `status` und `version` funktionieren auch ohne laufenden Daemon — also in genau
@@ -27,6 +29,19 @@ denn Windows benennt kein Verzeichnis um, in dem ein Programm läuft.
 Die vorherige Version bleibt neben der neuen liegen, bis Sie sie löschen, und
 scheitert der Tausch, kommt die alte zurück. Ein Werkzeug, das bloß veraltet
 ist, ist weit besser als eines, das nicht da ist.
+
+`logs php -f` folgt allen Arbeitern aller PHP-Versionen zugleich, denn ein Name
+trifft sowohl ein ganzes Protokoll als auch dessen Anfang — so denkt man über
+einen Pool, nicht als `php-8.4.24-1` bis `-4`. Zeilen sind mit ihrem Urheber
+beschriftet und danach eingefärbt, wie beunruhigend sie klingen.
+
+Die Dateien werden direkt gelesen, das funktioniert also auch bei angehaltenem
+Daemon — und dann wird die Frage meist gestellt.
+
+`shell` hat keine Tab-Vervollständigung. `readline` ist eine Unix-Erweiterung,
+die Windows-Builds von CPython nicht mitbringen; Vervollständigung bräuchte
+also eine Bibliothek, und das Bündel hat bewusst keine Abhängigkeiten. Verlauf
+und Pfeiltasten liefert die Konsole.
 
 ## Laufzeitumgebungen
 

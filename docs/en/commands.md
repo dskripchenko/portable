@@ -13,6 +13,8 @@ this page.
 | `portable status` | What is running, on which port, and why nothing is being served if nothing is. |
 | `portable version` | This build, the interpreter behind it, where things are kept, and the running daemon's version. |
 | `portable help` | Every command, grouped, with an example each. |
+| `portable shell` | Run commands one after another without retyping `portable`. |
+| `portable logs [name] [-f]` | What the supervised processes are writing. A name, or the start of one. |
 | `portable upgrade [--check]` | Replace this tool with the newest release. |
 
 `status` and `version` both work with nothing running — which is the state of a
@@ -27,6 +29,19 @@ rename a directory containing a running program.
 The previous version is kept beside the new one until you delete it, and if the
 exchange fails the old one is put back. A tool that is merely out of date is a
 great deal better than one that is not there.
+
+`logs php -f` follows every worker of every PHP version at once, because a name
+matches the start of a log as well as the whole of it — which is how somebody
+thinks about a pool, rather than as `php-8.4.24-1` through `-4`. Lines are
+labelled with who wrote them and coloured by how alarming they sound.
+
+It reads the files directly, so it works with the daemon stopped, which is when
+the question tends to be asked.
+
+`shell` has no tab completion. `readline` is a Unix extension that Windows
+builds of CPython do not carry, so completion would need a library, and the
+bundle deliberately has no dependencies. The console provides history and arrow
+keys.
 
 ## Runtimes
 

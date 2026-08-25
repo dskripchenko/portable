@@ -136,6 +136,9 @@ portable run npm install             # with the installed runtimes reachable
 portable status
 portable down
 
+portable logs -f                     # what everything is saying, live
+portable shell                       # commands without retyping `portable`
+
 portable help                        # every command, with worked examples
 portable version                     # this, the interpreter, the running daemon
 ```

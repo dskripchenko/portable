@@ -255,3 +255,99 @@ class TestFindingOutWhatItDoes:
 
         for name in catalog.names():
             assert name in printed, f"{name} is installable and unmentioned"
+
+
+class TestTheShell:
+    """
+    A loop that reads a command, runs it, and reads another.
+
+    Every line goes through the same parser and the same handlers as the command
+    line. A shell with its own dispatch is a second implementation that drifts —
+    one where a flag was added in one place and not the other, and the
+    difference is found by somebody who thought they were using the same tool.
+    """
+
+    def feed(self, monkeypatch, *lines: str) -> None:
+        typed = iter(lines)
+
+        def read(_prompt=""):
+            try:
+                return next(typed)
+            except StopIteration:
+                raise EOFError from None
+
+        monkeypatch.setattr("builtins.input", read)
+
+    def test_a_typo_does_not_end_the_session(self, monkeypatch, capsys):
+        """
+        argparse raises `SystemExit` for an unknown command.
+
+        Uncaught, that takes the whole shell down over a misspelling — losing
+        whatever else was about to be typed, which is the one thing a shell
+        exists to keep.
+        """
+        self.feed(monkeypatch, "nosuchcommand", "version --json")
+
+        assert cli.main(["shell"]) == 0
+
+        printed = capsys.readouterr()
+
+        assert "invalid choice" in printed.err
+        assert VERSION in printed.out, "it stopped before reaching the next line"
+
+    def test_an_unhandled_failure_does_not_either(self, monkeypatch, capsys):
+        # A shell that dies on an unforeseen error loses everything typed before
+        # it, and the error is usually one command's problem.
+        monkeypatch.setattr(
+            cli, "_version", lambda args: (_ for _ in ()).throw(RuntimeError("unexpected"))
+        )
+        self.feed(monkeypatch, "version", "help")
+
+        assert cli.main(["shell"]) == 0
+
+        printed = capsys.readouterr()
+
+        assert "RuntimeError: unexpected" in printed.err
+        assert "getting started" in printed.out, "it stopped at the failure"
+
+    def test_unbalanced_quotes_are_explained_rather_than_raised(self, monkeypatch, capsys):
+        self.feed(monkeypatch, 'site add demo "C:\\unclosed', "version --json")
+
+        assert cli.main(["shell"]) == 0
+        assert "quotes" in capsys.readouterr().err
+
+    def test_exit_leaves_without_running_what_follows(self, monkeypatch, capsys):
+        self.feed(monkeypatch, "exit", "home --json")
+
+        assert cli.main(["shell"]) == 0
+        assert "home" not in capsys.readouterr().out.split("Leaving does not")[-1]
+
+    def test_ctrl_c_abandons_the_line_and_not_the_shell(self, monkeypatch, capsys):
+        # Which is what it does in every other shell. Ending the session on it
+        # would be a surprise with a cost.
+        answers = iter([KeyboardInterrupt(), "version --json", EOFError()])
+
+        def read(_prompt=""):
+            answer = next(answers)
+
+            if isinstance(answer, BaseException):
+                raise answer
+
+            return answer
+
+        monkeypatch.setattr("builtins.input", read)
+
+        assert cli.main(["shell"]) == 0
+        assert VERSION in capsys.readouterr().out
+
+    def test_it_runs_the_real_handlers(self, monkeypatch, capsys):
+        # Not a lookalike. This is the whole reason there is no second dispatch.
+        self.feed(monkeypatch, "home --json")
+
+        assert cli.main(["shell"]) == 0
+
+        # The prompt is printed by `input`, which is replaced here, so the
+        # output is the banner followed by whatever the command produced.
+        reported = capsys.readouterr().out.strip().splitlines()[-1]
+
+        assert json.loads(reported)["home"] == str(paths.root())

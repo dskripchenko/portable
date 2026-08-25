@@ -18,12 +18,13 @@ import argparse
 import contextlib
 import json
 import os
+import shlex
 import shutil
 import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, paths, selfupdate, spawn
+from . import VERSION, catalog, logs, paths, selfupdate, spawn
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -71,6 +72,9 @@ anything else
   portable env                       print the settings a shell would need instead
   portable home                      where everything is kept, and what decided that
   portable home set D:\\portable      or --beside, to keep it next to the launcher
+  portable shell                     run commands without retyping `portable`
+  portable logs -f                   follow everything being written
+  portable logs php -f               or one process, or every worker of one kind
   portable version                   this, the interpreter, and the running daemon
   portable help                      this list on its own
   portable upgrade [--check]         replace this tool with the newest release
@@ -144,6 +148,18 @@ def _parser() -> argparse.ArgumentParser:
 
     add("version", "What this is, and where it keeps things.", _version)
     add("help", "Everything below, on its own.", _help)
+
+    add("shell", "Run commands one after another without retyping `portable`.", _shell)
+
+    logs_it = add("logs", "What the supervised processes are saying.", _logs)
+    logs_it.add_argument(
+        "name",
+        nargs="?",
+        help="A log, or the start of one: `php` follows every worker at once.",
+    )
+    logs_it.add_argument("-f", "--follow", action="store_true", help="Keep printing as it happens.")
+    logs_it.add_argument("-n", "--lines", type=int, default=20, help="How much history to show.")
+    logs_it.add_argument("--no-colour", action="store_true", help="Plain text.")
 
     upgrade = add("upgrade", "Replace this tool with the newest release.", _upgrade)
     upgrade.add_argument(
@@ -350,6 +366,145 @@ def _parser() -> argparse.ArgumentParser:
     home.set_defaults(run=_home_show, home_command=None)
 
     return parser
+
+
+SHELL_BANNER = """\
+portable {version} - {home}
+
+Type commands without the `portable` in front: `status`, `logs php -f`, `help`.
+`exit`, or Ctrl-D, leaves. Leaving does not stop the daemon.
+"""
+
+
+def _shell(args) -> int:
+    """
+    A loop that reads a command, runs it, and reads another.
+
+    Every line goes through the same parser and the same handlers as the command
+    line, deliberately. A shell with its own dispatch is a second implementation
+    that drifts — one where a flag was added in one place and not the other, and
+    the difference is discovered by somebody who thought they were using the
+    same tool.
+
+    There is no completion, and that is not an oversight: `readline` is a Unix
+    extension and Windows builds of CPython do not carry it, so tab completion
+    would need a library, and the bundle carries no dependencies. The console
+    itself provides history and arrow keys on Windows, which is most of what is
+    missed.
+    """
+    home, _ = paths.resolved()
+    print(SHELL_BANNER.format(version=VERSION, home=home))
+
+    while True:
+        try:
+            line = input("portable> ").strip()
+        except EOFError:
+            # Ctrl-D. A newline so the next prompt is not printed against ours.
+            print()
+
+            return 0
+        except KeyboardInterrupt:
+            # Ctrl-C abandons the line being typed rather than the shell, which
+            # is what it does in every other shell.
+            print()
+
+            continue
+
+        if not line:
+            continue
+
+        if line in ("exit", "quit"):
+            return 0
+
+        _run_line(line)
+
+
+def _run_line(line: str) -> None:
+    """
+    One typed line, through the ordinary parser.
+
+    `SystemExit` is caught because argparse raises it for a bad command, and in
+    a shell that would take the whole session down over a typo.
+    """
+    try:
+        argv = shlex.split(line)
+    except ValueError as error:
+        print(f"{error} - check the quotes.", file=sys.stderr)
+
+        return
+
+    try:
+        main(argv)
+    except SystemExit:
+        pass
+    except KeyboardInterrupt:
+        # A long-running command was interrupted, not the shell.
+        print(file=sys.stderr)
+    except Exception as error:  # noqa: BLE001
+        # A shell that dies on an unforeseen failure loses everything typed
+        # before it, and the failure is usually one command's problem.
+        print(f"{type(error).__name__}: {error}", file=sys.stderr)
+
+
+def _logs(args) -> int:
+    """
+    Show, and optionally follow, what the supervised processes write.
+
+    Read from the files rather than through the daemon. The daemon does not read
+    these — it hands each child a descriptor and steps out of the way, which is
+    why a worker that dies mid-sentence still leaves the sentence — so a route
+    through the API would be this same reading with a socket in the middle.
+
+    It therefore works with the daemon stopped, which is when the question tends
+    to be asked.
+    """
+    sources = logs.resolve(args.name)
+
+    if not sources:
+        known = ", ".join(source.name for source in logs.available())
+
+        return _fail(
+            args,
+            "no-such-log",
+            f"Nothing is logging under {args.name!r}.\n"
+            + (f"There is: {known}." if known else f"No logs yet in {paths.logs()}."),
+        )
+
+    if args.json:
+        return _emit(
+            args,
+            {
+                "logs": [
+                    {"name": source.name, "path": str(source.path), "lines": logs.tail(source, args.lines)}
+                    for source in sources
+                ]
+            },
+            "",
+        )
+
+    # Only when several are shown at once. One log labelled on every line is
+    # noise about something the reader already knows.
+    width = max((len(source.name) for source in sources), default=0) if len(sources) > 1 else 0
+    colour = not args.no_colour and sys.stdout.isatty()
+
+    for source in sources:
+        for line in logs.tail(source, args.lines):
+            print(logs.render(source.name, line, width, colour))
+
+    if not args.follow:
+        return 0
+
+    print(f"\n-- following {len(sources)} log{'s' if len(sources) != 1 else ''}, ^C to stop --\n",
+          file=sys.stderr)
+
+    try:
+        for name, line in logs.follow(sources):
+            print(logs.render(name, line, width, colour), flush=True)
+    except KeyboardInterrupt:
+        # Not an error. Somebody pressed the key the message told them to.
+        print(file=sys.stderr)
+
+    return 0
 
 
 def _upgrade(args) -> int:

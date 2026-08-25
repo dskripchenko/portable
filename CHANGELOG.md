@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — `portable logs` and `portable shell`
+
+`logs [name] [-f]` shows and follows what the supervised processes write. A name
+matches the start of a log as well as the whole of it, so `logs php -f` follows
+every worker of every PHP version at once — twelve files on a machine running
+three versions, and one thought rather than twelve. Lines carry the name of
+whoever wrote them and are coloured by how alarming they sound: Caddy's
+structured `level`, and the prose PHP and the databases write, matched loosely
+on the grounds that colouring a line that did not need it costs nothing while a
+scheme precise enough never to do that would miss the failures worth seeing.
+
+It reads the files rather than asking the daemon, deliberately. The daemon does
+not read them either — it hands each child a descriptor and steps out of the
+way, which is why a worker that dies mid-sentence still leaves the sentence — so
+a route through the API would be this same reading with a socket in between, and
+would stop working exactly when the daemon did.
+
+`shell` runs commands one after another without `portable` in front of each.
+Every line goes through the same parser and the same handlers as the command
+line: a shell with its own dispatch is a second implementation that drifts, and
+the drift is found by somebody who thought they were using the same tool. A typo
+does not end the session, and neither does an unforeseen failure — argparse
+raises `SystemExit` for an unknown command, which uncaught would take the whole
+shell down over a misspelling.
+
+There is no tab completion, and that is a platform fact rather than an
+oversight: `readline` is a Unix extension that Windows builds of CPython do not
+carry, so completion would need a library and the bundle carries no
+dependencies. The console provides history and arrow keys, which is most of what
+is missed.
+
 ### Confirmed on real Windows: port 80, without administrator rights
 
 Reported by a person running it on their own machine. It is the premise the
