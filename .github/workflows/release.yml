@@ -115,6 +115,22 @@ jobs:
             gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
           fi
 
+          # A copy under a name that never changes, so the download URL is one
+          # somebody can type from memory and a document can print without
+          # going stale:
+          #
+          #   .../releases/latest/download/portable-windows-x64.zip
+          #
+          # That is what makes a script-free install possible — two commands
+          # with `curl.exe` and `tar.exe`, both of which a stock Windows has —
+          # for machines where PowerShell is the thing that is locked down.
+          version="${GITHUB_REF_NAME#v}"
+          bundle="artifacts/portable-$version-x86_64-pc-windows-msvc.zip"
+
+          cp "$bundle" artifacts/portable-windows-x64.zip
+          printf '%s  portable-windows-x64.zip\n' \
+            "$(cut -d' ' -f1 < "$bundle.sha256")" > artifacts/portable-windows-x64.zip.sha256
+
           gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
 
   # The release is only real once somebody can install it. Checked here rather

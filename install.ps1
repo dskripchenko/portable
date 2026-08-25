@@ -18,6 +18,18 @@
 # ASCII only, deliberately. Windows PowerShell reads a script without a byte
 # order mark as ANSI, and anything else comes out as mojibake on a machine whose
 # code page differs from the one it was written on.
+#
+# Constrained Language Mode is respected throughout, which rules out a few
+# ordinary things. AppLocker and WDAC put PowerShell into that mode on managed
+# machines, and in it .NET method calls on anything but a handful of core types
+# are refused - `[IO.Path]::GetTempPath()`, `[Math]::Round()`, and, most
+# awkwardly, `Get-FileHash`, which cannot create the hashing type it needs. So
+# the checksum is computed by `certutil`, an ordinary program that no language
+# mode applies to.
+#
+# If even this is blocked, nothing here is required: see the script-free
+# instructions in the documentation, which are two commands using `curl.exe` and
+# `tar.exe`.
 
 $ErrorActionPreference = 'Stop'
 
@@ -42,7 +54,7 @@ function Fail($message) {
     throw 'portable was not installed.'
 }
 
-if ([Environment]::OSVersion.Platform -ne 'Win32NT') {
+if ($env:OS -ne 'Windows_NT') {
     Fail "portable is a Windows tool. Every runtime it installs is a Windows binary."
 }
 
@@ -115,13 +127,13 @@ To install elsewhere:
 "@
 }
 
-$work = Join-Path ([IO.Path]::GetTempPath()) "portable-install-$([Guid]::NewGuid().ToString('N'))"
+$work = Join-Path $env:TEMP "portable-install-$(New-Guid)"
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 
 try {
     $archive = Join-Path $work $bundle.name
 
-    Write-Host "Downloading $($bundle.name) ($([Math]::Round($bundle.size / 1MB)) MB)..."
+    Write-Host "Downloading $($bundle.name) ($('{0:N0}' -f ($bundle.size / 1MB)) MB)..."
     Invoke-WebRequest -Uri $bundle.browser_download_url -OutFile $archive -Headers $headers -UseBasicParsing
 
     # To a file and then read back, rather than through `.Content`. GitHub
@@ -138,7 +150,13 @@ try {
     Invoke-WebRequest -Uri $digest.browser_download_url -OutFile $digestFile -Headers $headers -UseBasicParsing
 
     $published = ((Get-Content -Path $digestFile -Raw) -split '\s+')[0]
-    $actual = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLower()
+
+    # certutil rather than Get-FileHash. Under Constrained Language Mode -
+    # which AppLocker and WDAC impose on managed machines - Get-FileHash fails
+    # with "Cannot create type", because it builds the hashing object through
+    # .NET. certutil is a program rather than a cmdlet, so no language mode
+    # applies to it, and it has been in System32 for twenty years.
+    $actual = (certutil -hashfile $archive SHA256 | Select-Object -Skip 1 -First 1).Replace(' ', '').ToLower()
 
     if ($actual -ne $published.ToLower()) {
         Fail @"

@@ -33,6 +33,26 @@ jobs:
       # setting most often enforced on a managed one. It blocks a .ps1 on disk
       # and permits a string through `iex`, which is the whole reason the
       # instruction is written the way it is — so the test has to run under it.
+      # Constrained Language Mode is what AppLocker and WDAC actually impose,
+      # and it is stricter than the execution policy in a way that matters:
+      # `Get-FileHash` cannot run in it at all, so a checksum has to come from
+      # `certutil` instead. Measured, not assumed.
+      - name: Install under Constrained Language Mode
+        shell: powershell
+        env:
+          PORTABLE_INSTALL_DIR: D:\constrained\portable
+          PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PORTABLE_VERSION: ${{ inputs.version }}
+        run: |
+          Set-ExecutionPolicy -Scope Process Restricted -Force
+          $ExecutionContext.SessionState.LanguageMode = 'ConstrainedLanguage'
+          Get-Content install.ps1 -Raw | Invoke-Expression
+
+          $reported = & D:\constrained\portable\portable.cmd version --json | ConvertFrom-Json
+          Write-Output "installed $($reported.version) with PowerShell locked down"
+
+          if (-not $reported.version) { throw "it does not report a version" }
+
       - name: Install under a Restricted execution policy
         shell: powershell
         env:
@@ -80,3 +100,27 @@ jobs:
           try { Get-Content install.ps1 -Raw | Invoke-Expression } catch { }
 
           Write-Output "still here, which is the point"
+
+  # For machines where PowerShell itself is the thing that is blocked. No script
+  # is executed at all: `curl.exe`, `tar.exe` and `certutil.exe` have all been in
+  # System32 since Windows 10 1803, and none of them is subject to an execution
+  # policy, a language mode or a script rule.
+  without-any-script:
+    runs-on: windows-latest
+
+    steps:
+      - shell: cmd
+        run: |
+          curl -sSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+          if errorlevel 1 (echo the stable download URL does not work & exit /b 1)
+
+          curl -sSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+          if errorlevel 1 (echo the stable checksum URL does not work & exit /b 1)
+
+          certutil -hashfile portable.zip SHA256
+          type portable.zip.sha256
+
+          tar -xf portable.zip
+          if errorlevel 1 (echo tar could not unpack it & exit /b 1)
+
+          for /d %%d in (portable-*) do %%d\portable.cmd version
