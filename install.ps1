@@ -237,16 +237,15 @@ Write-Host ""
 Write-Host "    .\portable.cmd help        every command, with examples"
 Write-Host ""
 
-# Opt-in, and named as the one thing here that leaves a trace. The tool's own
-# promise is that deleting its directory removes it completely, and an entry in
-# PATH would be an exception to that - so it is asked for rather than assumed.
+# Opt-in, and delegated rather than done here. `[Environment]::SetEnvironmentVariable`
+# writes the value back as a plain string, which destroys a user PATH that
+# contains `%USERPROFILE%\...` - the expanding type is what makes that a path
+# rather than a literal percent sign, and the breakage turns up later and
+# somewhere else. The tool does it properly, preserving the type, and can undo
+# it.
 if ($env:PORTABLE_ADD_TO_PATH -eq '1') {
-    $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-
-    if ($userPath -notlike "*$destination*") {
-        [Environment]::SetEnvironmentVariable('Path', "$userPath;$destination", 'User')
-        Write-Host "Added to your PATH. Open a new window, then just `portable`." -ForegroundColor Green
-        Write-Host "(This is the one thing the installer wrote outside $destination.)"
-        Write-Host ""
-    }
+    & (Join-Path $destination 'portable.cmd') path add
+} else {
+    Write-Host "    .\portable.cmd path add    to run it from anywhere, for you only"
+    Write-Host ""
 }

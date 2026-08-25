@@ -24,7 +24,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, logs, paths, selfupdate, spawn
+from . import VERSION, catalog, logs, paths, selfupdate, spawn, userpath
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -72,6 +72,7 @@ anything else
   portable env                       print the settings a shell would need instead
   portable home                      where everything is kept, and what decided that
   portable home set D:\\portable      or --beside, to keep it next to the launcher
+  portable path add                  put this on your own PATH; no administrator
   portable shell                     run commands without retyping `portable`
   portable logs -f                   follow everything being written
   portable logs php -f               or one process, or every worker of one kind
@@ -150,6 +151,24 @@ def _parser() -> argparse.ArgumentParser:
     add("help", "Everything below, on its own.", _help)
 
     add("shell", "Run commands one after another without retyping `portable`.", _shell)
+
+    path_it = subparsers.add_parser(
+        "path", parents=[common], help="Put this on your PATH, for you only."
+    )
+    path_it.add_argument("--json", action="store_true", help="Machine-readable output.")
+    path_commands = path_it.add_subparsers(dest="path_command")
+
+    def add_path(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = path_commands.add_parser(name, help=help_text, parents=[common])
+        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.set_defaults(run=run)
+
+        return sub
+
+    add_path("add", "Add it to your own PATH. No administrator needed.", _path_add)
+    add_path("remove", "Take it off again.", _path_remove)
+
+    path_it.set_defaults(run=_path_show, path_command=None)
 
     logs_it = add("logs", "What the supervised processes are saying.", _logs)
     logs_it.add_argument(
@@ -374,6 +393,90 @@ portable {version} - {home}
 Type commands without the `portable` in front: `status`, `logs php -f`, `help`.
 `exit`, or Ctrl-D, leaves. Leaving does not stop the daemon.
 """
+
+
+def _here() -> Path:
+    """
+    The directory that would go on the PATH: where the launcher sits.
+
+    Not `sys.executable`'s directory, which is `python/` inside the bundle, and
+    not the current one. In a source checkout there is no launcher and nothing
+    sensible to add.
+    """
+    bundle = paths.bundle()
+
+    if bundle is None:
+        raise userpath.PathError(
+            "This is a source checkout rather than a bundle, so there is no "
+            "launcher to put on a PATH."
+        )
+
+    return bundle
+
+
+def _path_show(args) -> int:
+    try:
+        here = _here()
+        state = userpath.read()
+    except userpath.PathError as error:
+        return _fail(args, "path-unavailable", str(error))
+
+    on_it = state.has(here)
+    payload = {
+        "directory": str(here),
+        "on_path": on_it,
+        "entries": state.entries,
+        "expandable": state.expandable,
+    }
+
+    if args.json:
+        return _emit(args, payload, "")
+
+    if on_it:
+        return _emit(args, payload, f"{here} is on your PATH.\nportable path remove")
+
+    return _emit(
+        args,
+        payload,
+        f"{here} is not on your PATH.\n"
+        f"portable path add\n\n"
+        f"That writes to your own environment only — no administrator, and "
+        f"nothing about the machine's PATH is touched.",
+    )
+
+
+def _path_add(args) -> int:
+    try:
+        here = _here()
+        changed = userpath.add(here)
+    except userpath.PathError as error:
+        return _fail(args, "path-failed", str(error))
+
+    if not changed:
+        return _emit(args, {"directory": str(here), "changed": False}, f"{here} was already there.")
+
+    return _emit(
+        args,
+        {"directory": str(here), "changed": True},
+        f"Added {here} to your PATH.\n"
+        f"Open a new terminal and `portable` works from anywhere.\n\n"
+        f"This is the only thing this tool writes outside its own directory. "
+        f"`portable path remove` undoes it.",
+    )
+
+
+def _path_remove(args) -> int:
+    try:
+        here = _here()
+        changed = userpath.remove(here)
+    except userpath.PathError as error:
+        return _fail(args, "path-failed", str(error))
+
+    return _emit(
+        args,
+        {"directory": str(here), "changed": changed},
+        f"Removed {here} from your PATH." if changed else f"{here} was not on it.",
+    )
 
 
 def _shell(args) -> int:

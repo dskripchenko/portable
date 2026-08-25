@@ -71,6 +71,27 @@ jobs:
 
           if (-not $reported.version) { throw "it does not report a version" }
 
+      # The one thing the tool writes outside its own directory, so it is worth
+      # watching that it writes the right thing and can take it back.
+      - name: It can put itself on the user PATH, and remove itself again
+        shell: powershell
+        run: |
+          $before = (Get-ItemProperty -Path 'HKCU:\Environment' -Name Path -ErrorAction SilentlyContinue).Path
+
+          & D:\test-install\portable\portable.cmd path add
+          $after = (Get-ItemProperty -Path 'HKCU:\Environment' -Name Path).Path
+
+          if ($after -notlike '*test-install*') { throw "it did not go on the PATH" }
+
+          & D:\test-install\portable\portable.cmd path remove
+          $restored = (Get-ItemProperty -Path 'HKCU:\Environment' -Name Path -ErrorAction SilentlyContinue).Path
+
+          if ($restored -ne $before) {
+            throw "the PATH was not restored`nbefore: $before`nafter:  $restored"
+          }
+
+          Write-Output "added and removed, and the PATH is exactly as it was"
+
       - name: Installing again refuses rather than overwriting
         shell: powershell
         env:
