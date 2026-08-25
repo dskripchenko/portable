@@ -182,6 +182,20 @@ class TestTheSwap:
             env={**os.environ, "PORTABLE_HOME": str(current.parent / "home")},
         )
 
+    def helper_said(self, home: Path) -> str:
+        """
+        Whatever the swap script printed.
+
+        Without this a failure is the word "still" and nothing else — and the
+        script runs detached, on another machine, in CI.
+        """
+        log = home / "logs" / "upgrade.log"
+
+        if not log.exists():
+            return f"Nothing was written to {log}."
+
+        return f"{log}:\n{log.read_text(encoding='utf-8', errors='replace')}"
+
     def wait_for(self, condition, seconds: float = 25) -> bool:
         deadline = time.monotonic() + seconds
 
@@ -201,7 +215,8 @@ class TestTheSwap:
         self.start_swap(current, replacement, keep)
 
         assert self.wait_for(lambda: (current / "who").read_text() == "new"), (
-            f"still {(current / 'who').read_text()}"
+            f"still {(current / 'who').read_text()}\n"
+            f"{self.helper_said(current.parent / 'home')}"
         )
         assert keep.is_dir() and (keep / "who").read_text() == "old"
 
@@ -252,14 +267,21 @@ class TestTheSwap:
 
 @pytest.mark.skipif(os.name != "nt", reason="the restriction being documented is Windows-only")
 class TestWhyTheHelperIsOutside:
-    def test_windows_will_not_rename_a_directory_a_process_is_running_from(self, tmp_path):
+    def test_what_windows_actually_does_with_a_directory_in_use(self, tmp_path):
         """
-        The reason for the whole arrangement, asserted rather than assumed.
+        Recorded rather than assumed, because the assumption was wrong.
 
-        POSIX permits this and would hide the problem entirely — it did, until
-        the consequence was thought through rather than observed. If this ever
-        starts passing, the helper could live inside the new bundle and all of
-        this could be simpler.
+        The helper was placed outside both bundles on the belief that Windows
+        refuses to rename a directory containing a running executable. This
+        test was written to assert that belief and did not: the rename
+        succeeded. Since Vista the loader maps images with `FILE_SHARE_DELETE`,
+        which permits renaming — deleting is what stays forbidden.
+
+        So the arrangement is not required by this, and the reason it stays is
+        narrower: the swap has to outlive the process asking for it, and a
+        script the system shell runs is the least that can do that. This test
+        now records the behaviour so the next person does not have to guess
+        either way.
         """
         import shutil
 
@@ -267,11 +289,16 @@ class TestWhyTheHelperIsOutside:
         home.mkdir()
         copied = shutil.copy(sys.executable, home / Path(sys.executable).name)
 
-        running = subprocess.Popen([str(copied), "-c", "import time; time.sleep(20)"])
+        running = subprocess.Popen([str(copied), "-c", "import time; time.sleep(30)"])
 
         try:
-            with pytest.raises(OSError):
-                os.rename(home, tmp_path / "moved")
+            time.sleep(2)
+
+            assert running.poll() is None, "the copied interpreter did not start, so this proves nothing"
+
+            os.rename(home, tmp_path / "moved")
+
+            assert (tmp_path / "moved").is_dir()
         finally:
             running.kill()
             running.wait(timeout=10)
