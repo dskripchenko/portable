@@ -29,6 +29,7 @@ going through it would add a hop and a dependency on the daemon being alive.
 from __future__ import annotations
 
 import contextlib
+import time
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
@@ -52,6 +53,19 @@ REFUSED = {
     "shell": "this is one",
     "upgrade": "it stops the daemon and replaces the folder this is running from",
 }
+
+#: How often the "still going" indicator moves.
+#:
+#: Five times a second, which is fast enough to read as motion rather than as a
+#: clock. The tables refresh once a second and that is plenty for them; this is
+#: answering a different question — not "what is true" but "is anything still
+#: happening" — and a still picture answers it wrongly.
+TICK = 0.2
+
+#: The frames it cycles through. Plain characters, because a terminal that
+#: cannot draw braille would show the indicator as boxes and make the screen
+#: look broken at exactly the moment it is meant to reassure.
+FRAMES = "|/-\\"
 
 #: Lines kept in the log pane.
 #:
@@ -244,6 +258,7 @@ def build() -> Any:
         Screen { layout: vertical; }
         #summary { height: 1; padding: 0 1; background: $panel; color: $text; }
         #tables { height: 40%; }
+        #busy { dock: bottom; height: 1; padding: 0 1; background: $warning; color: $text; }
         #command { dock: bottom; border: none; background: $surface; }
         #processes { width: 55%; }
         #right { width: 45%; }
@@ -277,6 +292,8 @@ def build() -> Any:
             self._history: list[str] = []
             self._recalled = 0
             self._busy: str | None = None
+            self._since = 0.0
+            self._frame = 0
             self._leaving = False
 
         def compose(self) -> ComposeResult:
@@ -296,6 +313,7 @@ def build() -> Any:
                 id="command",
                 suggester=SuggestFromList(_suggestions(), case_sensitive=False),
             )
+            yield Static("", id="busy")
             yield Footer()
 
         def on_mount(self) -> None:
@@ -305,6 +323,8 @@ def build() -> Any:
             self.query_one("#sites", DataTable).add_columns("site", "url", "php")
             self.query_one("#services", DataTable).add_columns("database", "kind", "port")
 
+            self.query_one("#busy", Static).display = False
+            self.set_interval(TICK, self.tick)
             self.set_interval(REFRESH, self.action_refresh)
             self.action_refresh()
             self.watch_logs()
@@ -373,7 +393,6 @@ def build() -> Any:
             printed, because stdout here belongs to the screen.
             """
             import contextlib as ctx
-            import time
 
             from . import cli
 
@@ -416,8 +435,37 @@ def build() -> Any:
             refreshing, and nothing says anybody is waiting on anything.
             """
             self._busy = line
+            self._since = time.monotonic() if line else 0.0
+            self._frame = 0
+
+            indicator = self.query_one("#busy", Static)
+            indicator.display = line is not None
+
             self.query_one("#command", Input).placeholder = (
                 f"running: {line}" if line else "a command, without `portable` in front of it"
+            )
+
+            if line is None:
+                indicator.update("")
+
+        def tick(self) -> None:
+            """
+            Move the indicator.
+
+            A label that says "running" and never changes is a still picture,
+            and a still picture cannot tell "working" from "hung" — which is the
+            whole question during a thirty-second connect timeout, when nothing
+            is printed at all.
+            """
+            if not self._busy:
+                return
+
+            self._frame = (self._frame + 1) % len(FRAMES)
+            elapsed = time.monotonic() - self._since
+
+            self.query_one("#busy", Static).update(
+                f"{FRAMES[self._frame]}  {self._busy}   {elapsed:.0f}s   "
+                f"(F10 twice to leave it running)"
             )
 
         def action_earlier(self) -> None:

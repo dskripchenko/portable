@@ -400,3 +400,69 @@ class TestLeavingWhileSomethingRuns:
             await pilot.pause()
 
             assert not app.is_running
+
+
+class TestShowingItIsStillAlive:
+    """
+    Reported: `install mariadb` sat for five minutes and eventually timed out,
+    and there was no way to tell it apart from a hang.
+
+    A label that says "running" and never changes is a still picture, and a
+    still picture cannot answer "is anything still happening" — which is the
+    whole question during a thirty-second connect timeout, when nothing is
+    printed at all.
+    """
+
+    async def test_the_indicator_moves_and_counts(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.busy("install mariadb")
+            app.tick()
+            first = str(app.query_one("#busy").content)
+
+            app.tick()
+            second = str(app.query_one("#busy").content)
+
+            assert first != second, "it is a still picture"
+            assert "install mariadb" in first, "it does not say what is running"
+            assert "s" in first, "it does not say how long"
+
+    async def test_it_is_hidden_when_nothing_is_running(self):
+        # A bar that is always there stops meaning anything.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            assert app.query_one("#busy").display is False
+
+            app.busy("install php")
+
+            assert app.query_one("#busy").display is True
+
+            app.busy(None)
+
+            assert app.query_one("#busy").display is False
+
+    async def test_it_says_how_to_get_out(self):
+        # Found by somebody quitting during exactly this and being left with a
+        # blinking cursor.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            app.busy("install mariadb")
+            app.tick()
+
+            assert "F10" in str(app.query_one("#busy").content)
+
+    async def test_the_frames_are_drawable_anywhere(self):
+        # A terminal that cannot draw braille would show the indicator as boxes
+        # and make the screen look broken at the moment it is meant to reassure.
+        assert all(character.isascii() for character in dash.FRAMES)

@@ -33,6 +33,22 @@ look frozen: it was running, saying so, and none of it appeared until it was
 over. Anything that prints as it goes now appears as it goes, and the prompt
 says what is running while it runs.
 
+### Added — something that moves while a command is working
+
+Reported: `install mariadb` sat for five minutes and eventually timed out, with
+no way to tell it apart from a hang.
+
+A label reading "running" and never changing is a still picture, and a still
+picture cannot answer "is anything still happening" — which is the whole
+question during a thirty-second connect timeout, when nothing is printed at all.
+There is a bar now, shown only while something runs, carrying a frame that moves
+five times a second, the command, the seconds elapsed, and how to leave without
+waiting.
+
+Plain characters rather than braille: a terminal that cannot draw them would
+show boxes and make the screen look broken at the exact moment it is meant to
+reassure.
+
 ### Fixed — retries were silent, and the silence was five minutes long
 
 An unreachable host costs five attempts, each waiting out a thirty-second
