@@ -3,16 +3,24 @@ name: install
 # The one-liner, run the way a person runs it, against the real published
 # release. A script that is only ever read is a script that works until somebody
 # tries it.
+#
+# There is deliberately no `release: published` trigger. GitHub does not start
+# workflows from events raised by `GITHUB_TOKEN`, which is what publishes our
+# releases — so such a trigger would never fire while looking exactly like a
+# release is being checked. The release workflow verifies its own release
+# instead, which is the moment it matters.
 on:
   push:
     paths: ['install.ps1', '.github/workflows/install.yml']
-  release:
-    types: [published]
   schedule:
     # Weekly. It depends on GitHub's API, on a published release and on what a
     # stock Windows carries, and none of those change when this repository does.
     - cron: '17 6 * * 1'
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version to install, or empty for the newest.
+        required: false
 
 jobs:
   one-liner:
@@ -30,6 +38,7 @@ jobs:
         env:
           PORTABLE_INSTALL_DIR: D:\test-install\portable
           PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PORTABLE_VERSION: ${{ inputs.version }}
         run: |
           Set-ExecutionPolicy -Scope Process Restricted -Force
           Get-Content install.ps1 -Raw | Invoke-Expression

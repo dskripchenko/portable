@@ -116,3 +116,35 @@ jobs:
           fi
 
           gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
+
+  # The release is only real once somebody can install it. Checked here rather
+  # than by a `release: published` trigger on the installer workflow, because
+  # GitHub does not start workflows from events raised by `GITHUB_TOKEN` — such
+  # a trigger never fires, while looking exactly like a release being verified.
+  installable:
+    needs: publish
+    if: github.event_name == 'push'
+    name: the one-liner installs it
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - shell: powershell
+        env:
+          PORTABLE_INSTALL_DIR: D:\released\portable
+          PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $env:PORTABLE_VERSION = "${{ github.ref_name }}".TrimStart('v')
+
+          # Under Restricted, the way a person on a managed machine has it.
+          Set-ExecutionPolicy -Scope Process Restricted -Force
+          Get-Content install.ps1 -Raw | Invoke-Expression
+
+          $reported = & D:\released\portable\portable.cmd version --json | ConvertFrom-Json
+
+          if ($reported.version -ne $env:PORTABLE_VERSION) {
+            throw "installed $($reported.version), expected $env:PORTABLE_VERSION"
+          }
+
+          Write-Output "the published $($reported.version) installs and runs"
