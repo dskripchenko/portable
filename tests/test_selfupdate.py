@@ -197,11 +197,21 @@ class TestTheSwap:
         return f"{log}:\n{log.read_text(encoding='utf-8', errors='replace')}"
 
     def wait_for(self, condition, seconds: float = 25) -> bool:
+        """
+        Wait for something to become true, tolerating it not being there yet.
+
+        Between the two renames neither name exists, and a condition that reads
+        a file in that instant raises rather than answers. The helper is quick
+        enough to land in that window, which is how this was found.
+        """
         deadline = time.monotonic() + seconds
 
         while time.monotonic() < deadline:
-            if condition():
-                return True
+            try:
+                if condition():
+                    return True
+            except OSError:
+                pass
 
             time.sleep(0.2)
 
