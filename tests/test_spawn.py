@@ -217,8 +217,16 @@ class TestSurvivingTheThingThatStartedIt:
     is checked rather than assumed.
     """
 
-    def job_with_kill_on_close(self):
-        """A job object that kills everything in it when the handle closes."""
+    def job_with_kill_on_close(self, allow_breakaway: bool = False):
+        """
+        A job object that kills everything in it when the handle closes.
+
+        `allow_breakaway` is the difference between the two cases that matter.
+        `CREATE_BREAKAWAY_FROM_JOB` only works if the job carries
+        `JOB_OBJECT_LIMIT_BREAKAWAY_OK`; against a job that does not, nothing at
+        this level can escape, and pretending otherwise would be the kind of
+        claim this test exists to prevent.
+        """
         import ctypes
         import ctypes.wintypes
 
@@ -248,6 +256,7 @@ class TestSurvivingTheThingThatStartedIt:
                 ("PeakJobMemoryUsed", ctypes.c_size_t),
             ]
 
+        JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x0800
         JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
         JobObjectExtendedLimitInformation = 9
 
@@ -257,7 +266,9 @@ class TestSurvivingTheThingThatStartedIt:
         assert job, "could not create a job object"
 
         limits = EXTENDED()
-        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | (
+            JOB_OBJECT_LIMIT_BREAKAWAY_OK if allow_breakaway else 0
+        )
 
         assert kernel32.SetInformationJobObject(
             job, JobObjectExtendedLimitInformation, ctypes.byref(limits), ctypes.sizeof(limits)
@@ -265,23 +276,19 @@ class TestSurvivingTheThingThatStartedIt:
 
         return job
 
-    def test_a_detached_process_escapes_a_job_that_kills_its_members(self, tmp_path):
+    def run_inside_job(self, job, tmp_path):
         """
-        The case an IDE creates.
+        Start a parent inside `job`, have it detach a child, and close the job.
 
-        A parent is put in a job that kills everything in it when closed; the
-        parent starts a detached child and exits; the job is closed. The parent
-        must die and the child must not.
+        Returns the child's pid and whether it was still alive afterwards —
+        which is the whole question.
         """
         import ctypes
 
         kernel32 = ctypes.windll.kernel32
-        job = self.job_with_kill_on_close()
-
         marker = tmp_path / "alive.txt"
         source = str(Path(__file__).resolve().parent.parent / "src")
 
-        # The parent: joins the job, starts a detached child, and leaves.
         parent = subprocess.Popen(
             [
                 sys.executable,
@@ -290,9 +297,10 @@ class TestSurvivingTheThingThatStartedIt:
                     "import sys, time;"
                     "sys.path.insert(0, sys.argv[1]);"
                     "from portable import spawn;"
-                    "print(spawn.start_detached([sys.executable, '-c',"
+                    "pid = spawn.start_detached([sys.executable, '-c',"
                     "    \"import sys, time; open(sys.argv[1], 'w').write('yes'); time.sleep(60)\","
-                    "    sys.argv[2]]), flush=True);"
+                    "    sys.argv[2]]);"
+                    "print(f'{pid} {spawn.broke_away}', flush=True);"
                     "time.sleep(0.5)"
                 ),
                 source,
@@ -306,7 +314,7 @@ class TestSurvivingTheThingThatStartedIt:
             "could not put the parent in the job"
         )
 
-        detached = int(parent.stdout.readline().strip())
+        pid, escaped = parent.stdout.readline().split()
         parent.wait(timeout=30)
 
         deadline = time.monotonic() + 10
@@ -316,19 +324,50 @@ class TestSurvivingTheThingThatStartedIt:
 
         assert marker.exists(), "the detached process never started"
 
-        # Closing the handle is what an IDE does when it quits.
+        # Closing the handle is what an editor does when it quits.
         kernel32.CloseHandle(job)
         time.sleep(1.5)
 
+        return int(pid), escaped == "True", spawn.is_running(int(pid))
+
+    def test_it_leaves_a_job_that_allows_it(self, tmp_path):
+        """
+        The flag doing its work.
+
+        A job carrying `JOB_OBJECT_LIMIT_BREAKAWAY_OK` and kill-on-close is what
+        a well-behaved launcher creates: everything it started is cleaned up,
+        unless something asked to be excused. `CREATE_BREAKAWAY_FROM_JOB` is
+        that asking, and this is where it is checked rather than assumed.
+        """
+        pid, escaped, alive = self.run_inside_job(
+            self.job_with_kill_on_close(allow_breakaway=True), tmp_path
+        )
+
         try:
-            assert spawn.is_running(detached), (
-                "the detached process was killed with the job — an IDE closing "
-                "would take the supervisor with it"
-            )
+            assert escaped, "it did not even try to break away"
+            assert alive, "it was killed with the job despite the job allowing breakaway"
         finally:
-            subprocess.run(
-                ["taskkill", "/F", "/PID", str(detached)], capture_output=True, check=False
-            )
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, check=False)
+
+    def test_a_job_that_forbids_it_wins_and_that_is_reported(self, tmp_path):
+        """
+        The limitation, measured rather than guessed at.
+
+        `CREATE_BREAKAWAY_FROM_JOB` fails outright against a job without
+        `JOB_OBJECT_LIMIT_BREAKAWAY_OK`, and nothing at the process level can
+        escape one. The supervisor still starts — better than refusing to — but
+        it will die when whatever started it closes, and `portable up` says so
+        instead of leaving that to be discovered later.
+        """
+        pid, escaped, alive = self.run_inside_job(
+            self.job_with_kill_on_close(allow_breakaway=False), tmp_path
+        )
+
+        try:
+            assert not escaped, "it reported breaking away from a job that forbids it"
+            assert not alive, "it survived, which would make the warning wrong"
+        finally:
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, check=False)
 
     def test_it_still_starts_where_breakaway_is_forbidden(self, tmp_path):
         """

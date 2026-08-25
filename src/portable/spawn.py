@@ -154,9 +154,33 @@ def _swallow_exit(process: subprocess.Popen) -> None:
         pass
 
 
+#: Whether the last detached start managed to leave its containing job.
+#:
+#: Read by `portable up` to say so. A supervisor that could not break away dies
+#: when whatever started it closes, and the alternative to saying that is the
+#: person finding out later, with no reason to connect the two.
+broke_away = True
+
+
 def _start_windows(argv, cwd, env, stdout):
-    """Try to break away from the job; fall back when the job forbids it."""
+    """
+    Try to break away from the job; fall back when the job forbids it.
+
+    `CREATE_BREAKAWAY_FROM_JOB` only works if the job **permits** it, by
+    carrying `JOB_OBJECT_LIMIT_BREAKAWAY_OK`. A job that does not sets
+    `CreateProcess` failing outright, and nothing at this level can escape one —
+    measured on Windows, where a detached child in a kill-on-close job died with
+    it exactly as an editor closing would kill a supervisor.
+
+    So the fallback starts inside the job instead, because a supervisor that
+    shares the editor's fate is still better than one that refuses to start, and
+    the caller is told which of the two happened.
+    """
+    global broke_away
+
     try:
+        broke_away = True
+
         return subprocess.Popen(
             argv,
             cwd=cwd,
@@ -169,7 +193,10 @@ def _start_windows(argv, cwd, env, stdout):
     except OSError:
         # ERROR_ACCESS_DENIED from a job that does not permit breakaway. The
         # daemon still detaches from the console and the process group, which
-        # covers the case that actually happens — a terminal being closed.
+        # covers a terminal being closed — but not the job being closed, and
+        # that is worth saying rather than discovering.
+        broke_away = False
+
         return subprocess.Popen(
             argv,
             cwd=cwd,

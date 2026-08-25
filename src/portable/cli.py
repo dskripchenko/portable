@@ -899,8 +899,24 @@ def _up(args) -> int:
             f"{paths.tail(paths.logs() / 'daemon.log')}",
         )
 
-    return _emit(args, {"pid": endpoint.pid, "port": endpoint.port},
-                 f"Started (pid {endpoint.pid}).")
+    # Said only when it matters, and it matters: a supervisor that could not
+    # leave its containing job dies when whatever started it closes. Editors
+    # sometimes put what they launch into such a job so that quitting tidies up
+    # after a run configuration, and nothing at the process level can escape one
+    # that forbids breakaway.
+    caged = (
+        "\nThis terminal put it in a job it could not leave, so closing this "
+        "window may stop it.\nStart it from a plain PowerShell window to avoid "
+        "that."
+        if not spawn.broke_away
+        else ""
+    )
+
+    return _emit(
+        args,
+        {"pid": endpoint.pid, "port": endpoint.port, "broke_away": spawn.broke_away},
+        f"Started (pid {endpoint.pid}).{caged}",
+    )
 
 
 def _down(args) -> int:
