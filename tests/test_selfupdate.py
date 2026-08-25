@@ -228,26 +228,23 @@ class TestTheSwap:
         is not there.
         """
         current = self.installation(tmp_path / "current", "old")
-        replacement = self.installation(tmp_path / "replacement", "new")
         keep = tmp_path / "kept"
 
-        self.start_swap(current, replacement, keep, seconds=8)
+        # A replacement that is not there, rather than one taken away mid-flight.
+        # Racing the helper is how this test used to work and it stopped working
+        # the moment the helper got faster — which says nothing about the code
+        # and everything about the test.
+        self.start_swap(current, tmp_path / "never-arrived", keep, seconds=4)
 
-        # Taken away in the window before the helper acts, so its second rename
-        # cannot succeed.
-        time.sleep(1.2)
-
-        import shutil
-
-        shutil.rmtree(replacement, ignore_errors=True)
-
-        assert self.wait_for(lambda: current.is_dir() and (current / "who").read_text() == "old")
+        assert self.wait_for(lambda: current.is_dir() and (current / "who").read_text() == "old"), (
+            f"{self.helper_said(current.parent / 'home')}"
+        )
         assert not keep.exists(), "the original was left under the wrong name"
 
     def test_the_helper_lives_outside_both_bundles(self, tmp_path, monkeypatch):
         written: list[Path] = []
         def remember(argv, **_kwargs):
-            written.append(Path(argv[-1]))
+            written.append(next(Path(part) for part in argv if part.endswith(".py")))
 
             return 1
 

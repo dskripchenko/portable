@@ -219,133 +219,146 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     """
     Start the process that exchanges the directories, and return its pid.
 
-    Run by the system's own shell — PowerShell on Windows, `/bin/sh` elsewhere —
-    from a script placed **beside** both bundles rather than inside either.
+    Run by the **new** bundle's interpreter — the one just proven to work — from
+    a script written beside both bundles rather than inside either, so that
+    nothing has to tidy up a file in a directory it has since renamed.
 
-    That is the whole design, and it is not caution. Windows refuses to rename a
-    directory containing a running executable, so a helper started from the new
-    bundle cannot rename the new bundle, and one started from the old cannot
-    rename the old. Anything inside either is disqualified from moving them.
-    POSIX permits both and would have hidden this entirely — it did, until the
-    consequence was thought through rather than observed.
+    The first version of this used PowerShell, on the belief that Windows
+    refuses to rename a directory containing a running executable and that
+    therefore no interpreter from either bundle could do the job. The belief was
+    wrong: since Vista the loader maps images with `FILE_SHARE_DELETE`, and
+    renaming is permitted — deleting is what is not. A test records that. So
+    this is Python again, which is one language instead of two and can be tested
+    on both platforms.
 
-    It waits for this process to exit first. Until then `python.exe` is running
-    from `current`, and `cmd.exe` still holds `portable.cmd` open.
+    It waits for the calling process to exit first, because until then that
+    process is running from `current`, and on Windows `cmd.exe` still holds
+    `portable.cmd` open.
     """
-    windows = os.name == "nt"
-    helper = current.parent / ("portable-swap.ps1" if windows else "portable-swap.sh")
-    helper.write_text(
-        (_WINDOWS_HELPER if windows else _POSIX_HELPER).format(
-            pid=os.getpid(),
-            current=current,
-            replacement=replacement,
-            keep=keep,
-            seconds=RENAME_SECONDS,
-            helper=helper,
-        ),
-        encoding="utf-8",
+    helper = current.parent / "portable-swap.py"
+    helper.write_text(_HELPER, encoding="utf-8")
+
+    interpreter = (
+        replacement / "python" / "python.exe"
+        if os.name == "nt"
+        else replacement / "python" / "bin" / "python3"
     )
 
-    if not windows:
-        helper.chmod(0o755)
+    # A bare interpreter when the replacement has none — which is every test
+    # that swaps two ordinary directories, and nothing else.
+    if not interpreter.exists():
+        interpreter = Path(sys.executable)
 
-    command = (
-        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(helper)]
-        if windows
-        else ["/bin/sh", str(helper)]
+    return spawn.start_detached(
+        [
+            str(interpreter),
+            str(helper),
+            str(os.getpid()),
+            str(current),
+            str(replacement),
+            str(keep),
+            str(RENAME_SECONDS),
+        ],
+        log=paths.logs() / "upgrade.log",
     )
 
-    return spawn.start_detached(command, log=paths.logs() / "upgrade.log")
+
+#: Written beside both bundles and run by the new one's interpreter.
+#:
+#: Standalone rather than a function in this package: at the moment it runs there
+#: are two installations on disk, and importing from either would tie the swap to
+#: something it is in the middle of moving.
+_HELPER = '''"""Exchange two directories once the process using the first has gone."""
+
+import os
+import shutil
+import sys
+import time
 
 
-#: PowerShell rather than a batch file. Both are outside the bundles, which is
-#: what matters, but batch has no way to wait on a process that does not involve
-#: parsing `tasklist` output, and the error handling around `move` is worse than
-#: the problem it is guarding.
-_WINDOWS_HELPER = """\
-$ErrorActionPreference = 'Stop'
-$deadline = (Get-Date).AddSeconds({seconds})
+def alive(pid):
+    if os.name == "nt":
+        import ctypes
 
-while ((Get-Date) -lt $deadline -and (Get-Process -Id {pid} -ErrorAction SilentlyContinue)) {{
-    Start-Sleep -Milliseconds 200
-}}
+        # PROCESS_QUERY_LIMITED_INFORMATION. A handle that opens means the
+        # process is there; one that does not means it is gone or was never
+        # ours to ask about, and both answers are "stop waiting".
+        handle = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
 
-# cmd.exe closes the batch file a moment after the process it launched exits.
-Start-Sleep -Seconds 1
+        if not handle:
+            return False
 
-function Move-WithRetries($from, $to) {{
-    while ((Get-Date) -lt $deadline) {{
-        try {{
-            Move-Item -LiteralPath $from -Destination $to -Force
+        ctypes.windll.kernel32.CloseHandle(handle)
+
+        return True
+
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+
+    return True
+
+
+def rename(source, destination, deadline):
+    """Keep trying: whatever blocks this is usually in the act of closing."""
+    last = None
+
+    while time.monotonic() < deadline:
+        try:
+            os.rename(source, destination)
+
             return
-        }} catch {{
-            Start-Sleep -Milliseconds 250
-        }}
-    }}
+        except OSError as error:
+            last = error
+            time.sleep(0.25)
 
-    throw "could not move $from to $to"
-}}
+    raise last if last else OSError(f"could not rename {source}")
 
-if (Test-Path -LiteralPath '{keep}') {{ Remove-Item -LiteralPath '{keep}' -Recurse -Force }}
 
-Move-WithRetries '{current}' '{keep}'
+def main():
+    pid = int(sys.argv[1])
+    current, replacement, keep = sys.argv[2], sys.argv[3], sys.argv[4]
+    deadline = time.monotonic() + float(sys.argv[5])
 
-try {{
-    Move-WithRetries '{replacement}' '{current}'
-}} catch {{
-    # Put the working installation back. A tool that is merely out of date is a
-    # great deal better than one that is not there.
-    Move-Item -LiteralPath '{keep}' -Destination '{current}' -Force
-    Write-Output "swap failed and was undone: $_"
-    Remove-Item -LiteralPath '{helper}' -Force -ErrorAction SilentlyContinue
-    exit 1
-}}
+    print(f"waiting for {pid}", flush=True)
 
-Write-Output "swapped: {current} replaced, previous kept at {keep}"
-Remove-Item -LiteralPath '{helper}' -Force -ErrorAction SilentlyContinue
-"""
+    while alive(pid) and time.monotonic() < deadline:
+        time.sleep(0.2)
 
-_POSIX_HELPER = """\
-#!/bin/sh
-deadline=$(($(date +%s) + {seconds}))
+    # cmd.exe closes the batch file a moment after the process it launched exits.
+    time.sleep(1.0)
 
-while kill -0 {pid} 2>/dev/null && [ "$(date +%s)" -lt "$deadline" ]; do
-    sleep 0.2
-done
+    if os.path.exists(keep):
+        shutil.rmtree(keep, ignore_errors=True)
 
-sleep 1
+    rename(current, keep, deadline)
 
-retry_move() {{
-    while [ "$(date +%s)" -lt "$deadline" ]; do
-        if mv "$1" "$2" 2>/dev/null; then
-            return 0
-        fi
+    try:
+        rename(replacement, current, deadline)
+    except OSError as error:
+        # Put the working installation back. A tool that is merely out of date
+        # is a great deal better than one that is not there.
+        os.rename(keep, current)
 
-        sleep 0.25
-    done
+        print(f"swap failed and was undone: {error}", flush=True)
+        cleanup()
 
-    return 1
-}}
+        raise SystemExit(1)
 
-rm -rf '{keep}'
+    print(f"swapped: {current} replaced, previous kept at {keep}", flush=True)
+    cleanup()
 
-if ! retry_move '{current}' '{keep}'; then
-    echo "could not move {current} aside"
-    rm -f '{helper}'
-    exit 1
-fi
 
-if ! retry_move '{replacement}' '{current}'; then
-    # Put the working installation back.
-    mv '{keep}' '{current}'
-    echo "swap failed and was undone"
-    rm -f '{helper}'
-    exit 1
-fi
+def cleanup():
+    try:
+        os.remove(os.path.abspath(__file__))
+    except OSError:
+        pass
 
-echo "swapped: {current} replaced, previous kept at {keep}"
-rm -f '{helper}'
-"""
+
+main()
+'''
 
 
 def can_upgrade() -> Path:

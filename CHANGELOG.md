@@ -23,13 +23,18 @@ published with it, and **run once** — before anything existing is touched. The
 the directories are exchanged by the system's own shell, from a script that
 lives outside both bundles.
 
-Outside both, and that is the whole design. Windows will not rename a directory
-containing a running executable, so a helper started from the new bundle cannot
-move the new bundle and one started from the old cannot move the old. The first
-attempt at this ran the helper from the new bundle and worked perfectly on
-macOS — which permits it, and would have hidden the problem until somebody on
-the target platform found it. There is a test asserting the restriction, skipped
-where it does not apply, so if it ever stops holding this can be simplified.
+Outside both, so that nothing has to tidy up a file in a directory it has since
+renamed — and run by the **new** bundle's interpreter, the one just proven to
+work.
+
+That is the second design. The first used PowerShell, on the belief that Windows
+refuses to rename a directory containing a running executable and that therefore
+no interpreter from either bundle could do the job. A test was written to assert
+the belief and did not: since Vista the loader maps images with
+`FILE_SHARE_DELETE`, and renaming is permitted — deleting is what is not. The
+test now records the behaviour instead of asserting the guess, so the next
+person need not guess either way. One language instead of two, testable on both
+platforms.
 
 If the exchange fails the previous installation is put back: a tool that is
 merely out of date is a great deal better than one that is not there. The old
