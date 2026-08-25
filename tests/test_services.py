@@ -371,3 +371,40 @@ class TestMariadbIgnoringTheRestOfTheMachine:
 
         assert "port = 3399" in written
         assert "bind-address = 127.0.0.1" in written
+
+
+class TestMariadbWhenItsHostWillNotServeTheArchive:
+    """
+    The index is a few kilobytes and often gets through on a network that a
+    hundred-megabyte download does not — and the URL the index hands back is on
+    the same host. So a machine that cannot reach `downloads.mariadb.org` used
+    to resolve perfectly well and then fail to fetch.
+    """
+
+    def test_there_is_somewhere_else_to_ask(self):
+        from portable.catalog import mariadb
+
+        assert callable(mariadb.fallback)
+
+    def test_it_answers_from_the_archive(self, monkeypatch):
+        from portable.catalog import mariadb
+
+        listing = (FIXTURES / "mariadb-archive.html").read_text(encoding="utf-8")
+        monkeypatch.setattr(mariadb.net, "read_text", lambda *a, **k: listing)
+        monkeypatch.setattr(mariadb, "_archive_checksum", lambda *a: "b" * 64)
+
+        build = mariadb.fallback("11.4")
+
+        assert "archive.mariadb.org" in build.url
+        assert build.checksum, "the way round should still be verified"
+
+    def test_only_the_publisher_that_needs_one_has_one(self):
+        # A generic seam, used once. Offering an alternative for a publisher
+        # that has none would be inventing a second source.
+        from portable import catalog
+
+        with_fallback = [
+            name for name, module in catalog.modules().items() if hasattr(module, "fallback")
+        ]
+
+        assert with_fallback == ["mariadb"]

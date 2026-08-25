@@ -195,7 +195,16 @@ class ShortTransfer(OSError):
     """The body ended before the length the server promised."""
 
 
-_INTERRUPTED = (net.Unreachable, OSError, http.client.HTTPException)
+#: Failures that resuming can answer, which is not all of them.
+#:
+#: `net.Unreachable` is deliberately absent. It already means "tried five times
+#: and gave up", so catching it here and going round again turned five attempts
+#: into twenty-five — each waiting out its own connect timeout. Reported from a
+#: Windows machine watching `install mariadb` cycle 1-to-5 four times over.
+#:
+#: What is left is a transfer that started and broke, which is exactly what
+#: resuming is for.
+_INTERRUPTED = (OSError, http.client.HTTPException)
 
 
 def unpack(build: Build, archive: Path, into: Path | None = None) -> Path:

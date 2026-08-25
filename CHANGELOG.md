@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.3.0 — 2026-08-25
 
+### Fixed — five retries meant five, not twenty-five
+
+Reported from a Windows machine watching `install mariadb` count "attempt 1 of
+5" for the fourth time over.
+
+- **Retrying happened at two levels and multiplied.** A connection that could
+  not be opened was already retried five times before giving up; the downloader
+  caught the giving-up itself and went round five more times. Twenty-five
+  attempts, each waiting out its own connect timeout, against a host with no
+  route to it. The downloader now retries only transfers that started and broke,
+  which is what resuming is for.
+- **MariaDB falls back to its archive when the download fails, not only when
+  the version list does.** The list is a few kilobytes and often gets through on
+  a network that a hundred-megabyte archive does not — and the URL it hands back
+  is on the same host — so an install could resolve a version perfectly well and
+  then fail to fetch it.
+
 ### Changed — the dashboard, looked at rather than reasoned about
 
 Textual renders a screen to an image without a terminal, so the dashboard can be

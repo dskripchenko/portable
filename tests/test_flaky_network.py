@@ -263,3 +263,57 @@ class TestSayingItIsWaiting:
 
         assert said.count("attempt") == net.ATTEMPTS - 1, "the last one is the failure itself"
         assert "downloads.mariadb.org" in said, "it should name the host being waited on"
+
+
+class TestRetriesDoNotMultiply:
+    """
+    Reported from Windows: `install mariadb` cycled "attempt 1 of 5" four times
+    over, more than twenty attempts in all.
+
+    `net.Unreachable` already means "tried five times and gave up". The
+    downloader caught it and went round again, five times, and each of those
+    waited out its own connect timeouts.
+    """
+
+    def build(self) -> Build:
+        return Build(
+            name="mariadb", version="11.4.13", url="https://x.invalid/m.zip", filename="m.zip"
+        )
+
+    def test_a_host_that_cannot_be_reached_is_not_asked_again(self, monkeypatch, tmp_path):
+        rounds = []
+
+        def unreachable(url, timeout=300, offset=0):
+            rounds.append(offset)
+
+            raise net.Unreachable("gave up after 5 attempts")
+
+        monkeypatch.setattr(acquire.net, "open_url", unreachable)
+
+        with pytest.raises(net.Unreachable):
+            acquire._fetch(self.build(), tmp_path / "m.part")
+
+        assert len(rounds) == 1, f"asked {len(rounds)} times for something already given up on"
+
+    def test_a_transfer_that_breaks_is_still_resumed(self, monkeypatch, tmp_path):
+        # Which is what the loop is for: a connection that started and dropped
+        # is a different failure from one that never opened.
+        whole = b"x" * 4000
+        offsets = []
+
+        def flaky(url, timeout=300, offset=0):
+            offsets.append(offset)
+
+            return Response(
+                whole[offset : offset + 1000],
+                status=206 if offset else 200,
+                headers={"Content-Length": str(len(whole) - offset)},
+            )
+
+        monkeypatch.setattr(acquire.net, "open_url", flaky)
+        partial = tmp_path / "m.part"
+
+        acquire._fetch(self.build(), partial)
+
+        assert partial.read_bytes() == whole
+        assert len(offsets) == 4, "it stopped resuming"

@@ -70,15 +70,24 @@ Everything is retried five times with growing pauses, and interrupted transfers
 resume where they stopped rather than starting again — which is what makes a
 ninety-megabyte archive arrive at all on a connection that keeps dropping.
 
+Five in total, counted once. Until 1.3.0 the download retried the connection
+that had already given up after five, so a host that could not be reached was
+asked twenty-five times, each waiting out its own timeout.
+
 If it still fails, the message lists every attempt. Five identical resets and
 five different errors mean different things. `HTTPS_PROXY` is honoured if you
 have one.
 
 **`WinError 10060` against `downloads.mariadb.org`** is a connect timeout rather
 than a reset — that host is simply unreachable from some networks, and retrying
-only takes longer to fail. MariaDB is fetched from `archive.mariadb.org`
-instead, which serves the same releases with checksums beside them.
-`PORTABLE_MARIADB_ARCHIVE` points at a mirror of your own.
+only takes longer to fail. MariaDB comes from `archive.mariadb.org` instead,
+which serves the same releases with checksums beside them.
+
+Both the version list and the download fall back to it, which they did not
+always: the list is a few kilobytes and often gets through where a hundred
+megabytes does not, so an install could resolve a version perfectly well and
+then fail to fetch it. `PORTABLE_MARIADB_ARCHIVE` points at a mirror of your
+own.
 
 ## `SSLCertVerificationError`, or "the certificate could not be verified"
 

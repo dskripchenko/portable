@@ -97,6 +97,19 @@ def available(index: dict | None = None, line: str | None = None) -> list[Offer]
     )
 
 
+def fallback(version: str = "latest") -> Build:
+    """
+    The same release from the archive, for when the usual host will not answer.
+
+    Not only when the *index* is unreachable, which is where the fallback used
+    to live. The index is a few kilobytes and often gets through on a network
+    that a hundred-megabyte archive does not — and the download URL the index
+    hands back is on the same host that just proved slow, so a machine that
+    cannot reach `downloads.mariadb.org` fails after resolving perfectly well.
+    """
+    return _from_archive(version)
+
+
 def archive_base() -> str:
     return os.environ.get(ARCHIVE_VARIABLE) or ARCHIVE
 

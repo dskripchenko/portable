@@ -31,6 +31,7 @@ from typing import Any
 
 from .. import acquire, extensions, paths, pecl, pool, settings, trust
 from .. import catalog as catalogs
+from .. import net as net_module
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
 from ..runtimes import Installed, NotInstalled
@@ -698,7 +699,22 @@ class ControlServer:
                     digest, algorithm = found
                     build = replace(build, checksum=digest, algorithm=algorithm)
 
-            acquired = acquire.install(build)
+            try:
+                acquired = acquire.install(build)
+            except (acquire.TransferFailed, net_module.Unreachable) as error:
+                # A publisher with somewhere else to be asked. Only MariaDB has
+                # one, and only because its own host is unreachable from some
+                # networks while a second host carries the same releases — with
+                # checksums, so this is a different route rather than a lower
+                # standard.
+                second = getattr(catalog, "fallback", None)
+
+                if second is None:
+                    raise
+
+                print(f"{name}: {error}\ntrying the archive instead", flush=True)
+                build = second(version)
+                acquired = acquire.install(build)
         except CatalogError as error:
             raise ApiError(HTTPStatus.NOT_FOUND, "no-such-version", str(error)) from error
         except acquire.VerificationError as error:

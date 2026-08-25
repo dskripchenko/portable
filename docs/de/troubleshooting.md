@@ -76,6 +76,11 @@ Alles wird fünfmal mit wachsenden Pausen wiederholt, und abgebrochene
 das ist es, was ein neunzig Megabyte großes Archiv über eine ständig abreißende
 Verbindung überhaupt ankommen lässt.
 
+Fünfmal insgesamt, einmal gezählt. Bis 1.3.0 wiederholte der Download die
+Verbindung, die nach fünf Versuchen bereits aufgegeben hatte — ein
+unerreichbarer Host wurde fünfundzwanzigmal gefragt, jedes Mal mit eigener
+Zeitüberschreitung.
+
 Scheitert es weiterhin, führt die Meldung jeden Versuch auf. Fünf gleiche
 Rücksetzungen und fünf verschiedene Fehler bedeuten Verschiedenes. `HTTPS_PROXY`
 wird beachtet, falls Sie einen haben.
@@ -83,8 +88,13 @@ wird beachtet, falls Sie einen haben.
 **`WinError 10060` gegen `downloads.mariadb.org`** ist eine Zeitüberschreitung
 beim Verbindungsaufbau, keine Rücksetzung — dieser Host ist aus manchen Netzen
 schlicht nicht erreichbar, und Wiederholen dauert nur länger bis zum Scheitern.
-MariaDB wird stattdessen von `archive.mariadb.org` geholt, wo dieselben Ausgaben
-mit Prüfsummen daneben liegen. `PORTABLE_MARIADB_ARCHIVE` zeigt auf einen eigenen
+MariaDB kommt stattdessen von `archive.mariadb.org`, wo dieselben Ausgaben mit
+Prüfsummen daneben liegen.
+
+Sowohl die Versionsliste als auch der Download weichen dorthin aus — früher nur
+die Liste. Die Liste ist ein paar Kilobyte groß und kommt oft durch, wo hundert
+Megabyte es nicht tun; so ließ sich eine Version einwandfrei auflösen und dann
+doch nicht holen. `PORTABLE_MARIADB_ARCHIVE` zeigt auf einen eigenen
 Spiegel.
 
 ## `SSLCertVerificationError`, „das Zertifikat konnte nicht geprüft werden“
