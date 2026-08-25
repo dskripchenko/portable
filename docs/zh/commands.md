@@ -1,0 +1,103 @@
+# 命令
+
+每条命令都接受 `--json`，以及 `--home 路径` —— 让这一条命令作用于另一份安装。
+`portable help` 会打印本页的简版。
+
+## 监督进程
+
+| | |
+|---|---|
+| `portable up` | 启动监督进程。其余一切都与它通信。 |
+| `portable down` | 停掉它，以及它管的一切。 |
+| `portable status` | 什么在跑、在哪个端口，以及若什么都没提供服务，那是为什么。 |
+| `portable version` | 这个构建、背后的解释器、数据放在哪，以及正在运行的守护进程的版本。 |
+| `portable help` | 所有命令，按用途分组，各带一个示例。 |
+
+`status` 和 `version` 在什么都没运行时也能用 —— 而那恰恰是这些问题通常冒出来的时候。
+
+## 运行时
+
+| | |
+|---|---|
+| `portable available <名称>` | 发布方当前提供什么，并标出已安装的。 |
+| `portable available php 8.3` | 该分支，包括 php.net 归档里已被取代的补丁版本。 |
+| `portable install <名称> [版本]` | 一个分支（`8.4`）、一个确切版本（`8.4.24`）或 `latest`。 |
+| `portable install php --from C:\php` | 接管机器上已有的 PHP。 |
+| `portable runtimes` | 已安装了什么。 |
+| `portable update [--install]` | 与已安装版本同一条线上的新版本。 |
+| `portable uninstall <名称> <版本>` | 删掉一个并收回磁盘空间。 |
+
+可安装：`php`、`caddy`、`node`、`postgres`、`mariadb`、`redis`。
+
+**版本是并排安装的，不会覆盖。** 固定在旧版本上的东西照常工作 —— 这正是
+`uninstall` 存在的理由。
+
+**升级不越出自己那条线** —— 8.4 只找最新的 `8.4.x`，绝不跳到 8.5。PHP 换分支会给每
+一个没有固定版本的站点带来弃用警告，而 PostgreSQL 的数据目录属于创建它的大版本：17
+起不来在 18 的文件上。越线要靠明确写出版本号。
+
+**被接管的运行时只读不写。** 工具不会升级它、删除它，也不会往里装扩展。
+
+## 站点
+
+| | |
+|---|---|
+| `portable site add <名称> [路径]` | 在 `<名称>.localhost` 上提供一个目录。 |
+| `portable site add <名称> <路径> --exact` | 按字面取用路径，不去里面找 `public/`。 |
+| `portable site add <名称> <路径> --php 8.2` | 固定版本。默认是已安装的最新版。 |
+| `portable site list` | 站点及其地址。 |
+| `portable site remove <名称>` | 不再提供该站点。 |
+| `portable port 8888` | 提供服务用的端口。`auto` 回到先试 80、再试 8080。 |
+| `portable trust` | 信任本地证书颁发机构，让 `https://` 不再警告。`--forget` 撤销。 |
+
+选定的端口是**唯一**会尝试的端口。在你要求 8888 之后退回 8080，会把站点放到一个你
+没选、也没人告诉你的地址上 —— 而人们之所以要选端口，正是因为默认值不能用。
+
+## PHP 扩展
+
+| | |
+|---|---|
+| `portable ext list` | 这个构建自带什么，其中哪些被加载了。 |
+| `portable ext enable <名称>` | 加载构建里已经带着的那个。 |
+| `portable ext disable <名称>` | 不再加载它。 |
+| `portable ext install <名称> [版本]` | 下载构建里没有的 —— `xdebug`、`redis`、`imagick`。 |
+
+它们都接受 `--php 8.3`，用来指定作用于哪个已安装的 PHP。
+
+Windows 版 PHP 把它支持的每个扩展都作为单独的 DLL 一并发布，全都在场、一个都没加
+载 —— 所以 `enable` 是往 `php.ini` 里写一行，不是下载。`install` 才是下载，并且要与
+该构建的 PHP 分支、线程安全性、编译器和架构相匹配；四者必须一致，否则扩展会悄无声
+息地加载不上。
+
+改动扩展会替换工作进程，因为每个 `php-cgi` 只在启动时读一次 `php.ini`。而 `php.ini`
+本身是在安装 PHP 时写下的，此后不再重新生成：你对它的修改能挺过这里描述的一切。
+
+如果某个扩展的最新版没有适配你这个 PHP 的构建，就指定一个老版本。Xdebug 3 不为
+PHP 7.2 构建，将来也不会；xdebug 2.9.8 可以。
+
+## 数据库
+
+| | |
+|---|---|
+| `portable service add <种类>` | 启动 `postgres`、`mariadb` 或 `redis`。 |
+| `portable service list` | 什么在跑，以及怎么连上去。 |
+| `portable service remove <名称>` | 停掉它。**数据保留。** |
+
+每一个都只监听回环地址。想要第二个实例或非惯例端口时，用 `--port` 和 `--name`。
+
+数据目录只初始化一次，PostgreSQL 用固定的 `C` 排序规则：排序规则跟着机器区域设置走
+的数据库，排出来和生产环境不一样，而这件事往往要等到某个测试在一个人那里能过时才
+被发现。
+
+## 其他
+
+| | |
+|---|---|
+| `portable run <命令>` | 只为这条命令把已安装的运行时放进 PATH 并执行它。 |
+| `portable env` | 打印一个 shell 会需要的设置，而不去改动任何东西。 |
+| `portable home` | 一切放在哪，以及是什么决定的。 |
+| `portable home set <路径>` | 放到别处。`--beside` 放在启动器旁边。 |
+| `portable home clear` | 回到默认。 |
+
+`portable run node --version` 会在它运行的是本工具不管理的 Node —— 机器自己的、在
+PATH 里找到的那个 —— 时告诉你。否则这件事很容易耗掉二十分钟。

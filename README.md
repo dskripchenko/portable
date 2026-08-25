@@ -3,9 +3,12 @@
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **works, unreleased.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node
-> install and run; sites are served at `*.localhost`. Not yet verified on a real
-> Windows machine — see the note at the end.
+> Status: **released, partly verified.** PHP, Caddy, PostgreSQL, MariaDB, Redis
+> and Node install and run; sites are served at `*.localhost`. Serving PHP has
+> been confirmed on real Windows; two things have not — see the note at the end.
+
+Documentation: [English](docs/en/) · [Русский](docs/ru/) · [Deutsch](docs/de/) ·
+[中文](docs/zh/)
 
 ## Why
 
@@ -169,16 +172,26 @@ Everything here runs, and most of it has been run against the real thing: a
 Node reached through `portable run`, and the bundle started on a machine with
 its `PATH` pointing at nothing.
 
-All of that was on macOS, which shares `php-cgi`, the FastCGI protocol and the
-archive formats with the target but not everything else. Three things can only
-be answered on Windows, and are not yet:
+Most of that was on macOS, which shares `php-cgi`, the FastCGI protocol and the
+archive formats with the target but not everything else.
 
-- `php-cgi.exe`, `initdb.exe` and the rest, as actual Windows binaries;
+**Confirmed on real Windows since:** `php-cgi.exe` serving a Laravel project
+through the pool, runtimes downloading and unpacking over a network that resets
+TLS connections mid-handshake.
+
+**Still open, and answerable only there:**
+
 - port 80 without administrator rights, and whether `http.sys` has it;
-- detaching from the console, the process group and the job object.
+- detaching from the console, the process group and the job object — the case
+  where an IDE puts its children in a job with kill-on-close.
 
-CI runs the whole suite on `windows-latest`, which covers the logic and none of
-those.
+CI runs the whole suite on `windows-latest`, which covers the logic and neither
+of those.
+
+**macOS is not a target.** Every catalog resolves Windows archives and nothing
+else, so the tool runs there but installs binaries that machine cannot execute.
+A macOS bundle is built on CI as a check that the bundler still works, and is
+deliberately not published.
 
 ## License
 

@@ -28,8 +28,10 @@ jobs:
         include:
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
+            publish: true
           - target: aarch64-apple-darwin
             runs-on: macos-latest
+            publish: false
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runs-on }}
 
@@ -70,7 +72,13 @@ jobs:
           verify(Path(tree[0]), "${{ matrix.target }}")
           print(f"the bundle in {tree[0]} runs")
 
+      # Only the Windows bundle is published. macOS is built as a check that the
+      # bundler and the POSIX launcher still work — every catalog resolves
+      # Windows archives and nothing else, so a macOS bundle can run the tool
+      # and then hand somebody a `php-cgi.exe` their machine cannot execute.
+      # Attaching it to a release would be offering something that does not work.
       - uses: actions/upload-artifact@v4
+        if: matrix.publish
         with:
           name: portable-${{ matrix.target }}
           path: |

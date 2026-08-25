@@ -7,7 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-The first pieces of M0: resolving a runtime version to a concrete artifact, and
+## 0.1.0 — 2026-08-25
+
+The first release. A local development environment for Windows — PHP, Caddy,
+PostgreSQL, MariaDB, Redis, Node — that installs beside the system rather than
+into it: no administrator rights, no `hosts` file, no services, no registry, no
+changes to PATH. Everything lives in one directory, and deleting it uninstalls
+the tool completely.
+
+Ships as a self-contained bundle carrying its own Python, because a tool that
+installs runtimes on a machine which has none cannot sensibly require one first.
+
+**Verified on real Windows:** PHP served through a supervised `php-cgi` pool
+behind Caddy, a Laravel project reachable at `*.localhost`, runtimes downloading
+and unpacking over a network that resets TLS connections.
+
+**Not yet verified on real Windows:** binding port 80 without administrator
+rights, and surviving the console, the process group and the job object when the
+terminal or the IDE closes. CI exercises the logic on `windows-latest` and
+neither of those.
+
+The sections below record what was built and, more usefully, what turned out to
+be wrong about it — most of it discovered by running the real thing rather than
+by reading.
+
+### The beginning
+
+The first pieces: resolving a runtime version to a concrete artifact, and
 getting that artifact onto disk without trusting it.
 
 ### Added

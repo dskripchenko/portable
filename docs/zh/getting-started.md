@@ -1,0 +1,113 @@
+# 快速开始
+
+## 安装
+
+从[发布页](https://github.com/dskripchenko/portable/releases)下载
+`portable-x86_64-pc-windows-msvc.zip`，解压到任何地方 —— 桌面上的一个文件夹、第二
+块硬盘、U 盘都行。没有什么要安装的，也没有安装程序。
+
+这个包自带 Python。一个专职把运行时装到没有运行时的机器上的工具，不该反过来先要
+求你已经有一个；而 Windows 上默认根本没有：看起来像 `python` 的那个东西，其实是打
+开 Microsoft Store 的快捷方式。
+
+```powershell
+cd C:\portable
+.\portable.cmd version
+```
+
+在普通的 PowerShell 窗口里运行。如果它什么时候向你要管理员权限，那是缺陷，请报告。
+
+## 选择它把东西放在哪
+
+```powershell
+.\portable.cmd home                    # 在哪，以及是什么决定的
+.\portable.cmd home set D:\portable    # 从现在起放到那里
+.\portable.cmd home set --beside       # 放在启动器旁边，随它一起走
+```
+
+默认是 `%LOCALAPPDATA%\portable`。在受管控的机器上，这个默认值可能不只是不合意，
+而是根本不能用：AppLocker 的常见配置会拒绝从用户配置目录下执行程序 —— 不用管理员
+权限安装的软件正是落在那里，这也正是那条规则的用意 —— 而这里下载的每一样东西都是
+可执行文件。凡是这条规则生效的地方，不把位置挪走就什么都启动不了。
+
+`--beside` 是为 U 盘准备的。它记下的是这个词，而不是今天的路径，所以盘符变了包依
+然能用。
+
+## 启动
+
+```powershell
+.\portable.cmd up
+```
+
+这会启动监督进程，其余一切都归它管。它能挺过关闭终端和 IDE，挺不过重启 —— 这是有
+意为之：要挺过重启就得写自启动项，而这个工具不写。
+
+## 跑起一个站点
+
+```powershell
+.\portable.cmd install php
+.\portable.cmd install caddy
+.\portable.cmd site add demo C:\projects\demo
+```
+
+打开 `http://demo.localhost`。没有改过 hosts，也没有 DNS 服务器参与：Windows 自己
+就把 `.localhost` 下的一切解析到回环地址。
+
+如果项目把前端控制器放在 `public/` 里 —— Laravel、Symfony 以及大多数框架 —— 提供服
+务的就是它，工具会告诉你。否则把站点指向仓库根目录，会把应用源码连同 `.env` 一起
+通过 HTTP 交出去，而表面上看只像是“没跑起来”。加 `--exact` 就按字面取用路径。
+
+用 `--php 8.2` 为每个站点固定 PHP 版本；不加则跟随最新的那个。多个版本并存，各有
+各的工作进程池。
+
+## HTTPS
+
+```powershell
+.\portable.cmd trust
+```
+
+站点同时通过 TLS 提供服务，证书来自 Caddy 在本地运行的证书颁发机构。`trust` 把该
+机构的根证书放进**你的**证书存储 —— 不是机器的那个，那需要管理员权限。
+
+Windows 会弹出确认对话框。那是 Windows 在问，不是这个工具，而且也不该有绕过它的
+办法。
+
+Firefox 有自己的存储，仍然会警告。只有在 `about:config` 里打开
+`security.enterprise_roots.enabled` 它才会读 Windows 的存储 —— 那是你配置文件里的
+设置，这个工具没有资格去改。
+
+## 加一个数据库
+
+```powershell
+.\portable.cmd install postgres
+.\portable.cmd service add postgres
+```
+
+它会在 `127.0.0.1:5432` 上启动，用户 `postgres`，无密码 —— 并且只绑定回环地址，因
+为在可从网络访问的端口上用 trust 认证，正是一台笔记本在会议 WiFi 上变成别人的东西
+的方式。
+
+`service remove` 停掉它并**保留数据**。再加回来就从原处继续。
+
+`mariadb` 和 `redis` 同理，端口是 3306 和 6379。
+
+## Node 和其他工具
+
+```powershell
+.\portable.cmd install node
+.\portable.cmd run npm install
+```
+
+`portable run` 只为这一条命令把已安装的运行时放进 PATH。机器本身的 PATH 不受影响。
+如果你想要整个 shell 会话的设置，`portable env` 会把它们打印出来。
+
+## 停止
+
+```powershell
+.\portable.cmd down
+```
+
+全部停止：路由器、PHP 工作进程、数据库。命令返回时端口已经空出来了。
+
+要彻底移除这个工具，删掉它存放数据的目录（`portable home` 会告诉你是哪个）和你解压
+出来的文件夹。此外别无他物：没有注册表项，没有服务，没有对 PATH 的改动。
