@@ -120,12 +120,20 @@ try {
     Write-Host "Downloading $($bundle.name) ($([Math]::Round($bundle.size / 1MB)) MB)..."
     Invoke-WebRequest -Uri $bundle.browser_download_url -OutFile $archive -Headers $headers -UseBasicParsing
 
-    # -UseBasicParsing, or Windows PowerShell hands the response to Internet
-    # Explorer's engine to build a DOM out of - and Windows 11 has no Internet
-    # Explorer, so it throws "Object reference not set to an instance of an
-    # object" instead of returning a line of text. The download above escaped it
-    # only because -OutFile skips the parsing entirely.
-    $published = ((Invoke-WebRequest -Uri $digest.browser_download_url -Headers $headers -UseBasicParsing).Content -split '\s+')[0]
+    # To a file and then read back, rather than through `.Content`. GitHub
+    # serves the checksum as application/octet-stream, so `.Content` is a byte
+    # array - and splitting a byte array on whitespace yields the first byte
+    # rendered as a number. It compared "50" against the hash and reported a
+    # mismatch, 50 being the code of "2", the first character of the digest.
+    #
+    # `-UseBasicParsing` on both, or Windows PowerShell hands the response to
+    # Internet Explorer's engine to build a DOM out of - and Windows 11 has no
+    # Internet Explorer, so it throws "Object reference not set to an instance of
+    # an object" instead.
+    $digestFile = Join-Path $work $digest.name
+    Invoke-WebRequest -Uri $digest.browser_download_url -OutFile $digestFile -Headers $headers -UseBasicParsing
+
+    $published = ((Get-Content -Path $digestFile -Raw) -split '\s+')[0]
     $actual = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLower()
 
     if ($actual -ne $published.ToLower()) {
