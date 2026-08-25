@@ -398,3 +398,54 @@ class TestRunningFromAnywhere:
         cli.main(["site", "add", "demo", "."])
 
         assert sent["root"] == str(tmp_path.resolve())
+
+
+class TestSplittingATypedLine:
+    r"""
+    `shlex` defaults to POSIX rules, where a backslash escapes what follows.
+
+    Reported from the dashboard: `site add demo c:\www\project` arrived as
+    `c:wwwproject`, which on Windows is not a mangled path but a valid and quite
+    different one — `c:name` means "name, relative to the current directory on
+    drive C:" — so it resolved against wherever the tool was standing and
+    produced `c:\path\to\portable\www\project`.
+    """
+
+    def test_backslashes_survive_on_windows(self, monkeypatch):
+        monkeypatch.setattr(cli.os, "name", "nt")
+
+        assert cli.split(r"site add demo c:\www\project") == [
+            "site",
+            "add",
+            "demo",
+            r"c:\www\project",
+        ]
+
+    def test_a_quoted_path_with_spaces_arrives_whole_and_unquoted(self, monkeypatch):
+        # Non-POSIX splitting keeps the quotes attached, which is the cost of
+        # keeping the backslashes. They come off here.
+        monkeypatch.setattr(cli.os, "name", "nt")
+
+        assert cli.split(r'site add demo "c:\my sites\app"') == [
+            "site",
+            "add",
+            "demo",
+            r"c:\my sites\app",
+        ]
+
+    def test_the_posix_rules_still_apply_elsewhere(self, monkeypatch):
+        # Where a backslash really is an escape character.
+        monkeypatch.setattr(cli.os, "name", "posix")
+
+        assert cli.split(r"site add demo /srv/my\ site") == [
+            "site",
+            "add",
+            "demo",
+            "/srv/my site",
+        ]
+
+    def test_unbalanced_quotes_are_still_an_error_to_report(self, monkeypatch):
+        monkeypatch.setattr(cli.os, "name", "nt")
+
+        with pytest.raises(ValueError):
+            cli.split('site add demo "c:\\unclosed')

@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.2 — 2026-08-25
+
+Three things reported from using the dashboard, all of them real.
+
+### Fixed — a typed Windows path was taken apart
+
+`site add demo c:\www\project` from inside the dashboard produced
+`c:\path\to\portable\www\project`, and the joining was the symptom rather than
+the cause. `shlex` splits with POSIX rules by default, where a backslash escapes
+what follows — so the path arrived as `c:wwwproject`, which on Windows is not
+mangled but valid and quite different: `c:name` means "name, relative to the
+current directory on drive C:", and resolving it does exactly what was reported.
+
+Windows keeps its backslashes now. The cost is that quotes come back attached to
+the token, since only POSIX mode removes them, and they are taken off by hand —
+one pair, from the outside, which is what somebody typing `"C:\my sites\app"`
+meant by them. Both the dashboard and `shell` split the same way, through one
+function.
+
+### Fixed — a command's output arrived only when it had finished
+
+Collected and shown at the end, which is exactly what makes a working command
+look frozen: it was running, saying so, and none of it appeared until it was
+over. Anything that prints as it goes now appears as it goes, and the prompt
+says what is running while it runs.
+
+### Fixed — retries were silent, and the silence was five minutes long
+
+An unreachable host costs five attempts, each waiting out a thirty-second
+connect timeout, and an index fetched twice doubles that. Reported as five
+minutes of a dashboard doing nothing — while it was doing precisely what it had
+been told. Each wait now says which host it is waiting on and for how long.
+
+### Fixed — quitting during a command left the process behind
+
+A command runs in a thread, and a thread inside a network call does not notice
+being asked to stop. The screen went, the process stayed, and what was left was
+a blinking cursor in a terminal that looked wedged.
+
+Quitting while something runs now says what it is, once; a second press leaves
+regardless, and the process ends rather than waiting on a thread that is not
+listening. The daemon owns everything that matters, and an abandoned download
+costs the part that was fetched — which is kept for the next attempt.
+
 ## 1.2.1 — 2026-08-25
 
 ### Fixed — the upgrade helper was blocked by application control

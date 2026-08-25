@@ -19,6 +19,7 @@ import http.client
 import os
 import socket
 import ssl
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -181,6 +182,7 @@ def open_url(url: str, timeout: int = TIMEOUT, attempts: int = ATTEMPTS, offset:
             if attempt == attempts:
                 raise Unreachable(_gave_up(url, failures)) from error
 
+            _waiting(url, attempt, attempts, BACKOFF * (2 ** (attempt - 1)))
             time.sleep(BACKOFF * (2 ** (attempt - 1)))
         except _TRANSIENT as error:
             failures.append(f"{type(error).__name__}: {error}")
@@ -188,9 +190,28 @@ def open_url(url: str, timeout: int = TIMEOUT, attempts: int = ATTEMPTS, offset:
             if attempt == attempts:
                 raise Unreachable(_gave_up(url, failures)) from error
 
+            _waiting(url, attempt, attempts, BACKOFF * (2 ** (attempt - 1)))
             time.sleep(BACKOFF * (2 ** (attempt - 1)))
 
     raise AssertionError("unreachable")
+
+
+def _waiting(url: str, attempt: int, attempts: int, pause: float) -> None:
+    """
+    Say that a retry is coming, and how long the wait is.
+
+    Silence here is what makes a working command look hung. An unreachable host
+    costs five attempts, each waiting out a thirty-second connect timeout, and
+    an index that is fetched twice doubles it — reported as five minutes of a
+    dashboard doing nothing while it was in fact doing exactly what it was told.
+    """
+    host = urllib.parse.urlparse(url).hostname or url
+
+    print(
+        f"{host}: attempt {attempt} of {attempts} failed, waiting {pause:.0f}s",
+        file=sys.stderr,
+        flush=True,
+    )
 
 
 def _open_once(url: str, timeout: int, offset: int = 0):

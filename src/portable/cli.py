@@ -505,7 +505,16 @@ def _dash(args) -> int:
 
     application(follow=args.logs).run()
 
-    return 0
+    # Leave without waiting for a thread that is not listening.
+    #
+    # A command runs in a worker thread, and one inside a network call cannot be
+    # interrupted — Python will wait for it at exit, so the screen disappears
+    # and the process stays, which looks exactly like a wedged terminal. The
+    # screen has already been torn down and the daemon owns everything that
+    # matters, so there is nothing here worth waiting on.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
 
 
 def _shell(args) -> int:
@@ -551,6 +560,37 @@ def _shell(args) -> int:
         _run_line(line)
 
 
+def split(line: str) -> list[str]:
+    """
+    A typed line, split into arguments the way the platform means it.
+
+    `shlex` defaults to POSIX rules, where a backslash escapes the next
+    character — so `c:\\www\\project` arrives as `c:wwwproject`. On Windows that
+    is not a mangled path but a valid and quite different one: `c:name` means
+    "name, relative to the current directory on drive C:", so it resolves
+    against wherever the tool happens to be standing. Reported as
+    `c:\\path\\to\\portable\\www\\project` from a site added inside the dashboard,
+    which is exactly what that produces.
+
+    So on Windows the backslash is left alone. The cost is that quotes come back
+    attached to the token, since only POSIX mode removes them, and they are
+    taken off here — one pair, from the outside, which is what somebody typing
+    `"C:\\my sites\\app"` meant by them.
+    """
+    if os.name != "nt":
+        return shlex.split(line)
+
+    stripped = []
+
+    for token in shlex.split(line, posix=False):
+        if len(token) > 1 and token[0] == token[-1] and token[0] in "\"'":
+            token = token[1:-1]
+
+        stripped.append(token)
+
+    return stripped
+
+
 def _run_line(line: str) -> None:
     """
     One typed line, through the ordinary parser.
@@ -559,7 +599,7 @@ def _run_line(line: str) -> None:
     a shell that would take the whole session down over a typo.
     """
     try:
-        argv = shlex.split(line)
+        argv = split(line)
     except ValueError as error:
         print(f"{error} - check the quotes.", file=sys.stderr)
 

@@ -236,3 +236,30 @@ class TestATruncatedBody:
 
         assert partial.read_bytes() == whole
         assert len(seen) == 3, "it accepted a short body instead of asking for the rest"
+
+
+class TestSayingItIsWaiting:
+    """
+    Silence is what makes a working command look hung.
+
+    An unreachable host costs five attempts, each waiting out a thirty-second
+    connect timeout, and an index fetched twice doubles it — reported as five
+    minutes of a dashboard doing nothing while it was doing exactly what it had
+    been told.
+    """
+
+    def test_each_wait_is_announced(self, monkeypatch, capsys):
+        monkeypatch.setattr(net, "BACKOFF", 0)
+        monkeypatch.setattr(
+            net,
+            "_open_once",
+            lambda *a, **k: (_ for _ in ()).throw(ConnectionResetError("10054")),
+        )
+
+        with pytest.raises(net.Unreachable):
+            net.open_url("https://downloads.mariadb.org/rest-api/mariadb/")
+
+        said = capsys.readouterr().err
+
+        assert said.count("attempt") == net.ATTEMPTS - 1, "the last one is the failure itself"
+        assert "downloads.mariadb.org" in said, "it should name the host being waited on"

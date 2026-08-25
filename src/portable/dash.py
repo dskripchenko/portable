@@ -144,6 +144,46 @@ def look() -> Snapshot:
     return snapshot
 
 
+class _Streaming:
+    """
+    Somewhere for a command's output to go, a line at a time.
+
+    Collecting it and showing it at the end was the first version, and a
+    download then looked exactly like a freeze: the command was working, saying
+    so, and none of it arrived until it had finished. Anything that prints as it
+    goes now appears as it goes.
+
+    Stands in for `sys.stdout` while a command runs, so it answers what code
+    reasonably asks of one — `isatty` in particular, which decides whether
+    output is coloured. False, because this is a widget and the escape codes
+    would be printed rather than obeyed.
+    """
+
+    def __init__(self, app: Any) -> None:
+        self._app = app
+        self._pending = ""
+
+    def write(self, text: str) -> int:
+        self._pending += text
+
+        while "\n" in self._pending:
+            line, self._pending = self._pending.split("\n", 1)
+            self._say(line)
+
+        return len(text)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._say(self._pending)
+            self._pending = ""
+
+    def isatty(self) -> bool:
+        return False
+
+    def _say(self, line: str) -> None:
+        self._app.call_from_thread(self._app.query_one("#log").write, f"  {line}")
+
+
 def _suggestions() -> list[str]:
     """
     What the command line offers as you type.
@@ -236,6 +276,8 @@ def build() -> Any:
             self._stop = None
             self._history: list[str] = []
             self._recalled = 0
+            self._busy: str | None = None
+            self._leaving = False
 
         def compose(self) -> ComposeResult:
             yield Header()
@@ -303,10 +345,10 @@ def build() -> Any:
             )
 
         def _refused(self, line: str) -> str:
-            import shlex
+            from . import cli
 
             try:
-                first = (shlex.split(line) or [""])[0]
+                first = (cli.split(line) or [""])[0]
             except ValueError:
                 return "the quotes do not balance"
 
@@ -331,29 +373,52 @@ def build() -> Any:
             printed, because stdout here belongs to the screen.
             """
             import contextlib as ctx
-            import io
-            import shlex
+            import time
 
             from . import cli
 
-            captured = io.StringIO()
+            started = time.monotonic()
+            self.call_from_thread(self.busy, line)
+            stream = _Streaming(self)
 
             try:
-                with ctx.redirect_stdout(captured), ctx.redirect_stderr(captured):
-                    cli.main(shlex.split(line))
+                with ctx.redirect_stdout(stream), ctx.redirect_stderr(stream):
+                    cli.main(cli.split(line))
             except SystemExit:
                 # argparse raises this for a bad command. In a screen it would
                 # be the last thing that ever happened.
                 pass
             except Exception as error:  # noqa: BLE001
-                captured.write(f"{type(error).__name__}: {error}\n")
+                stream.write(f"{type(error).__name__}: {error}\n")
+            finally:
+                stream.flush()
 
-            for written in captured.getvalue().splitlines():
-                self.call_from_thread(self.query_one("#log", RichLog).write, f"  {written}")
+            took = time.monotonic() - started
+
+            # Only when it was long enough to have been worth wondering about.
+            if took > 1.0:
+                self.call_from_thread(
+                    self.query_one("#log", RichLog).write, f"  ({took:.0f}s)"
+                )
+
+            self.call_from_thread(self.busy, None)
 
             # A command that changed something should be visible in the tables
             # before the next tick, which is a whole second of wondering.
             self.call_from_thread(self.action_refresh)
+
+        def busy(self, line: str | None) -> None:
+            """
+            Say that something is running, and what.
+
+            Without it a command that takes a minute is indistinguishable from
+            one that has hung — the screen keeps redrawing, the tables keep
+            refreshing, and nothing says anybody is waiting on anything.
+            """
+            self._busy = line
+            self.query_one("#command", Input).placeholder = (
+                f"running: {line}" if line else "a command, without `portable` in front of it"
+            )
 
         def action_earlier(self) -> None:
             self._recall(-1)
@@ -405,7 +470,8 @@ def build() -> Any:
             self.query_one("#log", RichLog).write(logs.render(name, line, width, colour=False))
 
         def show(self, snapshot: Snapshot) -> None:
-            self.query_one("#summary", Static).update(snapshot.summary)
+            running = f"  —  running: {self._busy}" if self._busy else ""
+            self.query_one("#summary", Static).update(snapshot.summary + running)
 
             if snapshot.router_error and not snapshot.port:
                 # The reason nothing is being served, in the place somebody is
@@ -440,6 +506,31 @@ def build() -> Any:
                 services.add_row(
                     entry.get("name", ""), entry.get("kind", ""), str(entry.get("port") or "")
                 )
+
+        def action_quit(self) -> None:
+            """
+            Leave, saying what is still going on if anything is.
+
+            A command runs in a thread, and a thread inside a network call does
+            not notice being asked to stop. The screen goes, the process stays,
+            and what is left is a blinking cursor in a terminal that looks
+            wedged — reported after quitting during an `install` that was
+            waiting out an unreachable host.
+
+            So it is said, once, and the second press leaves regardless. The
+            daemon owns everything that matters; abandoning a download costs the
+            part of it that was fetched, and even that is kept for the next
+            attempt.
+            """
+            if self._busy and not self._leaving:
+                self._leaving = True
+                self.query_one("#log", RichLog).write(
+                    f"  {self._busy} is still running. F10 again to leave it."
+                )
+
+                return
+
+            self.exit()
 
         def on_unmount(self) -> None:
             if self._stop is not None:

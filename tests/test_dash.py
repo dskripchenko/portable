@@ -268,3 +268,135 @@ class TestTheLibrariesItNeeds:
         assert all(version[0].isdigit() for version in module.VENDORED.values()), (
             "a version must be exact — a bundle gets a checksum, and a range cannot"
         )
+
+
+class TestSayingItIsBusy:
+    """
+    Reported after using it: commands ran, and nothing said they were running.
+
+    A download that takes a minute was indistinguishable from a screen that had
+    hung — the tables kept refreshing, the log kept flowing, and nothing said
+    anybody was waiting on anything.
+    """
+
+    async def test_output_arrives_as_it_is_written_not_at_the_end(self):
+        """
+        Collecting it and showing it afterwards was the first version, and it is
+        exactly what made a working command look frozen.
+        """
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # From a thread, which is where a command actually runs — the
+            # screen's own loop cannot call into itself that way.
+            import asyncio
+
+            stream = dash._Streaming(app)
+            await asyncio.to_thread(stream.write, "first line\n")
+            await pilot.pause()
+
+            written = "\n".join(str(line) for line in app.query_one("#log").lines)
+
+            assert "first line" in written, "nothing arrived before the command ended"
+
+    async def test_a_partial_line_is_not_lost(self):
+        # A command that finishes without a trailing newline still said
+        # something, and dropping it would lose the last thing it said.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            import asyncio
+
+            stream = dash._Streaming(app)
+            await asyncio.to_thread(stream.write, "no newline at the end")
+            await asyncio.to_thread(stream.flush)
+            await pilot.pause()
+
+            assert "no newline" in "\n".join(str(l) for l in app.query_one("#log").lines)
+
+    async def test_it_is_not_a_terminal(self):
+        # Which decides whether output is coloured. It is a widget, and the
+        # escape codes would be printed rather than obeyed.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            assert dash._Streaming(app).isatty() is False
+
+    async def test_the_prompt_says_what_is_running(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.busy("install php")
+
+            assert "install php" in app.query_one("#command").placeholder
+
+            app.busy(None)
+
+            assert "install php" not in app.query_one("#command").placeholder
+
+
+class TestLeavingWhileSomethingRuns:
+    """
+    Reported: quitting during an `install` that was waiting out an unreachable
+    host left the screen gone and the process alive — a blinking cursor in a
+    terminal that looks wedged.
+
+    A command runs in a thread, and a thread inside a network call does not
+    notice being asked to stop.
+    """
+
+    async def test_the_first_press_says_what_is_still_running(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            app.busy("install mariadb")
+
+            await pilot.press("f10")
+            await pilot.pause()
+
+            written = "\n".join(str(line) for line in app.query_one("#log").lines)
+
+            assert "install mariadb is still running" in written
+            assert app.is_running, "it left without saying anything"
+
+    async def test_the_second_press_leaves_regardless(self):
+        # The daemon owns everything that matters, and an abandoned download
+        # costs the part that was fetched — which is kept for the next attempt.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            app.busy("install mariadb")
+
+            await pilot.press("f10")
+            await pilot.pause()
+            await pilot.press("f10")
+            await pilot.pause()
+
+            assert not app.is_running
+
+    async def test_nothing_running_leaves_at_once(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.press("f10")
+            await pilot.pause()
+
+            assert not app.is_running
