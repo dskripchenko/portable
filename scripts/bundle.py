@@ -44,6 +44,29 @@ from portable import net
 
 RELEASES = "https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest"
 
+#: The libraries the dashboard is drawn with, pinned exactly.
+#:
+#: Only four, and that is measured rather than declared. `textual` names six more
+#: dependencies — pygments, markdown-it-py and its plugins among them — and none
+#: of those is imported by anything this tool does: the dashboard was run under
+#: the test harness with `sys.modules` inspected afterwards, and they were absent.
+#: Carrying them would add four and a half megabytes of syntax lexers for a
+#: screen that highlights nothing.
+#:
+#: A test blocks those imports and runs the dashboard anyway, so that the day
+#: something does reach for one, it is a failing test rather than a bundle that
+#: crashes on somebody's machine.
+#:
+#: Pinned, and not by a range: this is a directory copied into an archive that
+#: gets a checksum, and "whatever was newest that morning" is not something a
+#: checksum can mean.
+VENDORED = {
+    "textual": "8.2.8",
+    "rich": "15.0.0",
+    "platformdirs": "4.11.4",
+    "typing_extensions": "4.16.0",
+}
+
 #: The interpreter version that ships. Pinned rather than "newest": the bundle
 #: is the one place where the Python running this tool is decided, and letting
 #: it drift with an upstream release is how a build that worked in March fails
@@ -134,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     interpreter = _fetch_python(args.python, args.target, args.output)
     _unpack_python(interpreter, staging)
     _install_package(staging, args.target)
+    _vendor(staging, args.target, args.output)
     _write_launcher(staging, args.target)
     (staging / "README.txt").write_text(README, encoding="utf-8")
 
@@ -257,6 +281,76 @@ def _install_package(staging: Path, target: str) -> None:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
     print(f"  package -> {destination.relative_to(staging)}")
+
+
+def _vendor(staging: Path, target: str, cache: Path) -> None:
+    """
+    Put the dashboard's libraries beside our own package.
+
+    Wheels from PyPI, verified against the digest PyPI publishes with them, and
+    unpacked by hand. No pip: it would have to be present, would resolve
+    versions of its own choosing, and would turn a copied directory into an
+    install — which is the property that makes this bundle what it is.
+
+    Pure Python only, checked rather than hoped for. A wheel with a compiled
+    extension is built for one interpreter and one platform, and copying it into
+    a bundle for another is a crash at import time on somebody else's machine.
+    """
+    destination = _site_packages(staging, target)
+
+    for name, version in VENDORED.items():
+        wheel = _fetch_wheel(name, version, cache)
+
+        with zipfile.ZipFile(wheel) as archive:
+            names = archive.namelist()
+            compiled = [entry for entry in names if entry.endswith((".so", ".pyd", ".dll"))]
+
+            if compiled:
+                raise SystemExit(
+                    f"{name} {version} carries compiled files ({compiled[0]}), so it is "
+                    f"built for one interpreter and platform. It cannot be vendored."
+                )
+
+            archive.extractall(destination)
+
+        print(f"  vendored {name} {version}")
+
+
+def _fetch_wheel(name: str, version: str, cache: Path) -> Path:
+    """The `py3-none-any` wheel for one pinned version, verified and cached."""
+    cached = cache / f"{name}-{version}-py3-none-any.whl"
+
+    if cached.exists():
+        return cached
+
+    index = json.loads(net.read_text(f"https://pypi.org/pypi/{name}/{version}/json", timeout=60))
+    wheels = [
+        entry
+        for entry in index.get("urls", [])
+        if entry.get("packagetype") == "bdist_wheel" and entry["filename"].endswith("-any.whl")
+    ]
+
+    if not wheels:
+        raise SystemExit(f"{name} {version} publishes no platform-independent wheel.")
+
+    wheel = wheels[0]
+    cache.mkdir(parents=True, exist_ok=True)
+
+    with net.open_url(wheel["url"], timeout=300) as response:
+        payload = response.read()
+
+    expected = wheel["digests"]["sha256"]
+    actual = hashlib.sha256(payload).hexdigest()
+
+    if actual != expected:
+        raise SystemExit(
+            f"{wheel['filename']} does not match the digest PyPI publishes.\n"
+            f"  expected: {expected}\n  received: {actual}"
+        )
+
+    cached.write_bytes(payload)
+
+    return cached
 
 
 def _write_launcher(staging: Path, target: str) -> None:

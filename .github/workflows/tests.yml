@@ -26,8 +26,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      # `textual` and `pytest-asyncio` are the dashboard's, which the bundle
+      # vendors and a checkout does not carry. Without them its tests skip — and
+      # so does the guard that keeps four vendored packages from becoming ten.
       - name: Install test dependencies
-        run: python -m pip install --quiet pytest
+        run: python -m pip install --quiet pytest pytest-asyncio textual
 
       - name: Test
         run: python -m pytest -q

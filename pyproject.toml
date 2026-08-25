@@ -17,6 +17,11 @@ where = ["src"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 
+# The dashboard is asynchronous, so its tests are coroutines. Ignored when
+# pytest-asyncio is absent, which is every environment that does not have the
+# dashboard's libraries either.
+asyncio_mode = "auto"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

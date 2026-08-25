@@ -24,7 +24,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, logs, paths, purge, selfupdate, spawn, userpath
+from . import VERSION, catalog, dash, logs, paths, purge, selfupdate, spawn, userpath
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -74,6 +74,7 @@ anything else
   portable home set D:\\portable      or --beside, to keep it next to the launcher
   portable path add                  put this on your own PATH; no administrator
   portable purge                     take back everything outside this folder
+  portable dash                      a full-screen view of what is running
   portable shell                     run commands without retyping `portable`
   portable logs -f                   follow everything being written
   portable logs php -f               or one process, or every worker of one kind
@@ -152,6 +153,13 @@ def _parser() -> argparse.ArgumentParser:
     add("help", "Everything below, on its own.", _help)
 
     add("shell", "Run commands one after another without retyping `portable`.", _shell)
+
+    dashboard = add("dash", "A full-screen view of what is running.", _dash)
+    dashboard.add_argument(
+        "logs",
+        nargs="?",
+        help="Which log to follow in the bottom pane. All of them by default.",
+    )
 
     path_it = subparsers.add_parser(
         "path", parents=[common], help="Put this on your PATH, for you only."
@@ -481,6 +489,23 @@ def _path_remove(args) -> int:
         {"directory": str(here), "changed": changed},
         f"Removed {here} from your PATH." if changed else f"{here} was not on it.",
     )
+
+
+def _dash(args) -> int:
+    """
+    The full-screen view.
+
+    A client of the daemon like every other command — nothing was added to the
+    daemon for it, which is what the API being built first was for.
+    """
+    try:
+        application = dash.build()
+    except dash.Unavailable as error:
+        return _fail(args, "no-dashboard", str(error))
+
+    application(follow=args.logs).run()
+
+    return 0
 
 
 def _shell(args) -> int:

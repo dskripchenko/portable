@@ -69,6 +69,21 @@ jobs:
           verify(Path(tree[0]), "${{ env.TARGET }}")
           print(f"the bundle in {tree[0]} runs")
 
+          # And that the dashboard's libraries came with it. They are vendored
+          # by hand rather than installed, so nothing else would notice their
+          # absence until somebody pressed the key.
+          import subprocess
+
+          result = subprocess.run(
+              [str(Path(tree[0]) / "python" / "python.exe"), "-c",
+               "from portable import dash; dash.build(); print('the dashboard builds')"],
+              capture_output=True, text=True, check=False,
+          )
+          print(result.stdout, result.stderr)
+
+          if "the dashboard builds" not in result.stdout:
+              raise SystemExit("the vendored dashboard does not build inside the bundle")
+
       - uses: actions/upload-artifact@v4
         with:
           name: portable-${{ env.TARGET }}
