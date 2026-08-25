@@ -3,9 +3,10 @@
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **released, partly verified.** PHP, Caddy, PostgreSQL, MariaDB, Redis
-> and Node install and run; sites are served at `*.localhost`. Serving PHP has
-> been confirmed on real Windows; two things have not — see the note at the end.
+> Status: **released, nearly verified.** PHP, Caddy, PostgreSQL, MariaDB, Redis
+> and Node install and run; sites are served at `*.localhost`. Serving PHP and
+> binding port 80 are confirmed on real Windows; one thing is not — see the note
+> at the end.
 
 Documentation: [English](docs/en/) · [Русский](docs/ru/) · [Deutsch](docs/de/) ·
 [中文](docs/zh/)
@@ -196,17 +197,17 @@ Most of that was on macOS, which shares `php-cgi`, the FastCGI protocol and the
 archive formats with the target but not everything else.
 
 **Confirmed on real Windows since:** `php-cgi.exe` serving a Laravel project
-through the pool, runtimes downloading and unpacking over a network that resets
-TLS connections mid-handshake.
+through the pool; **port 80 bound by an ordinary user, with no administrator
+rights** — the premise the whole design rests on; runtimes downloading and
+unpacking over a network that resets TLS connections mid-handshake; and
+installing under a PowerShell locked into Constrained Language Mode.
 
-**Still open, and answerable only there:**
+**Still open, and answerable only there:** detaching from the console, the
+process group and the job object — in particular the case where an IDE puts its
+children in a job with kill-on-close.
 
-- port 80 without administrator rights, and whether `http.sys` has it;
-- detaching from the console, the process group and the job object — the case
-  where an IDE puts its children in a job with kill-on-close.
-
-CI runs the whole suite on `windows-latest`, which covers the logic and neither
-of those.
+CI runs the whole suite on `windows-latest`, which covers the logic and not
+that.
 
 **macOS is not a target.** Every catalog resolves Windows archives and nothing
 else, so the tool runs there but installs binaries that machine cannot execute.

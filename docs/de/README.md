@@ -25,10 +25,13 @@ Werkzeuge dieser Art sich sonst gar nicht installieren lassen.
 
 ## Stand
 
-Veröffentlicht, teilweise geprüft. Das Ausliefern von PHP ist auf echtem Windows
-bestätigt. Zwei Dinge nicht: Port 80 ohne Administratorrechte zu belegen, und das
-Überleben von Konsole und Job-Objekt, wenn ein Terminal oder eine IDE geschlossen
-wird. Beide stehen in [Fehlerbehebung](troubleshooting.md).
+Veröffentlicht und beinahe vollständig geprüft. Das Ausliefern von PHP auf
+echtem Windows ist bestätigt, und **Port 80 als gewöhnlicher Benutzer zu
+belegen** ebenfalls — die Voraussetzung, auf der der ganze Entwurf ruht, denn
+ein lokaler Webserver, der erhöhte Rechte bräuchte, bräuchte sie täglich.
+
+Eines nicht: das Überleben von Konsole und Job-Objekt, wenn ein Terminal oder
+eine IDE geschlossen wird. Es steht in [Fehlerbehebung](troubleshooting.md).
 
 macOS und Linux sind keine Ziele. Alle Kataloge lösen Windows-Archive auf; das
 Werkzeug läuft dort zwar, installiert aber Binärdateien, die jene Maschine nicht

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Confirmed on real Windows: port 80, without administrator rights
+
+Reported by a person running it on their own machine. It is the premise the
+whole design rests on — a local web server that needed elevation would need it
+every day, and the tool's first constraint is that it never asks — and until now
+it was an expectation rather than an observation.
+
+`http.sys`, IIS and Windows' reserved port ranges can each still hold port 80 on
+a particular machine, which is why there is a fallback and why `portable port`
+exists. What is settled is that nothing about binding it requires elevation.
+
+One thing is still unconfirmed: surviving the console, the process group and the
+job object when a terminal or an IDE closes.
+
 ## 0.1.3 — 2026-08-25
 
 Installing on a machine that has been locked down, which turned out to mean

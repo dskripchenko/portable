@@ -26,10 +26,12 @@ this class of tool usually cannot be installed at all.
 
 ## Status
 
-Released and partly verified. Serving PHP has been confirmed on real Windows.
-Two things have not: binding port 80 without administrator rights, and surviving
-the console and the job object when a terminal or an IDE closes. Both are named
-in [troubleshooting](troubleshooting.md).
+Released and nearly verified. Serving PHP on real Windows is confirmed, and so
+is **binding port 80 as an ordinary user** — the premise the whole design rests
+on, since a local web server that needed elevation would need it every day.
+
+One thing is not: surviving the console and the job object when a terminal or an
+IDE closes. It is named in [troubleshooting](troubleshooting.md).
 
 macOS and Linux are not targets. Every catalog resolves Windows archives, so the
 tool runs elsewhere but installs binaries that machine cannot execute.
