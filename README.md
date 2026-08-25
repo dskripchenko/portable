@@ -203,8 +203,9 @@ archive formats with the target but not everything else.
 the pool; **port 80 bound by an ordinary user, with no administrator rights** —
 the premise the whole design rests on; runtimes downloading and unpacking over a
 network that resets TLS connections mid-handshake; installing under a PowerShell
-locked into Constrained Language Mode; and detaching from the console and the
-process group.
+locked into Constrained Language Mode; detaching from the console and the
+process group; **replacing itself with `upgrade`**, which exchanges two
+directories while running from inside one of them; and `logs` and `shell`.
 
 **One limitation, measured rather than promised.** A process can leave a job
 object only if that job permits it, and some launchers create one that does not.

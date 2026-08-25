@@ -27,7 +27,8 @@ this class of tool usually cannot be installed at all.
 ## Status
 
 Released and verified on real Windows: serving PHP through the pool, binding
-port 80 as an ordinary user, and surviving the console being closed.
+port 80 as an ordinary user, surviving the console being closed, and replacing
+itself with `upgrade`.
 
 One limitation is measured rather than promised. A terminal that puts what it
 starts into a **job object forbidding breakaway** takes the supervisor with it

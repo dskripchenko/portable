@@ -75,7 +75,9 @@ directory you are in.
 Serving PHP through the pool. Binding port 80 as an ordinary user — the premise
 the whole design rests on. Downloading over a network that resets TLS handshakes
 mid-record. Installing under a PowerShell locked into Constrained Language Mode.
-Detaching from the console and the process group.
+Detaching from the console and the process group. Replacing itself with
+`upgrade`, which exchanges two directories while running from inside one of
+them. Following logs, and the shell.
 
 ### Added — `portable path add`
 

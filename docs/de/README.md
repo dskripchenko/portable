@@ -26,8 +26,8 @@ Werkzeuge dieser Art sich sonst gar nicht installieren lassen.
 ## Stand
 
 Veröffentlicht und auf echtem Windows geprüft: PHP durch den Pool ausliefern,
-Port 80 als gewöhnlicher Benutzer belegen, und das Schließen der Konsole
-überleben.
+Port 80 als gewöhnlicher Benutzer belegen, das Schließen der Konsole überleben,
+und sich mit `upgrade` selbst ersetzen.
 
 Eine Einschränkung ist gemessen statt versprochen. Ein Terminal, das Gestartetes
 in ein **Job-Objekt ohne Breakaway-Erlaubnis** steckt, nimmt den Supervisor beim
