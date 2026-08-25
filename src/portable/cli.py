@@ -24,7 +24,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, logs, paths, selfupdate, spawn, userpath
+from . import VERSION, catalog, logs, paths, purge, selfupdate, spawn, userpath
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -73,6 +73,7 @@ anything else
   portable home                      where everything is kept, and what decided that
   portable home set D:\\portable      or --beside, to keep it next to the launcher
   portable path add                  put this on your own PATH; no administrator
+  portable purge                     take back everything outside this folder
   portable shell                     run commands without retyping `portable`
   portable logs -f                   follow everything being written
   portable logs php -f               or one process, or every worker of one kind
@@ -179,6 +180,9 @@ def _parser() -> argparse.ArgumentParser:
     logs_it.add_argument("-f", "--follow", action="store_true", help="Keep printing as it happens.")
     logs_it.add_argument("-n", "--lines", type=int, default=20, help="How much history to show.")
     logs_it.add_argument("--no-colour", action="store_true", help="Plain text.")
+
+    purge_it = add("purge", "Remove everything this has put outside its own folder.", _purge)
+    purge_it.add_argument("--yes", action="store_true", help="Do not ask.")
 
     upgrade = add("upgrade", "Replace this tool with the newest release.", _upgrade)
     upgrade.add_argument(
@@ -608,6 +612,91 @@ def _logs(args) -> int:
         print(file=sys.stderr)
 
     return 0
+
+
+def _purge(args) -> int:
+    """
+    Take back everything outside this folder, and say what is left.
+
+    Not the folder itself: this is running from inside it, and Windows will not
+    delete a directory holding a running executable. After this there is exactly
+    one thing left — the folder — which is the promise the README has always
+    made, restored.
+    """
+    bundle = paths.bundle()
+    traces = purge.find(bundle)
+
+    if args.json and not args.yes:
+        return _emit(
+            args,
+            {
+                "traces": [
+                    {"kind": trace.kind, "what": trace.what, "detail": trace.detail, "size": trace.size}
+                    for trace in traces
+                ],
+                "bundle": str(bundle) if bundle else None,
+                "removed": False,
+            },
+            "",
+        )
+
+    if not traces:
+        return _emit(
+            args,
+            {"traces": [], "removed": True, "bundle": str(bundle) if bundle else None},
+            "Nothing has been left anywhere else."
+            + (f"\nDelete {bundle} and none of this was ever here." if bundle else ""),
+        )
+
+    if not args.yes:
+        print("This will remove:\n")
+
+        for trace in traces:
+            size = purge.megabytes(trace.size)
+            print(f"  {trace.what}{f'  ({size})' if size else ''}")
+            print(f"      {trace.detail}")
+
+        print()
+
+        try:
+            answer = input("Go ahead? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+
+            return 1
+
+        if answer not in ("y", "yes"):
+            return _fail(args, "declined", "Nothing was removed.")
+
+    # The daemon first. It holds the data directory open, and on Windows an open
+    # directory is one that will not be deleted.
+    with contextlib.suppress(NotRunning, CallFailed):
+        Client().shutdown()
+
+    _await_gone()
+
+    removed = []
+
+    for trace in traces:
+        try:
+            trace.remove()
+            removed.append(trace.what)
+        except Exception as error:  # noqa: BLE001
+            # One thing refusing to go should not leave the rest behind, and the
+            # reader needs to know which one it was.
+            print(f"could not remove {trace.what}: {error}", file=sys.stderr)
+
+    tail = (
+        f"\n\nOnly {bundle} is left. Delete it and none of this was ever here."
+        if bundle
+        else ""
+    )
+
+    return _emit(
+        args,
+        {"removed": removed, "bundle": str(bundle) if bundle else None},
+        "Removed:\n" + "\n".join(f"  {what}" for what in removed) + tail,
+    )
 
 
 def _upgrade(args) -> int:

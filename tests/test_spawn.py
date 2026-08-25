@@ -13,9 +13,13 @@ until someone closed a terminal on Windows and lost their stack.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
+from pathlib import Path
+
+import pytest
 
 from portable import spawn
 
@@ -196,3 +200,154 @@ class TestNothingHoldsSomebodyElsesDirectory:
             keeper.stop_all()
 
         assert where["cwd"] == tmp_path
+
+
+@pytest.mark.skipif(os.name != "nt", reason="job objects are a Windows mechanism")
+class TestSurvivingTheThingThatStartedIt:
+    """
+    The last claim in the README that was an expectation rather than a
+    measurement.
+
+    A terminal closing takes its console and its process group with it, and an
+    IDE goes further: it puts everything it starts into a **job object** with
+    kill-on-close, so that quitting cleans up whatever the run configuration
+    left behind. A supervisor caught in one dies with the editor.
+
+    `CREATE_BREAKAWAY_FROM_JOB` is what steps out of it, and this is where that
+    is checked rather than assumed.
+    """
+
+    def job_with_kill_on_close(self):
+        """A job object that kills everything in it when the handle closes."""
+        import ctypes
+        import ctypes.wintypes
+
+        class LIMITS(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", ctypes.wintypes.LARGE_INTEGER),
+                ("PerJobUserTimeLimit", ctypes.wintypes.LARGE_INTEGER),
+                ("LimitFlags", ctypes.wintypes.DWORD),
+                ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t),
+                ("ActiveProcessLimit", ctypes.wintypes.DWORD),
+                ("Affinity", ctypes.POINTER(ctypes.wintypes.ULONG)),
+                ("PriorityClass", ctypes.wintypes.DWORD),
+                ("SchedulingClass", ctypes.wintypes.DWORD),
+            ]
+
+        class COUNTERS(ctypes.Structure):
+            _fields_ = [("Reserved", ctypes.c_byte * 48)]
+
+        class EXTENDED(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", LIMITS),
+                ("IoInfo", COUNTERS),
+                ("ProcessMemoryLimit", ctypes.c_size_t),
+                ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+        JobObjectExtendedLimitInformation = 9
+
+        kernel32 = ctypes.windll.kernel32
+        job = kernel32.CreateJobObjectW(None, None)
+
+        assert job, "could not create a job object"
+
+        limits = EXTENDED()
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+
+        assert kernel32.SetInformationJobObject(
+            job, JobObjectExtendedLimitInformation, ctypes.byref(limits), ctypes.sizeof(limits)
+        ), "could not set kill-on-close"
+
+        return job
+
+    def test_a_detached_process_escapes_a_job_that_kills_its_members(self, tmp_path):
+        """
+        The case an IDE creates.
+
+        A parent is put in a job that kills everything in it when closed; the
+        parent starts a detached child and exits; the job is closed. The parent
+        must die and the child must not.
+        """
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        job = self.job_with_kill_on_close()
+
+        marker = tmp_path / "alive.txt"
+        source = str(Path(__file__).resolve().parent.parent / "src")
+
+        # The parent: joins the job, starts a detached child, and leaves.
+        parent = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys, time;"
+                    "sys.path.insert(0, sys.argv[1]);"
+                    "from portable import spawn;"
+                    "print(spawn.start_detached([sys.executable, '-c',"
+                    "    \"import sys, time; open(sys.argv[1], 'w').write('yes'); time.sleep(60)\","
+                    "    sys.argv[2]]), flush=True);"
+                    "time.sleep(0.5)"
+                ),
+                source,
+                str(marker),
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+
+        assert kernel32.AssignProcessToJobObject(job, int(parent._handle)), (
+            "could not put the parent in the job"
+        )
+
+        detached = int(parent.stdout.readline().strip())
+        parent.wait(timeout=30)
+
+        deadline = time.monotonic() + 10
+
+        while time.monotonic() < deadline and not marker.exists():
+            time.sleep(0.1)
+
+        assert marker.exists(), "the detached process never started"
+
+        # Closing the handle is what an IDE does when it quits.
+        kernel32.CloseHandle(job)
+        time.sleep(1.5)
+
+        try:
+            assert spawn.is_running(detached), (
+                "the detached process was killed with the job — an IDE closing "
+                "would take the supervisor with it"
+            )
+        finally:
+            subprocess.run(
+                ["taskkill", "/F", "/PID", str(detached)], capture_output=True, check=False
+            )
+
+    def test_it_still_starts_where_breakaway_is_forbidden(self, tmp_path):
+        """
+        Some jobs refuse to let anything out.
+
+        `CREATE_BREAKAWAY_FROM_JOB` then fails outright, and a supervisor that
+        will not start at all is worse than one that starts and shares the
+        editor's fate. The fallback drops the flag and keeps the other two.
+        """
+        flags = spawn.detached_flags(breakaway=False)
+
+        assert flags & spawn.DETACHED_PROCESS
+        assert flags & spawn.CREATE_NEW_PROCESS_GROUP
+        assert not flags & spawn.CREATE_BREAKAWAY_FROM_JOB
+
+        pid = spawn.start_detached(
+            [sys.executable, "-c", "import time; time.sleep(5)"], log=tmp_path / "out.log"
+        )
+
+        assert spawn.is_running(pid)
+
+        subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, check=False)
