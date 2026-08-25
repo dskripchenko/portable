@@ -1,0 +1,19 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  what-is-there:
+    runs-on: windows-latest
+    steps:
+      - shell: powershell
+        run: |
+          "PowerShell: $($PSVersionTable.PSVersion)"
+          foreach ($n in 'curl.exe','tar.exe','certutil.exe','winget.exe','bitsadmin.exe') {
+            $p = (Get-Command $n -ErrorAction SilentlyContinue).Source
+            "{0,-14} {1}" -f $n, $(if ($p) { $p } else { 'отсутствует' })
+          }
+          "Expand-Archive: $([bool](Get-Command Expand-Archive -ErrorAction SilentlyContinue))"
+          "Get-FileHash:   $([bool](Get-Command Get-FileHash -ErrorAction SilentlyContinue))"
+          "ExecutionPolicy: $(Get-ExecutionPolicy)"
+          "--- iex под Restricted ---"
+          Set-ExecutionPolicy -Scope Process Restricted -Force
+          try { iex 'Write-Output "строка из iex выполнилась"' } catch { "iex отказал: $_" }
