@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- **The release no longer builds a macOS bundle.** It was justified as a check
+  that the bundler still worked, and it was not much of one: everything in
+  `bundle.py` except the shell launcher is exercised by the Windows job too, and
+  that launcher exists only for a bundle deliberately never published — code
+  tested to keep its own test passing. It also put a second, unusable target in
+  front of anyone reading the release run.
+
+  `scripts/bundle.py --target aarch64-apple-darwin` still works for anyone
+  developing on a Mac who wants one.
+
 ## 0.1.1 — 2026-08-25
 
 Three defects found by running several versions of everything side by side,

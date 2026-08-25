@@ -2,16 +2,20 @@ name: release
 
 # A tagged version, built into self-contained bundles and published.
 #
-# One per target, each carrying its own interpreter, because the whole premise
-# is that this installs on a machine with nothing on it. Requiring Python first
-# would be the same problem the tool exists to solve, one level down.
+# The bundle carries its own interpreter, because the whole premise is that this
+# installs on a machine with nothing on it. Requiring Python first would be the
+# same problem the tool exists to solve, one level down.
 #
-# Windows is the product; the macOS bundle is for developing the thing. Intel
-# macOS is deliberately absent — `macos-13` runners are being retired and a leg
-# that queues forever holds `publish` forever, which is a release that silently
-# never happens. Anyone on an Intel Mac can build one: `scripts/bundle.py
-# --target x86_64-apple-darwin` runs anywhere, since it only downloads and
-# repacks.
+# Windows only, and that is the whole list. Every catalog resolves Windows
+# archives, so a bundle for anything else runs the tool and then hands somebody a
+# `php-cgi.exe` their machine cannot execute.
+#
+# A macOS bundle was built here for a while, justified as a check that the
+# bundler still worked. It was not much of one: everything in `bundle.py` except
+# the shell launcher is exercised by this job too, and that launcher exists only
+# for the bundle nobody should use — so it was code tested to keep its own test
+# passing. `scripts/bundle.py --target aarch64-apple-darwin` still works for
+# anyone developing on a Mac who wants one.
 on:
   push:
     tags: ['v*']
@@ -22,18 +26,11 @@ permissions:
 
 jobs:
   bundle:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-msvc
-            runs-on: windows-latest
-            publish: true
-          - target: aarch64-apple-darwin
-            runs-on: macos-latest
-            publish: false
-    name: ${{ matrix.target }}
-    runs-on: ${{ matrix.runs-on }}
+    name: x86_64-pc-windows-msvc
+    runs-on: windows-latest
+
+    env:
+      TARGET: x86_64-pc-windows-msvc
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +52,7 @@ jobs:
       - name: Build the bundle
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/bundle.py --target ${{ matrix.target }} --keep-tree
+        run: python scripts/bundle.py --target ${{ env.TARGET }} --keep-tree
 
       # Built on one machine and run on another, so the run has to happen with
       # nothing of the build machine's Python around it. A bundle that quietly
@@ -68,19 +65,13 @@ jobs:
           from bundle import verify
           from pathlib import Path
 
-          tree = glob.glob("dist/portable-*-${{ matrix.target }}")
-          verify(Path(tree[0]), "${{ matrix.target }}")
+          tree = glob.glob("dist/portable-*-${{ env.TARGET }}")
+          verify(Path(tree[0]), "${{ env.TARGET }}")
           print(f"the bundle in {tree[0]} runs")
 
-      # Only the Windows bundle is published. macOS is built as a check that the
-      # bundler and the POSIX launcher still work — every catalog resolves
-      # Windows archives and nothing else, so a macOS bundle can run the tool
-      # and then hand somebody a `php-cgi.exe` their machine cannot execute.
-      # Attaching it to a release would be offering something that does not work.
       - uses: actions/upload-artifact@v4
-        if: matrix.publish
         with:
-          name: portable-${{ matrix.target }}
+          name: portable-${{ env.TARGET }}
           path: |
             dist/*.zip
             dist/*.sha256
