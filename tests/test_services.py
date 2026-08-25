@@ -325,15 +325,15 @@ class TestMariadbIgnoringTheRestOfTheMachine:
         # MariaDB reads its option files in order and the first one wins, so
         # `--defaults-file` anywhere but first is a suggestion rather than an
         # instruction.
-        command = init_command("mariadb", self.paths_for(), Path("/data"), Path("/conf/my.cnf"))
+        # Built from the Path rather than written out: the same path renders
+        # with backslashes on Windows, which is where this actually runs.
+        config = Path("/conf/my.cnf")
+        expected = f"--defaults-file={config}"
 
-        assert command[1] == "--defaults-file=/conf/my.cnf"
-
-        started = start_command(
-            "mariadb", self.paths_for(), Path("/data"), 3306, Path("/conf/my.cnf")
+        assert init_command("mariadb", self.paths_for(), Path("/data"), config)[1] == expected
+        assert (
+            start_command("mariadb", self.paths_for(), Path("/data"), 3306, config)[1] == expected
         )
-
-        assert started[1] == "--defaults-file=/conf/my.cnf"
 
     def test_root_is_created_so_it_can_actually_connect(self):
         """
