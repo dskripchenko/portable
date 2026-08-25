@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.3 — 2026-08-25
+
+### Fixed — upgrading an installation whose data lives inside it
+
+Reported from Windows: `upgrade` said it had succeeded and the version did not
+change.
+
+`home set --beside` puts the data directory inside the bundle, which is the
+point of that mode — a flash drive holding the whole installation, one folder
+that travels. Replacing the bundle then means replacing the folder that also
+holds the sites and the databases, and the swap treated the two as one thing.
+
+Two consequences, and the loud one hid the worse one:
+
+- **The helper's own log was inside the directory it was renaming.** Windows
+  will not rename a directory holding an open file, so it spent its whole
+  deadline waiting on a lock it held itself, and gave up. The log now lives
+  beside the bundle rather than under it.
+- **Everything that was not the bundle went into the copy kept as the previous
+  version.** On Windows the first problem stopped this from happening; on POSIX
+  it "succeeded" and carried every site and database into `…​.old` while the new
+  bundle came up empty. Reproduced here before it was fixed.
+
+The swap now knows what a bundle consists of — `python`, the launcher and the
+readme — and treats everything else in the folder as belonging to whoever put it
+there. It is moved across after the exchange, which on one volume is a rename
+and costs nothing however large the databases. What is kept as the previous
+version is the bundle alone, which is also what makes it small enough to leave
+lying around.
+
+An installation that keeps its data elsewhere was never affected, and is not
+changed by this.
+
 ## 1.2.2 — 2026-08-25
 
 Three things reported from using the dashboard, all of them real.

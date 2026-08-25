@@ -431,3 +431,120 @@ class TestStartingTheSwap:
 
         assert "still 1." in said or "this is still" in said.lower()
         assert "portable up" in said, "it should say how to carry on"
+
+
+class TestWhenTheDataLivesInsideTheBundle:
+    """
+    `home set --beside` puts it there, which is the point of that mode: a flash
+    drive holding the whole installation, one folder that travels.
+
+    Replacing the bundle then means replacing the folder that also holds the
+    sites and the databases. Reported from Windows, where it failed loudly — the
+    helper's own log was inside the directory it was renaming, and Windows will
+    not rename a directory holding an open file, so it waited out its deadline
+    against a lock it held itself. On POSIX it "succeeded" and carried every
+    site into the copy kept as the previous version, which is worse.
+    """
+
+    def installation(self, root: Path, marker: str, beside: bool = True) -> Path:
+        (root / "python").mkdir(parents=True)
+        (root / "portable.cmd").write_text(marker, encoding="utf-8")
+
+        if beside:
+            (root / "data" / "sites").mkdir(parents=True)
+            (root / "data" / "sites.json").write_text('["demo"]', encoding="utf-8")
+            (root / "portable.home").write_text("beside\n", encoding="utf-8")
+
+        return root
+
+    def wait_for(self, condition, seconds: float = 25) -> bool:
+        deadline = time.monotonic() + seconds
+
+        while time.monotonic() < deadline:
+            try:
+                if condition():
+                    return True
+            except OSError:
+                pass
+
+            time.sleep(0.2)
+
+        return False
+
+    def start(self, current: Path, replacement: Path, keep: Path) -> None:
+        source = str(Path(__file__).resolve().parent.parent / "src")
+        subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; sys.path.insert(0, sys.argv[1]); "
+                    "from pathlib import Path; "
+                    "from portable import selfupdate; "
+                    "selfupdate.RENAME_SECONDS = 20; "
+                    "selfupdate.swap(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]))"
+                ),
+                source,
+                str(current),
+                str(replacement),
+                str(keep),
+            ],
+            check=True,
+            timeout=60,
+            env={**os.environ, "PORTABLE_HOME": str(current / "data")},
+        )
+
+    def test_the_data_travels_with_the_new_bundle(self, tmp_path):
+        current = self.installation(tmp_path / "current", "old")
+        replacement = self.installation(tmp_path / "new", "new", beside=False)
+        keep = tmp_path / "kept"
+
+        self.start(current, replacement, keep)
+
+        assert self.wait_for(
+            lambda: (current / "portable.cmd").read_text() == "new"
+        ), "the bundle was not replaced"
+        assert self.wait_for(lambda: (current / "data" / "sites.json").exists()), (
+            "the sites went into the copy kept as the previous version"
+        )
+        assert (current / "portable.home").read_text().strip() == "beside", (
+            "the pointer naming the data directory did not come across"
+        )
+
+    def test_the_previous_copy_keeps_only_the_bundle(self, tmp_path):
+        # Which is also what makes it small enough to leave lying around.
+        current = self.installation(tmp_path / "current", "old")
+        replacement = self.installation(tmp_path / "new", "new", beside=False)
+        keep = tmp_path / "kept"
+
+        self.start(current, replacement, keep)
+
+        # Waiting on the data directory would prove nothing: it is there before
+        # the swap as well as after. The bundle changing is what only happens
+        # once the exchange has run.
+        assert self.wait_for(lambda: (current / "portable.cmd").read_text() == "new")
+
+        assert not (keep / "data").exists()
+        assert (keep / "portable.cmd").read_text() == "old"
+
+    def test_the_helpers_log_is_not_inside_what_it_renames(self, tmp_path, monkeypatch):
+        """
+        It was, and it held the lock that stopped the rename.
+
+        A file open inside a directory is enough for Windows to refuse to rename
+        it, so the helper spent its whole deadline waiting for itself.
+        """
+        started: dict = {}
+        monkeypatch.setattr(
+            selfupdate.spawn,
+            "start_detached",
+            lambda argv, **kwargs: started.update(kwargs) or 1,
+        )
+
+        current = self.installation(tmp_path / "current", "old")
+
+        selfupdate.swap(current, tmp_path / "new", tmp_path / "kept")
+
+        log = started["log"]
+
+        assert current not in log.parents, f"the log is inside the bundle: {log}"

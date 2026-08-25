@@ -47,6 +47,17 @@ RELEASES = "https://api.github.com/repos/dskripchenko/portable/releases/latest"
 #: hands somebody binaries their machine cannot execute.
 TARGET = "x86_64-pc-windows-msvc"
 
+#: What a bundle consists of. Everything else in the folder belongs to whoever
+#: put it there and travels with them across an upgrade.
+#:
+#: `home set --beside` puts the data directory inside the bundle, which is the
+#: point of it — a flash drive holding the whole installation. Replacing the
+#: bundle then means replacing the folder that also holds the sites and the
+#: databases, and treating the two as one thing carried them into the copy kept
+#: as the previous version. Reported from Windows, where it failed earlier and
+#: more loudly, and reproduced here.
+BUNDLE_FILES = frozenset({"python", "portable.cmd", "portable", "README.txt"})
+
 #: How long the helper keeps trying to rename before giving up.
 #:
 #: Not a fixed pause. `cmd.exe` closes `portable.cmd` a moment after the Python
@@ -241,6 +252,13 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     process is running from `current`, and on Windows `cmd.exe` still holds
     `portable.cmd` open.
     """
+    # Anything in the folder that is not part of a bundle. With
+    # `home set --beside` that is the data directory and the pointer naming it,
+    # and losing them is losing every site and database.
+    carry = sorted(
+        entry.name for entry in current.iterdir() if entry.name not in BUNDLE_FILES
+    )
+
     return spawn.start_detached(
         [
             sys.executable,
@@ -251,8 +269,14 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
             str(replacement),
             str(keep),
             str(RENAME_SECONDS),
+            *carry,
         ],
-        log=paths.logs() / "upgrade.log",
+        # Beside the bundle, never inside it. Windows will not rename a
+        # directory holding an open file, and with the data directory inside the
+        # bundle — which `--beside` puts there — the helper's own log was in the
+        # directory it was trying to rename. It waited out its deadline against
+        # a lock it was holding itself.
+        log=current.parent / "portable-upgrade.log",
     )
 
 
@@ -316,6 +340,7 @@ def main():
     pid = int(sys.argv[1])
     current, replacement, keep = sys.argv[2], sys.argv[3], sys.argv[4]
     deadline = time.monotonic() + float(sys.argv[5])
+    carry = sys.argv[6:]
 
     print(f"waiting for {pid}", flush=True)
 
@@ -340,6 +365,22 @@ def main():
         print(f"swap failed and was undone: {error}", flush=True)
 
         raise SystemExit(1)
+
+    # Whatever was in the folder besides the bundle: the data directory when it
+    # lives there, and the pointer that says so. Moved rather than copied, which
+    # on one volume is a rename and costs nothing however large the databases.
+    for name in carry:
+        source = os.path.join(keep, name)
+        destination = os.path.join(current, name)
+
+        if not os.path.exists(source) or os.path.exists(destination):
+            continue
+
+        try:
+            os.rename(source, destination)
+            print(f"carried across: {name}", flush=True)
+        except OSError as error:
+            print(f"could not carry {name} across: {error}", flush=True)
 
     print(f"swapped: {current} replaced, previous kept at {keep}", flush=True)
 
