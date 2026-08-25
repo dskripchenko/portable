@@ -61,6 +61,16 @@ Ein gewählter Port ist der **einzige**, der versucht wird. Nach einer Bitte um
 nicht gewählt haben und von der Ihnen niemand erzählt hat — und man wählt einen
 Port gerade deshalb, weil die Voreinstellungen nicht taugten.
 
+## Mehrere Versionen gleichzeitig
+
+Jede installierte PHP-Version kann gleichzeitig ausliefern. Jede bekommt einen
+eigenen Arbeiter-Pool und eine eigene `php.ini`; Websites wählen mit `--php`
+zwischen ihnen, und eine Website ohne Festlegung folgt der jeweils neuesten.
+
+Bei Datenbanken gilt dasselbe, nur je Instanz statt je Version: `--name` gibt
+einer zweiten ein eigenes Datenverzeichnis und einen eigenen Port, `--version`
+legt fest, welchen installierten Build sie ausführt.
+
 ## PHP-Erweiterungen
 
 | | |

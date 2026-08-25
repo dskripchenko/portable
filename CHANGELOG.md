@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed — MariaDB could not be created, and then could not be connected to
+
+Both found by running several versions side by side, which is what the question
+"can PHP 8.2 and 8.4 serve at the same time" turned into.
+
+- **MariaDB read configuration from outside this installation.** `C:\my.ini`,
+  `%WINDIR%\my.ini`, the one beside its own binaries — and a machine that has
+  ever had Laragon, XAMPP or another MariaDB on it has one of those pointing at
+  somebody else's data directory and socket. It failed as "Installation of
+  system tables failed", followed by a suggestion to look for "conflicting
+  information in an external my.cnf". Each database now gets its own `my.cnf`,
+  passed as `--defaults-file` and first on the command line, since MariaDB takes
+  the first option file it is given and a `--defaults-file` anywhere else is a
+  suggestion rather than an instruction. The file is written once and then left
+  alone, the same rule `php.ini` follows.
+
+- **The root account could not be reached over TCP.** Where a unix socket
+  exists, `mariadb-install-db` defaults to socket authentication and creates a
+  root usable only as the operating system's root over a local socket. So the
+  database started, this tool reported "as root", and connecting was refused
+  with "Host '127.0.0.1' is not allowed to connect". A tool that says how to
+  connect and is wrong about it is worse than one that says nothing.
+
+### Fixed — an adopted runtime's version was read wrongly
+
+`postgres --version` prints `16.13`: two components, not three. The pattern
+demanded three, found nothing, and recorded "unknown" — and the registry keys on
+name and version, so two adopted PostgreSQLs would both have been "unknown" and
+the second would have replaced the first.
+
+MariaDB prints the full path to its own binary before the version, and that path
+has numbers in it. On the machine this was found on, `/mariadb/11.4/11.4.10/bin/`
+happens to agree with the release — the kind of coincidence that hides a bug
+rather than revealing one. The path is dropped before the version is looked for.
+
 ## 0.1.0 — 2026-08-25
 
 The first release. A local development environment for Windows — PHP, Caddy,

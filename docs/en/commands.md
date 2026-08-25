@@ -59,6 +59,16 @@ A chosen port is the **only** one tried. Falling back to 8080 after you asked
 for 8888 would put the site at an address you did not pick and were not told
 about — and the reason to choose one is that the defaults were not usable.
 
+## Several versions at once
+
+Every PHP version installed can serve at the same time. Each gets its own pool
+of workers and its own `php.ini`; sites choose between them with `--php`, and a
+site that pins nothing follows whichever is newest.
+
+Databases work the same way but per instance rather than per version:
+`--name` gives a second one its own data directory and port, and `--version`
+pins which installed build it runs.
+
 ## PHP extensions
 
 | | |

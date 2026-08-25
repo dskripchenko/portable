@@ -636,3 +636,61 @@ class TestAnAnswerThatBreaksOff:
 
         assert cli._await_daemon(pid=1, timeout=5) is endpoint
         assert len(attempts) == 3, "it gave up on the first truncated answer"
+
+
+class TestReadingAnAdoptedRuntimesVersion:
+    """
+    The strings below are what these programs actually print.
+
+    Guessing from the directory name works until it does not — a PHP unpacked
+    into `php-latest` would be recorded as version `latest` and sort below
+    everything — so the runtime is asked. Which only helps if the answer is read
+    correctly, and each of these publishers answers differently.
+    """
+
+    def parse(self, output: str) -> str:
+        from portable.daemon import server
+
+        return server._parse_version(output)
+
+    def test_postgres_numbers_its_releases_with_two_components(self):
+        """
+        `16.13`, not `16.13.0`.
+
+        A pattern demanding three found nothing and recorded "unknown" — and
+        that is not merely untidy. The registry keys on name and version, so two
+        adopted PostgreSQLs would both be "unknown" and the second would replace
+        the first.
+        """
+        assert self.parse("postgres (PostgreSQL) 16.13(ServBay)") == "16.13"
+
+    def test_mariadb_prints_its_own_path_first(self):
+        """
+        And the path has numbers in it.
+
+        `/package/mariadb/11.4/11.4.10/bin/mariadbd Ver 11.4.10-MariaDB-log` —
+        a version pattern applied to the whole line finds the directory before
+        the release. On this author's machine the two happen to agree, which is
+        exactly the kind of coincidence that hides a bug.
+        """
+        printed = (
+            "/Applications/ServBay/package/mariadb/11.4/11.4.10/bin/mariadbd  "
+            "Ver 11.4.10-MariaDB-log for osx12.00 on arm64"
+        )
+
+        assert self.parse(printed) == "11.4.10"
+
+    def test_a_path_that_disagrees_with_the_version_is_not_believed(self):
+        # The case the machine here cannot produce: a binary in one directory
+        # reporting a different version. The path must lose.
+        printed = "/opt/mariadb/10.6/bin/mariadbd  Ver 11.4.10-MariaDB for linux"
+
+        assert self.parse(printed) == "11.4.10"
+
+    def test_php_and_node_and_caddy_are_read_too(self):
+        assert self.parse("PHP 8.2.30 (cli) (built: Jan  1 2026)") == "8.2.30"
+        assert self.parse("v24.19.0") == "24.19.0"
+        assert self.parse("v2.11.4 h1:XKxkMTgNSizEvKG6QHue6cAsFOteU2qA61w2tKkCWi0=") == "2.11.4"
+
+    def test_nothing_recognisable_says_so(self):
+        assert self.parse("some program with no version at all") == "unknown"

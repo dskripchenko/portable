@@ -53,7 +53,6 @@ def _version_of(name: str, directory: Path) -> str:
     into `php-latest` would be recorded as version `latest` and sort below
     everything.
     """
-    import re
     import subprocess
 
     entry = Installed(name=name, version="0", directory=directory, managed=False)
@@ -72,9 +71,40 @@ def _version_of(name: str, directory: Path) -> str:
     except (NotInstalled, OSError, subprocess.SubprocessError):
         return "unknown"
 
-    found = re.search(r"(\d+\.\d+\.\d+)", output)
+    # Two components or three. PostgreSQL numbers its releases `16.13` and
+    # prints exactly that, so a pattern demanding three found nothing and
+    # recorded the version as "unknown" — which is not merely untidy: two
+    # adopted PostgreSQLs would both be "unknown", and the registry keys on
+    # name and version, so the second would replace the first.
+    #
+    # The path matters too. MariaDB prints its own executable's full path
+    # before the version, and on a machine where that path contains numbers —
+    # `/php/8.3/8.3.30/bin/` is one this author has — the first match is the
+    # directory rather than the release.
+    return _parse_version(output)
+
+
+def _parse_version(output: str) -> str:
+    """Pull a version out of whatever the program printed."""
+    import re
+
+    found = re.search(r"(\d+\.\d+(?:\.\d+)?)", _after_path(output))
 
     return found.group(1) if found else "unknown"
+
+
+def _after_path(output: str) -> str:
+    """
+    The version line with any leading filesystem path removed.
+
+    `mariadbd --version` begins with the full path to itself, and a version
+    pattern applied to the whole line finds whatever numbers are in the
+    directory names first.
+    """
+    first = output.strip().splitlines()[0] if output.strip() else ""
+    words = [word for word in first.split() if not ("/" in word or "\\" in word)]
+
+    return " ".join(words)
 
 
 def net_read(url: str) -> str:

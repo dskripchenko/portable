@@ -105,7 +105,9 @@ def validate(service: Service) -> None:
         )
 
 
-def init_command(kind: str, executables: dict[str, Path], data: Path) -> list[str]:
+def init_command(
+    kind: str, executables: dict[str, Path], data: Path, config: Path | None = None
+) -> list[str]:
     """
     The one-time command that creates the data directory.
 
@@ -128,13 +130,81 @@ def init_command(kind: str, executables: dict[str, Path], data: Path) -> list[st
             "--locale=C",
         ]
 
+    # `--defaults-file` first, and it is not optional. MariaDB reads
+    # configuration from a list of places outside this installation —
+    # `C:\my.ini`, `%WINDIR%\my.ini`, the one beside its own binaries — and a
+    # machine that has ever had Laragon, XAMPP or another MariaDB on it has one
+    # of those pointing at somebody else's data directory and socket.
+    #
+    # It fails obscurely when that happens: "Installation of system tables
+    # failed", followed by a suggestion to look for "conflicting information in
+    # an external my.cnf". Observed exactly so against a MariaDB packaged by
+    # another tool on this author's machine.
     return [
         str(executables["install"]),
+        f"--defaults-file={config}",
         f"--datadir={data}",
+        # `normal`, not the `socket` that is the default where a unix socket
+        # exists. Socket authentication creates a root that can only be reached
+        # as the operating system's root over a local socket — so the database
+        # starts, this tool reports "as root", and connecting over TCP is
+        # refused with "Host '127.0.0.1' is not allowed to connect".
+        #
+        # A tool that says how to connect and is wrong about it is worse than
+        # one that says nothing. `normal` creates a passwordless root reachable
+        # over the loopback, which is the same trust this tool already gives
+        # PostgreSQL and for the same reason: the protection is the binding.
+        "--auth-root-authentication-method=normal",
     ]
 
 
-def start_command(kind: str, executables: dict[str, Path], data: Path, port: int) -> list[str]:
+def config_for(service: Service, port: int) -> Path:
+    """
+    Write MariaDB's own configuration file and return it, once.
+
+    Generated rather than argued about on the command line, and then left alone
+    — the same rule `php.ini` follows, and for the same reason: somebody will
+    edit it, and regenerating it on every start would discard their work.
+
+    It exists mainly so that `--defaults-file` can point somewhere. Without
+    that, MariaDB reads whatever `my.ini` the machine happens to have.
+    """
+    target = service.data.parent / f"{service.name}.cnf"
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    if target.exists():
+        return target
+
+    target.write_text(
+        "\n".join(
+            [
+                "# Written by portable when this database was created, and not",
+                "# touched again. Edit freely.",
+                "#",
+                "# It is passed as --defaults-file, which stops MariaDB reading the",
+                "# my.ini files a machine collects from other installations.",
+                "",
+                "[mysqld]",
+                f"datadir = {service.data}",
+                f"port = {port}",
+                "bind-address = 127.0.0.1",
+                "skip-name-resolve",
+                "",
+                "[client]",
+                f"port = {port}",
+                "host = 127.0.0.1",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    return target
+
+
+def start_command(
+    kind: str, executables: dict[str, Path], data: Path, port: int, config: Path | None = None
+) -> list[str]:
     if kind == "postgres":
         return [
             str(executables["server"]),
@@ -156,6 +226,8 @@ def start_command(kind: str, executables: dict[str, Path], data: Path, port: int
 
     return [
         str(executables["server"]),
+        # First, and before anything else it might read. See `init_command`.
+        f"--defaults-file={config}",
         f"--datadir={data}",
         f"--port={port}",
         "--bind-address=127.0.0.1",

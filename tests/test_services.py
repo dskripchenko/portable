@@ -303,3 +303,71 @@ class TestMariadbWhenTheApiCannotBeReached:
             mariadb._from_archive("99.9", listing=self.listing())
 
         assert "11.4" in str(excinfo.value)
+
+
+class TestMariadbIgnoringTheRestOfTheMachine:
+    """
+    MariaDB reads configuration from places outside this installation.
+
+    `C:\\my.ini`, `%WINDIR%\\my.ini`, the one beside its own binaries — and a
+    machine that has ever had Laragon, XAMPP or another MariaDB on it has one of
+    those pointing at somebody else's data directory and socket. It fails
+    obscurely: "Installation of system tables failed", then a suggestion to look
+    for "conflicting information in an external my.cnf".
+
+    Observed exactly so against a MariaDB packaged by another tool.
+    """
+
+    def paths_for(self) -> dict:
+        return {role: Path(f"/bin/{role}") for role in ("server", "install", "client")}
+
+    def test_the_defaults_file_comes_first(self):
+        # MariaDB reads its option files in order and the first one wins, so
+        # `--defaults-file` anywhere but first is a suggestion rather than an
+        # instruction.
+        command = init_command("mariadb", self.paths_for(), Path("/data"), Path("/conf/my.cnf"))
+
+        assert command[1] == "--defaults-file=/conf/my.cnf"
+
+        started = start_command(
+            "mariadb", self.paths_for(), Path("/data"), 3306, Path("/conf/my.cnf")
+        )
+
+        assert started[1] == "--defaults-file=/conf/my.cnf"
+
+    def test_root_is_created_so_it_can_actually_connect(self):
+        """
+        Socket authentication is the default where a unix socket exists.
+
+        It creates a root reachable only as the operating system's root over a
+        local socket — so the database starts, this tool reports "as root", and
+        connecting over TCP is refused with "Host '127.0.0.1' is not allowed to
+        connect". A tool that says how to connect and is wrong about it is worse
+        than one that says nothing.
+        """
+        command = init_command("mariadb", self.paths_for(), Path("/data"), Path("/my.cnf"))
+
+        assert "--auth-root-authentication-method=normal" in command
+
+    def test_the_file_is_written_once_and_then_left_alone(self, tmp_path, monkeypatch):
+        # The same rule `php.ini` follows: somebody will edit it, and
+        # regenerating it on every start would discard their work.
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+
+        from portable.services import config_for
+
+        service = Service(name="db", kind="mariadb")
+        first = config_for(service, 3306)
+        first.write_text("; edited by hand\n", encoding="utf-8")
+
+        assert config_for(service, 3307).read_text(encoding="utf-8") == "; edited by hand\n"
+
+    def test_it_carries_the_port_the_service_was_given(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+
+        from portable.services import config_for
+
+        written = config_for(Service(name="db", kind="mariadb"), 3399).read_text(encoding="utf-8")
+
+        assert "port = 3399" in written
+        assert "bind-address = 127.0.0.1" in written

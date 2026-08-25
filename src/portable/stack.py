@@ -177,11 +177,17 @@ class Stack:
                 # exist is this tool's job; filling it is not.
                 service.data.mkdir(parents=True, exist_ok=True)
 
+            config = (
+                services_module.config_for(service, service.port or self._port_for(service))
+                if service.kind == "mariadb"
+                else None
+            )
+
             port = service.port or self._port_for(service)
             spec = Spec(
                 name=service.name,
                 argv=services_module.start_command(
-                    service.kind, binaries, service.data, port
+                    service.kind, binaries, service.data, port, config
                 ),
                 log=paths.logs() / f"{service.name}.log",
                 restart=True,
@@ -210,7 +216,14 @@ class Stack:
         import subprocess
 
         service.data.parent.mkdir(parents=True, exist_ok=True)
-        command = services_module.init_command(service.kind, binaries, service.data)
+        command = services_module.init_command(
+            service.kind,
+            binaries,
+            service.data,
+            services_module.config_for(service, service.port or self._port_for(service))
+            if service.kind == "mariadb"
+            else None,
+        )
         log = paths.logs() / f"{service.name}-init.log"
         log.parent.mkdir(parents=True, exist_ok=True)
 
