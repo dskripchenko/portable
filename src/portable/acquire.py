@@ -13,6 +13,7 @@ already fetched on Thursday.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import shutil
 import tarfile
 import zipfile
@@ -84,19 +85,7 @@ def download(
     # Written beside the target and moved into place, so that an interrupted
     # download never looks like a complete one.
     partial = target.with_suffix(target.suffix + ".part")
-
-    with net.open_url(build.url, timeout=300) as response:
-        total = response.headers.get("Content-Length")
-        total = int(total) if total and total.isdigit() else None
-        seen = 0
-
-        with partial.open("wb") as handle:
-            while chunk := response.read(_CHUNK):
-                handle.write(chunk)
-                seen += len(chunk)
-
-                if on_progress:
-                    on_progress(seen, total)
+    _fetch(build, partial, on_progress)
 
     if build.checksum:
         actual = digest(partial, build.algorithm)
@@ -114,6 +103,99 @@ def download(
     partial.replace(target)
 
     return target
+
+
+#: How many times a transfer that breaks off is resumed before giving up.
+RESUMES = 5
+
+
+def _fetch(
+    build: Build,
+    partial: Path,
+    on_progress: Callable[[int, int | None], None] | None = None,
+) -> None:
+    """
+    Fill `partial` with the archive, continuing where a broken transfer stopped.
+
+    Reconnecting is not enough on its own. These are thirty- and ninety-megabyte
+    archives, and a connection that drops eight times out of ten will drop
+    partway through — so starting again from nothing means never finishing,
+    however many attempts are allowed. Asking for the rest is what turns a bad
+    network into a slow one.
+
+    A server that ignores `Range` answers 200 with the whole file, and then what
+    is already on disk has to be thrown away: appending to it would produce an
+    archive with the first bytes twice.
+    """
+    failures: list[str] = []
+
+    for attempt in range(1, RESUMES + 1):
+        have = partial.stat().st_size if partial.exists() else 0
+
+        try:
+            with net.open_url(build.url, timeout=300, offset=have) as response:
+                resuming = response.status == 206
+                total = response.headers.get("Content-Length")
+                total = int(total) if total and total.isdigit() else None
+
+                if total is not None and resuming:
+                    total += have
+
+                seen = have if resuming else 0
+
+                with partial.open("ab" if resuming else "wb") as handle:
+                    while chunk := response.read(_CHUNK):
+                        handle.write(chunk)
+                        seen += len(chunk)
+
+                        if on_progress:
+                            on_progress(seen, total)
+
+            # A transfer can stop early and look like it finished: the socket
+            # closes, `read` returns nothing, and the loop ends contentedly on a
+            # file missing its last thirty megabytes. Nothing downstream would
+            # notice for postgres, redis or an archived PHP, none of which the
+            # publisher gives a checksum for — the archive would simply be
+            # unpacked, short.
+            if total is not None and seen < total:
+                raise ShortTransfer(
+                    f"the connection ended after {seen} of {total} bytes"
+                )
+
+            return
+        except _INTERRUPTED as error:
+            failures.append(f"{type(error).__name__}: {error}")
+
+            if attempt == RESUMES or (partial.exists() and partial.stat().st_size == have):
+                # Either out of attempts, or the last one moved nothing at all —
+                # and resuming a transfer that makes no progress is a loop, not
+                # a recovery.
+                raise TransferFailed(
+                    f"{build.filename} could not be downloaded in one piece.\n"
+                    + "\n".join(f"  {failure}" for failure in dict.fromkeys(failures))
+                    + f"\n{_kept(partial)}"
+                ) from error
+
+
+def _kept(partial: Path) -> str:
+    if not partial.exists():
+        return "Nothing was kept."
+
+    return (
+        f"{partial.stat().st_size // 1048576} MB is kept at {partial.name} and the "
+        f"next attempt continues from there."
+    )
+
+
+class TransferFailed(RuntimeError):
+    """The archive could not be fetched, after resuming."""
+
+
+class ShortTransfer(OSError):
+    """The body ended before the length the server promised."""
+
+
+_INTERRUPTED = (net.Unreachable, OSError, http.client.HTTPException)
 
 
 def unpack(build: Build, archive: Path, into: Path | None = None) -> Path:

@@ -745,3 +745,41 @@ store only when `security.enterprise_roots.enabled` is on, which is a setting in
 somebody's profile and not this tool's business to change — so it is said rather
 than worked around.
 
+### Fixed — one attempt was the wrong model
+
+From a real Windows session: `install php 8.3` failing three times with
+`[SSL] record layer failure` and `WinError 10054`, while `install php 8.4` went
+through in between, on the same machine within the same minute. Every network
+operation made exactly one attempt and reported the socket error verbatim.
+
+A TLS handshake reset mid-record is what traffic inspection does to traffic it
+dislikes, and it is intermittent by nature. The failure is not "the host is
+down", it is "ask again".
+
+- **Transient failures are retried**, five times with doubling backoff.
+  `ssl.SSLError` is not a `URLError` and used to escape every handler there was,
+  arriving as `[SSL] record layer failure (_ssl.c:2660)`.
+- **A 404 is not.** `HTTPError` subclasses `URLError`, so retrying transient
+  `URLError`s nearly meant retrying every missing file five times over fifteen
+  seconds to say what was already known after the first. Only 408, 425, 429 and
+  5xx are asked again.
+- **Interrupted transfers resume.** Reconnecting alone does not help with a
+  ninety-megabyte archive: a connection that keeps dropping will drop partway
+  through, so starting again from nothing means never finishing however many
+  attempts are allowed. `Range` turns a bad network into a slow one. A server
+  that ignores it and answers 200 makes the partial file get thrown away rather
+  than appended to, which would put the first bytes in twice.
+- **A body that stops early is no longer taken for a finished download.** The
+  socket closes, `read` returns nothing, and the loop used to end contentedly on
+  a file missing its last thirty megabytes. Nothing downstream would have
+  noticed for PostgreSQL, Redis or an archived PHP — the three the publisher
+  gives no checksum for — and the short archive would simply have been unpacked.
+  Found by a test written for resuming, which failed for this reason instead.
+- **Giving up lists the attempts** rather than summarising them: five identical
+  resets and five different errors mean different things. When they are all
+  resets it says so, and mentions `HTTPS_PROXY`, which is the one setting that
+  can help.
+
+Verified against php.net: a real download cut off at five megabytes resumed and
+finished, and the completed file matched the publisher's sha256.
+

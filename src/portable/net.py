@@ -15,8 +15,11 @@ downloaded here is executed afterwards.
 
 from __future__ import annotations
 
+import http.client
 import os
+import socket
 import ssl
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -57,6 +60,30 @@ class TrustError(RuntimeError):
 
 class RateLimited(RuntimeError):
     """GitHub is refusing to answer for now, with something to do about it."""
+
+
+class Unreachable(RuntimeError):
+    """Repeated attempts all failed the same transient way."""
+
+
+#: Failures worth trying again, as opposed to worth reporting.
+#:
+#: `SSLError` belongs here and is the one that matters most: a handshake reset
+#: mid-record raises it, and that is what an inspecting middlebox does to
+#: traffic it dislikes — intermittently, so the retry usually succeeds. It is
+#: not an `URLError`, so it used to escape everything and arrive as
+#: `SSLError: [SSL] record layer failure (_ssl.c:2660)`.
+#: Status codes that mean "ask again", as opposed to "stop asking".
+_WORTH_RETRYING = frozenset({408, 425, 429, 500, 502, 503, 504})
+
+_TRANSIENT = (
+    ssl.SSLError,
+    urllib.error.URLError,
+    http.client.HTTPException,
+    ConnectionError,
+    TimeoutError,
+    socket.timeout,
+)
 
 
 #: Where a token may be offered, in order.
@@ -113,9 +140,66 @@ def _headers(url: str) -> dict[str, str]:
     return headers
 
 
-def open_url(url: str, timeout: int = TIMEOUT):
-    """A GET with our user agent, verified. The caller closes it."""
-    request = urllib.request.Request(url, headers=_headers(url))
+#: How many times a transient failure is retried before giving up.
+#:
+#: Not a nicety. On real networks — and especially where traffic is inspected in
+#: transit — a TLS handshake is reset, or a connection times out, and the same
+#: command a moment later works. Observed directly: `install php 8.3` failing
+#: three times with `record layer failure` and `WinError 10054` while
+#: `install php 8.4` went through in between, on the same machine and minute.
+ATTEMPTS = 5
+
+#: Seconds before the first retry; doubled each time, so 1, 2, 4, 8.
+BACKOFF = 1.0
+
+
+def open_url(url: str, timeout: int = TIMEOUT, attempts: int = ATTEMPTS, offset: int = 0):
+    """
+    A GET with our user agent, verified, retried through transient failures.
+
+    `offset` asks the server to continue from a byte position — see
+    `acquire.download`, which uses it so that a connection dropped forty
+    megabytes into a fifty-megabyte archive does not start again from nothing.
+
+    The caller closes it.
+    """
+    failures: list[str] = []
+
+    for attempt in range(1, attempts + 1):
+        try:
+            return _open_once(url, timeout, offset)
+        except urllib.error.HTTPError as error:
+            # An answer, not a failure to get one. Retrying a 404 five times
+            # over fifteen seconds tells nobody anything they did not know after
+            # the first — `HTTPError` being a subclass of `URLError` is how that
+            # nearly happened.
+            if error.code not in _WORTH_RETRYING:
+                raise
+
+            failures.append(f"HTTP {error.code}: {error.reason}")
+
+            if attempt == attempts:
+                raise Unreachable(_gave_up(url, failures)) from error
+
+            time.sleep(BACKOFF * (2 ** (attempt - 1)))
+        except _TRANSIENT as error:
+            failures.append(f"{type(error).__name__}: {error}")
+
+            if attempt == attempts:
+                raise Unreachable(_gave_up(url, failures)) from error
+
+            time.sleep(BACKOFF * (2 ** (attempt - 1)))
+
+    raise AssertionError("unreachable")
+
+
+def _open_once(url: str, timeout: int, offset: int = 0):
+    headers = _headers(url)
+
+    if offset:
+        headers["Range"] = f"bytes={offset}-"
+
+    request = urllib.request.Request(url, headers=headers)
 
     opener = urllib.request.build_opener(
         _DropAuthOnRedirect,
@@ -163,6 +247,35 @@ def _why(url: str) -> str:
         f"proxy whose authority this machine does not trust. Export the proxy's "
         f"root certificate and point at it:\n\n"
         f"    PORTABLE_CA_BUNDLE=C:\\path\\to\\corporate-root.pem"
+    )
+
+
+def _gave_up(url: str, failures: list[str]) -> str:
+    """
+    What to say when every attempt failed the same way.
+
+    The attempts are listed rather than summarised. Five identical resets and
+    five different errors mean different things — the first is something between
+    here and the host, the second is closer to home — and only showing them lets
+    anybody tell which.
+    """
+    distinct = list(dict.fromkeys(failures))
+    reset = any("10054" in failure or "record layer" in failure for failure in failures)
+
+    hint = (
+        "\n\nA connection reset partway through a TLS handshake, repeatedly, is "
+        "usually something between this machine and the host rather than either "
+        "end of it — traffic inspection, or a filtering proxy. The same command "
+        "often succeeds on another attempt or another network. If there is a "
+        "proxy, `HTTPS_PROXY` is honoured."
+        if reset
+        else ""
+    )
+
+    return (
+        f"Gave up on {url} after {len(failures)} attempts.\n"
+        + "\n".join(f"  {failure}" for failure in distinct)
+        + hint
     )
 
 
