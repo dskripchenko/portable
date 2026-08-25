@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.0 — 2026-08-25
+
+### Added — the dashboard is somewhere to type, not only to watch
+
+Reported after using it: the screen showed everything and could do nothing, so
+acting on what it showed meant another window — and then the screen was behind
+that window.
+
+There is a command line at the bottom now. Commands go in without `portable` in
+front, and what was typed and what it answered join the services' own output in
+the order it happened, which is what makes "I added a site and then this
+appeared in the log" readable rather than something to reconstruct. Arrows
+recall earlier lines; there are inline suggestions, taken from the parser so a
+command added later appears without anybody remembering to add it here.
+
+Every line goes through the same parser and the same handlers as the command
+line — the rule the shell already follows, because a second dispatch is a second
+implementation and it drifts. Output is captured rather than printed, since
+stdout belongs to the screen. A typo does not end the session: argparse raises
+`SystemExit` for an unknown command, which uncaught would have been the last
+thing that ever happened.
+
+Commands run in a thread, so a download does not freeze the screen, and the
+tables refresh the moment one finishes rather than at the next tick.
+
+**Four commands are declined from inside, each saying why.** `dash` — you are in
+it. `shell` — this is one. `upgrade` replaces the folder the screen is running
+from. `purge` asks a question this screen cannot put to you, unless `--yes` says
+you meant it. And `logs -f` is what the pane below already does. A window that
+stops responding for a reason nobody can see is worse than one that declines.
+
+**The keys moved to F10, F5 and F2.** Single letters belonged to the screen and
+now belong to the command line: one where `site add q...` closes the window is
+one nobody types in twice. The obvious replacements were taken — `ctrl+c` is
+copy inside a text field and `ctrl+p` is textual's own command palette — which
+is the sort of thing found by pressing the key rather than by reasoning about
+it. The bindings are marked as taking priority so nothing swallows them.
+
 ## 1.1.1 — 2026-08-25
 
 ### Fixed — `upgrade` could not start the process that finishes it

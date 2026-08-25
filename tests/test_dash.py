@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from portable import dash
+from portable import VERSION, dash
 
 textual = pytest.importorskip("textual", reason="the dashboard's libraries are vendored")
 
@@ -68,12 +68,29 @@ class TestRunningIt:
             await pilot.pause()
 
             assert len(app.query("DataTable")) == 3, "processes, sites and services"
+            assert app.query_one("#command"), "there is nowhere to type"
 
-            await pilot.press("r")
+            await pilot.press("f5")
             await pilot.pause()
-            await pilot.press("f")
+
+    async def test_the_letters_belong_to_the_command_line(self):
+        """
+        `q` types a q.
+
+        The single-letter bindings had to go the moment there was somewhere to
+        type: a screen where `site add q...` closes the window is a screen
+        nobody types in twice.
+        """
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
             await pilot.pause()
-            await pilot.press("q")
+            await pilot.press("q", "u", "i", "t")
+            await pilot.pause()
+
+            assert app.query_one("#command").value == "quit"
+            assert app.is_running, "typing q closed the screen"
 
     async def test_pausing_says_so_rather_than_going_quiet(self):
         # A log pane that stops moving is indistinguishable from one whose
@@ -83,12 +100,116 @@ class TestRunningIt:
 
         async with app.run_test() as pilot:
             await pilot.pause()
-            await pilot.press("f")
+            await pilot.press("f2")
             await pilot.pause()
 
             assert app._paused is True
 
-            await pilot.press("q")
+
+class TestTypingIntoIt:
+    """
+    The half that makes it more than a screen to watch.
+
+    Every line goes through the same parser and the same handlers as the command
+    line — the rule the shell already follows, and for the same reason: a second
+    dispatch is a second implementation, and it drifts.
+    """
+
+    async def submit(self, pilot, app, line: str) -> None:
+        app.query_one("#command").value = line
+        await pilot.press("enter")
+        await pilot.pause()
+
+        # The command runs in a thread so the screen stays alive through a
+        # download; wait for it rather than for a fixed moment.
+        for _ in range(80):
+            if not app.workers._workers:
+                break
+
+            await pilot.pause(0.05)
+
+    def written(self, app) -> str:
+        return "\n".join(str(line) for line in app.query_one("#log").lines)
+
+    async def test_a_command_runs_and_its_answer_appears(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await self.submit(pilot, app, "version --json")
+
+            written = self.written(app)
+
+            assert "> version --json" in written, "what was typed is not shown"
+            assert VERSION in written, "the answer is not shown"
+
+    async def test_a_typo_does_not_take_the_screen_with_it(self):
+        # argparse raises SystemExit for an unknown command. In a screen that
+        # would be the last thing that ever happened.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await self.submit(pilot, app, "nosuchcommand")
+
+            assert app.is_running
+            assert "invalid choice" in self.written(app)
+
+    async def test_the_commands_that_cannot_work_here_are_refused_with_a_reason(self):
+        """
+        Each would either wait for an answer nobody can give, or take the ground
+        out from under the screen.
+
+        A window that stops responding for a reason nobody can see is worse than
+        one that declines.
+        """
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            for line, expected in (
+                ("dash", "you are in it"),
+                ("shell", "this is one"),
+                ("upgrade", "replaces the folder"),
+                ("logs -f", "already following"),
+                ("purge", "add --yes"),
+            ):
+                await self.submit(pilot, app, line)
+
+                assert expected in self.written(app), f"{line} was not refused clearly"
+
+    async def test_history_comes_back_with_the_arrows(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await self.submit(pilot, app, "version --json")
+            await self.submit(pilot, app, "home --json")
+
+            await pilot.press("up")
+            await pilot.pause()
+
+            assert app.query_one("#command").value == "home --json"
+
+            await pilot.press("up")
+            await pilot.pause()
+
+            assert app.query_one("#command").value == "version --json"
+
+    async def test_what_it_offers_comes_from_the_parser(self):
+        # So a command added tomorrow appears here without anybody remembering
+        # to add it, and one that cannot run here is not offered.
+        offered = dash._suggestions()
+
+        assert "status" in offered
+        assert "site add " in offered
+        assert "dash" not in offered
+        assert "upgrade" not in offered
 
 
 class TestTheLibrariesItNeeds:

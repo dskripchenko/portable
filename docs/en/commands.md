@@ -47,8 +47,20 @@ keys.
 `dash` shows everything at once because the answers are usually wanted together:
 which worker died is a question about the log, whether it came back is a
 question about the process table, and reading them in turn means alternating
-between two commands while the thing you are watching moves. `q` quits, `r`
-refreshes, `f` pauses the log. `dash php` follows only PHP in the bottom pane.
+between two commands while the thing you are watching moves.
+
+You type into it as well. Commands go in at the bottom, without `portable` in
+front, and what you typed and what it answered join the services' own output in
+the order it happened — which is what makes "I added a site and then this
+appeared in the log" something you can read rather than reconstruct. Arrows
+recall what you typed before; there are inline suggestions as you go.
+
+`F10` quits, `F5` refreshes, `F2` pauses the log. Function keys because the
+letters belong to the command line now. `dash php` follows only PHP below.
+
+A few commands are declined from inside it, each with the reason: `upgrade`
+replaces the folder the screen is running from, `purge` asks a question the
+screen cannot put to you, and `logs -f` is what the pane already does.
 
 It is the one part of the tool with libraries that are not the standard one.
 Four of them, vendored into the bundle — `textual` names six more that nothing

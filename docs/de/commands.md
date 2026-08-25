@@ -47,8 +47,22 @@ und Pfeiltasten liefert die Konsole.
 `dash` zeigt alles auf einmal, weil die Antworten meist zusammen gebraucht
 werden: welcher Arbeiter starb, ist eine Frage ans Protokoll; ob er zurückkam,
 eine an die Prozesstabelle — und sie nacheinander zu lesen heißt, zwischen zwei
-Befehlen zu wechseln, während sich das Beobachtete bewegt. `q` beendet, `r`
-aktualisiert, `f` pausiert das Protokoll. `dash php` folgt unten nur PHP.
+Befehlen zu wechseln, während sich das Beobachtete bewegt.
+
+Man tippt auch hinein. Befehle kommen unten hinein, ohne `portable` davor, und
+das Getippte samt Antwort reiht sich in die Ausgabe der Dienste ein, in der
+Reihenfolge des Geschehens — das macht aus „ich habe eine Website hinzugefügt,
+und dann erschien dies im Protokoll" etwas Lesbares statt etwas zu
+Rekonstruierendes. Die Pfeiltasten holen Getipptes zurück; beim Tippen gibt es
+Vorschläge.
+
+`F10` beendet, `F5` aktualisiert, `F2` pausiert. Funktionstasten, weil die
+Buchstaben jetzt der Befehlszeile gehören. `dash php` folgt unten nur PHP.
+
+Ein paar Befehle werden von dort abgelehnt, jeder mit Begründung: `upgrade`
+ersetzt den Ordner, aus dem die Ansicht läuft, `purge` stellt eine Frage, die
+diese Ansicht nicht stellen kann, und `logs -f` ist das, was der untere Bereich
+ohnehin tut.
 
 Es ist der einzige Teil des Werkzeugs mit Bibliotheken außerhalb der
 Standardbibliothek. Vier davon, ins Bündel eingelegt: `textual` nennt sechs

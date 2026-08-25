@@ -1,5 +1,5 @@
 """
-A full-screen view of what the supervisor is doing.
+A full-screen view of what the supervisor is doing, with somewhere to type.
 
 Everything here is already available from the command line — `status`, `site
 list`, `service list`, `logs -f` — and the reason to have it in one screen is
@@ -7,6 +7,13 @@ that those answers are usually wanted together. Which PHP worker died is a
 question about the log; whether it came back is a question about the process
 table; and reading them in turn means alternating between two commands while the
 thing you are watching moves.
+
+The command line at the bottom is the other half of that. A screen you can only
+watch sends you back to another window to act on what it showed, and then the
+screen is behind that window. What you type and what it answers go into the same
+stream as the services' own output, in the order it happened — which is what
+makes "I added a site and then this appeared in the log" a thing you can read
+rather than reconstruct.
 
 It is a client of the daemon like every other, which is the whole point of the
 API having been built first: nothing was added to the daemon for this.
@@ -34,6 +41,17 @@ from .daemon.client import CallFailed, Client, NotRunning
 #: process restarting, and slow enough that the daemon is not answering a
 #: question every frame for a screen nobody is looking at.
 REFRESH = 1.0
+
+#: Commands that cannot be run from inside the screen, and why.
+#:
+#: Each of these would either wait for an answer nobody can give here, or take
+#: the ground out from under the screen itself. Refusing by name and saying so
+#: is better than a window that stops responding for a reason nobody can see.
+REFUSED = {
+    "dash": "you are in it",
+    "shell": "this is one",
+    "upgrade": "it stops the daemon and replaces the folder this is running from",
+}
 
 #: Lines kept in the log pane.
 #:
@@ -126,6 +144,38 @@ def look() -> Snapshot:
     return snapshot
 
 
+def _suggestions() -> list[str]:
+    """
+    What the command line offers as you type.
+
+    Whole commands rather than a grammar: the point is to save typing and to
+    remind somebody what exists, not to be a parser. The list comes from the
+    parser itself so a new command appears here without anybody remembering to
+    add it.
+    """
+    from . import cli
+
+    commands = cli._parser()._subparsers._group_actions[0].choices
+    offered = [name for name in commands if name not in REFUSED]
+
+    return sorted(
+        [
+            *offered,
+            "site add ",
+            "site list",
+            "site remove ",
+            "service add ",
+            "service list",
+            "install php",
+            "install caddy",
+            "ext list",
+            "ext install ",
+            "logs php",
+            "status --json",
+        ]
+    )
+
+
 def build() -> Any:
     """
     The application, built only when asked.
@@ -144,24 +194,37 @@ def build() -> Any:
         )
 
     from textual.app import App, ComposeResult
+    from textual.binding import Binding
     from textual.containers import Horizontal, Vertical
-    from textual.widgets import DataTable, Footer, Header, RichLog, Static
+    from textual.suggester import SuggestFromList
+    from textual.widgets import DataTable, Footer, Header, Input, RichLog, Static
 
     class Dashboard(App):
         CSS = """
         Screen { layout: vertical; }
         #summary { height: 1; padding: 0 1; background: $panel; color: $text; }
-        #tables { height: 50%; }
+        #tables { height: 40%; }
+        #command { dock: bottom; border: none; background: $surface; }
         #processes { width: 55%; }
         #right { width: 45%; }
         DataTable { height: 1fr; }
         RichLog { height: 1fr; border-top: solid $primary; }
         """
 
+        # Function keys, and `priority` so nothing swallows them.
+        #
+        # Single letters had to go the moment there was somewhere to type: a
+        # screen where `site add q...` closes the window is one nobody types in
+        # twice. The obvious replacements are taken — `ctrl+c` is copy inside a
+        # text field, and `ctrl+p` is textual's own command palette — which is
+        # the sort of thing found by pressing the key rather than by reasoning
+        # about it.
         BINDINGS: ClassVar = [
-            ("q", "quit", "Quit"),
-            ("r", "refresh", "Refresh"),
-            ("f", "toggle_follow", "Pause logs"),
+            Binding("f10", "quit", "Quit", priority=True),
+            Binding("f5", "refresh", "Refresh", priority=True),
+            Binding("f2", "toggle_follow", "Pause logs", priority=True),
+            Binding("up", "earlier", "Previous", priority=True),
+            Binding("down", "later", "Next", priority=True),
         ]
 
         TITLE = "portable"
@@ -171,6 +234,8 @@ def build() -> Any:
             self._follow = follow
             self._paused = False
             self._stop = None
+            self._history: list[str] = []
+            self._recalled = 0
 
         def compose(self) -> ComposeResult:
             yield Header()
@@ -184,6 +249,11 @@ def build() -> Any:
                     yield DataTable(id="services")
 
             yield RichLog(id="log", highlight=False, markup=False, max_lines=SCROLLBACK)
+            yield Input(
+                placeholder="a command, without `portable` in front of it",
+                id="command",
+                suggester=SuggestFromList(_suggestions(), case_sensitive=False),
+            )
             yield Footer()
 
         def on_mount(self) -> None:
@@ -196,6 +266,7 @@ def build() -> Any:
             self.set_interval(REFRESH, self.action_refresh)
             self.action_refresh()
             self.watch_logs()
+            self.query_one("#command", Input).focus()
 
         def action_refresh(self) -> None:
             self.collect()
@@ -205,6 +276,101 @@ def build() -> Any:
             self.query_one("#log", RichLog).write(
                 "-- paused --" if self._paused else "-- following --"
             )
+
+        # ------------------------------------------------------------ commands
+
+        def on_input_submitted(self, event) -> None:
+            line = event.value.strip()
+            self.query_one("#command", Input).value = ""
+
+            if not line:
+                return
+
+            self._history.append(line)
+            self._recalled = len(self._history)
+
+            self.query_one("#log", RichLog).write(f"> {line}")
+
+            refusal = self._refused(line)
+
+            if refusal:
+                self.query_one("#log", RichLog).write(f"  not from here: {refusal}")
+
+                return
+
+            self.run_worker(
+                lambda: self._run(line), thread=True, group="command", exclusive=False
+            )
+
+        def _refused(self, line: str) -> str:
+            import shlex
+
+            try:
+                first = (shlex.split(line) or [""])[0]
+            except ValueError:
+                return "the quotes do not balance"
+
+            if first in REFUSED:
+                return REFUSED[first]
+
+            # `logs -f` never returns, and the pane below is already following.
+            if first == "logs" and ("-f" in line or "--follow" in line):
+                return "the pane below is already following; drop the -f"
+
+            if first == "purge" and "--yes" not in line:
+                return "it asks a question this screen cannot put to you; add --yes if you mean it"
+
+            return ""
+
+        def _run(self, line: str) -> None:
+            """
+            One typed line, through the ordinary parser and handlers.
+
+            The same rule the shell follows: a second dispatch is a second
+            implementation, and it drifts. Output is captured rather than
+            printed, because stdout here belongs to the screen.
+            """
+            import contextlib as ctx
+            import io
+            import shlex
+
+            from . import cli
+
+            captured = io.StringIO()
+
+            try:
+                with ctx.redirect_stdout(captured), ctx.redirect_stderr(captured):
+                    cli.main(shlex.split(line))
+            except SystemExit:
+                # argparse raises this for a bad command. In a screen it would
+                # be the last thing that ever happened.
+                pass
+            except Exception as error:  # noqa: BLE001
+                captured.write(f"{type(error).__name__}: {error}\n")
+
+            for written in captured.getvalue().splitlines():
+                self.call_from_thread(self.query_one("#log", RichLog).write, f"  {written}")
+
+            # A command that changed something should be visible in the tables
+            # before the next tick, which is a whole second of wondering.
+            self.call_from_thread(self.action_refresh)
+
+        def action_earlier(self) -> None:
+            self._recall(-1)
+
+        def action_later(self) -> None:
+            self._recall(1)
+
+        def _recall(self, step: int) -> None:
+            if not self._history:
+                return
+
+            self._recalled = max(0, min(len(self._history), self._recalled + step))
+            command = self.query_one("#command", Input)
+            command.value = (
+                self._history[self._recalled] if self._recalled < len(self._history) else ""
+            )
+            command.cursor_position = len(command.value)
 
         # ------------------------------------------------------------- workers
 
