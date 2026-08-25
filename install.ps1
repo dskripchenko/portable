@@ -66,6 +66,14 @@ if ($env:OS -ne 'Windows_NT') {
     Fail "portable is a Windows tool. Every runtime it installs is a Windows binary."
 }
 
+if (-not (Get-Command tar.exe -ErrorAction SilentlyContinue)) {
+    Fail @"
+This needs tar.exe, which Windows has carried in System32 since Windows 10 1803.
+On anything older, download the bundle from
+https://github.com/dskripchenko/portable/releases and unzip it with Explorer.
+"@
+}
+
 if ($env:PROCESSOR_ARCHITECTURE -notin @('AMD64', 'IA64')) {
     Fail @"
 Only 64-bit x86 is published, and this machine reports $env:PROCESSOR_ARCHITECTURE.
@@ -177,7 +185,17 @@ It has been discarded. Nothing was installed.
 
     Write-Host "Checksum matches. Unpacking..."
 
-    Expand-Archive -Path $archive -DestinationPath $work -Force
+    # tar rather than Expand-Archive. Expand-Archive is itself written in
+    # PowerShell and calls .NET methods internally, so it fails under
+    # Constrained Language Mode the same way everything else does - and unlike
+    # the earlier cases, `Get-Command Expand-Archive` succeeds, which is how a
+    # first measurement said it was fine. tar.exe is bsdtar, reads zip, and has
+    # been in System32 since Windows 10 1803.
+    & tar.exe -x -f $archive -C $work
+
+    if ($LASTEXITCODE -ne 0) {
+        Fail "tar could not unpack the bundle. Nothing was installed."
+    }
 
     # The archive holds one directory named for the version.
     $unpacked = Get-ChildItem -Path $work -Directory | Select-Object -First 1
