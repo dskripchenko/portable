@@ -676,6 +676,16 @@ def _up(args) -> int:
     pid = spawn.start_detached(
         [spawn.python_executable(), "-m", "portable.daemon"],
         env=_daemon_environment(),
+        # Its own directory, not the one this was typed in. A process holds its
+        # working directory open, and on Windows that means the folder cannot be
+        # deleted or renamed for as long as it runs — so a daemon started from a
+        # project folder quietly locks it, and the message Explorer gives says
+        # only that it is "open in another program".
+        #
+        # It matters more once `portable` is on PATH, because then it is run
+        # from wherever the person happens to be rather than from where it
+        # lives.
+        cwd=paths.root(),
         log=paths.logs() / "daemon.log",
     )
 

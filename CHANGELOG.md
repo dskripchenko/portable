@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed — the daemon held the directory it was started from
+
+A process holds its working directory open, and on Windows a folder held open
+cannot be deleted or renamed — Explorer says only that it is "open in another
+program". The daemon inherited whichever directory `portable up` was typed in,
+and everything it supervises inherited that from the daemon, so starting it once
+inside a project folder locked that folder for as long as it ran.
+
+It went unnoticed because the tool has so far been run from where it lives. That
+stops being true the moment somebody puts it on PATH, which is exactly the
+question that surfaced this.
+
+The daemon and every supervised process now stand in the installation's own
+directory. Nothing needed the old one: every path any of them is given is
+absolute. What still follows the caller is what should — `site add demo .` means
+the directory you are in, and `portable run` runs there.
+
 ## 0.1.4 — 2026-08-25
 
 Seeing what the thing is doing: a live view of everything the supervised

@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-from . import spawn
+from . import paths, spawn
 
 
 class State(str, Enum):
@@ -45,7 +45,16 @@ class Spec:
 
     name: str
     argv: list[str]
+
     cwd: Path | None = None
+    """
+    Where the process runs, defaulting to this installation's own directory.
+
+    Never the caller's. A child inherits the daemon's working directory, the
+    daemon inherited whoever started it, and on Windows every one of them then
+    holds that folder open against deletion. None of these need a particular
+    directory — every path they are given is absolute — so they are given ours.
+    """
     env: dict[str, str] | None = None
     log: Path | None = None
 
@@ -249,7 +258,9 @@ class Supervisor:
         if spec.log:
             spec.log.parent.mkdir(parents=True, exist_ok=True)
 
-        managed.process = spawn.start_child(spec.argv, cwd=spec.cwd, env=spec.env, log=spec.log)
+        managed.process = spawn.start_child(
+            spec.argv, cwd=spec.cwd or paths.root(), env=spec.env, log=spec.log
+        )
         managed.state = State.RUNNING
         managed.failure = None
         managed._recent.append(time.monotonic())

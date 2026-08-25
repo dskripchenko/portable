@@ -27,6 +27,19 @@ gegen die daneben veröffentlichte Prüfsumme, startet es einmal, bevor es Erfol
 meldet, und weigert sich, über eine vorhandene Installation zu schreiben —
 dafür gibt es `portable upgrade`.
 
+### Von überall aufrufen
+
+Das Installationsverzeichnis in den PATH zu legen funktioniert, und mehr ist
+nicht nötig: Der Starter findet seinen Interpreter und seine Einstellungen dort,
+wo er selbst liegt, nicht dort, wo Sie stehen. `portable site add demo .` meint
+dann das Verzeichnis, in dem Sie sind, und `portable run` läuft ebenfalls dort.
+
+Dieses Verzeichnis wird dabei von niemandem festgehalten. Der Daemon und alles,
+was er beaufsichtigt, stehen im Installationsordner: Ein Prozess hält sein
+Arbeitsverzeichnis offen, und unter Windows lässt sich ein offen gehaltener
+Ordner weder löschen noch umbenennen — der Explorer sagt dazu nur, er sei „in
+einem anderen Programm geöffnet".
+
 **Ihr PATH wird nicht angefasst.** Das Versprechen lautet, dass das Löschen des
 Verzeichnisses alles entfernt, und ein PATH-Eintrag wäre eine Ausnahme davon.
 Mit `$env:PORTABLE_ADD_TO_PATH = '1'` bekommen Sie trotzdem einen; es ist das

@@ -13,6 +13,7 @@ until someone closed a terminal on Windows and lost their stack.
 
 from __future__ import annotations
 
+import subprocess
 import sys
 import time
 
@@ -131,3 +132,67 @@ class TestNoZombies:
         assert not spawn.is_running(pid), (
             "the exited child is still reported as running — it was left unreaped"
         )
+
+
+class TestNothingHoldsSomebodyElsesDirectory:
+    """
+    A process holds its working directory open.
+
+    On Windows that means the folder cannot be deleted or renamed for as long as
+    it runs, and Explorer says only that it is "open in another program". So a
+    daemon started from a project folder quietly locks it — and it matters more
+    once `portable` is on PATH, because then it is run from wherever the person
+    happens to be rather than from where it lives.
+    """
+
+    def test_a_supervised_process_stands_in_the_installation(self, tmp_path, monkeypatch):
+        from portable import paths, supervisor
+
+        where: dict = {}
+
+        def remember(argv, cwd=None, env=None, log=None):
+            where["cwd"] = cwd
+
+            return subprocess.Popen(
+                [sys.executable, "-c", "import time; time.sleep(30)"],
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+            )
+
+        monkeypatch.setattr(supervisor.spawn, "start_child", remember)
+
+        keeper = supervisor.Supervisor()
+        keeper.add(supervisor.Spec(name="thing", argv=["x"], restart=False))
+
+        try:
+            keeper.start("thing")
+        finally:
+            keeper.stop_all()
+
+        assert where["cwd"] == paths.root()
+
+    def test_a_spec_may_still_ask_for_somewhere_else(self, tmp_path, monkeypatch):
+        # The default is ours; it is not a rule. Something that genuinely needs
+        # a directory should be able to say so.
+        from portable import supervisor
+
+        where: dict = {}
+
+        def remember(argv, cwd=None, env=None, log=None):
+            where["cwd"] = cwd
+
+            return subprocess.Popen(
+                [sys.executable, "-c", "pass"], cwd=cwd, stdout=subprocess.DEVNULL
+            )
+
+        monkeypatch.setattr(supervisor.spawn, "start_child", remember)
+
+        keeper = supervisor.Supervisor()
+        keeper.add(supervisor.Spec(name="thing", argv=["x"], cwd=tmp_path, restart=False))
+
+        try:
+            keeper.start("thing")
+        finally:
+            keeper.stop_all()
+
+        assert where["cwd"] == tmp_path

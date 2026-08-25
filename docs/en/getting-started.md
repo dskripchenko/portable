@@ -26,6 +26,18 @@ against the checksum published beside it, runs it once before saying it worked,
 and refuses to install over an existing copy — for which there is
 `portable upgrade`.
 
+### Running it from anywhere
+
+Putting the install directory on your PATH works, and nothing else is needed:
+the launcher finds its own interpreter and its own settings from where it sits,
+not from where you are standing. `portable site add demo .` then means the
+directory you are in, and `portable run` runs there too.
+
+Nothing takes that directory hostage, either. The daemon and everything it
+supervises stand in the installation's own folder — a process holds its working
+directory open, and on Windows a folder held open cannot be deleted or renamed,
+with Explorer saying only that it is "open in another program".
+
 **Your PATH is not touched.** The tool's promise is that deleting its directory
 removes it completely, and an entry in PATH would be an exception to that. Set
 `$env:PORTABLE_ADD_TO_PATH = '1'` if you want one anyway; it is the only thing

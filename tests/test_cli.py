@@ -351,3 +351,50 @@ class TestTheShell:
         reported = capsys.readouterr().out.strip().splitlines()[-1]
 
         assert json.loads(reported)["home"] == str(paths.root())
+
+
+class TestRunningFromAnywhere:
+    """
+    On PATH, `portable` is run from wherever somebody happens to be.
+
+    Two things have to hold: it must find itself without help, and it must not
+    take the caller's directory hostage.
+    """
+
+    def test_the_daemon_is_started_in_its_own_directory(self, monkeypatch, tmp_path):
+        started: dict = {}
+
+        def remember(argv, cwd=None, env=None, log=None):
+            started["cwd"] = cwd
+
+            return 4321
+
+        monkeypatch.setattr(cli.spawn, "start_detached", remember)
+        monkeypatch.setattr(cli, "_await_daemon", lambda pid=None, timeout=60: None)
+
+        cli.main(["up"])
+
+        assert started["cwd"] == paths.root()
+
+    def test_a_relative_site_root_still_follows_the_caller(self, monkeypatch, tmp_path):
+        # Which is the other half of it. `site add demo .` has to mean the
+        # directory the person is standing in, not the one the tool lives in.
+        sent: dict = {}
+
+        class Recording:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def call(self, method, route, payload=None, **kwargs):
+                sent.update(payload or {})
+
+                return {"name": "demo", "hostname": "demo.localhost",
+                        "url": "http://demo.localhost", "root": payload["root"],
+                        "https": None, "detected": False}
+
+        monkeypatch.setattr(cli, "Client", Recording)
+        monkeypatch.chdir(tmp_path)
+
+        cli.main(["site", "add", "demo", "."])
+
+        assert sent["root"] == str(tmp_path.resolve())
