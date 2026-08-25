@@ -255,6 +255,7 @@ def build() -> Any:
     from textual.app import App, ComposeResult
     from textual.binding import Binding
     from textual.containers import Horizontal, Vertical
+    from textual.css.query import NoMatches
     from textual.suggester import SuggestFromList
     from textual.widgets import DataTable, Footer, Input, RichLog, Static
 
@@ -482,15 +483,37 @@ def build() -> Any:
 
             # Only when it was long enough to have been worth wondering about.
             if took > 1.0:
-                self.call_from_thread(
-                    self.query_one("#log", RichLog).write, f"  ({took:.0f}s)"
-                )
+                self.call_from_thread(self.note, f"  ({took:.0f}s)")
 
             self.call_from_thread(self.busy, None)
 
             # A command that changed something should be visible in the tables
             # before the next tick, which is a whole second of wondering.
             self.call_from_thread(self.action_refresh)
+
+        def _find(self, selector: str, kind: type) -> Any:
+            """
+            A widget if the screen has one, `None` if it does not.
+
+            Everything here can be reached from the thread running a command,
+            and that thread outlives neither the screen's arrival nor its
+            departure. A command finishing a moment before the screen is
+            composed, or a moment after F10, used to raise `NoMatches` deep in
+            the framework — which on one of four machines it duly did, and in a
+            real session would have left the busy bar spinning over a command
+            that had already finished.
+            """
+            try:
+                return self.query_one(selector, kind)
+            except NoMatches:
+                return None
+
+        def note(self, text: str) -> None:
+            """Write a line to the log pane, from the message loop."""
+            pane = self._find("#log", RichLog)
+
+            if pane is not None:
+                pane.write(text)
 
         def busy(self, line: str | None) -> None:
             """
@@ -504,7 +527,11 @@ def build() -> Any:
             self._since = time.monotonic() if line else 0.0
             self._frame = 0
 
-            indicator = self.query_one("#busy", Static)
+            indicator = self._find("#busy", Static)
+
+            if indicator is None:
+                return
+
             indicator.display = line is not None
 
             # The bar above says what is running, loudly. Repeating it in the
@@ -529,7 +556,12 @@ def build() -> Any:
             self._frame = (self._frame + 1) % len(FRAMES)
             elapsed = time.monotonic() - self._since
 
-            self.query_one("#busy", Static).update(
+            indicator = self._find("#busy", Static)
+
+            if indicator is None:
+                return
+
+            indicator.update(
                 f"{FRAMES[self._frame]}  {self._busy}   {elapsed:.0f}s   "
                 f"(F10 twice to leave it running)"
             )

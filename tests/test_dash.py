@@ -12,6 +12,7 @@ libraries it is drawn with being the only four it needs.
 from __future__ import annotations
 
 import builtins
+import inspect
 import sys
 
 import pytest
@@ -555,3 +556,49 @@ class TestShowingWhatIsWrong:
             assert app.query_one("#processes").row_count == 1
             assert app.query_one("#sites").row_count == 1
             assert app.query_one("#services").row_count == 1
+
+
+class TestACommandOutlivingTheScreen:
+    """
+    A command runs in its own thread. That thread outlives neither the screen's
+    arrival nor its departure, and it touches the screen three times: to raise
+    the busy bar, to write a duration, to lower it again.
+
+    One of four CI machines caught this as `NoMatches` on `#busy`. In a real
+    session the cost is worse than a failed test: the lookup happened in the
+    worker thread, before the line that lowers the bar, so a command finishing
+    at the wrong moment would leave the bar spinning over nothing.
+    """
+
+    async def test_the_bar_survives_the_screen_going_away(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+        # The screen is gone; a command finishing now must not raise.
+        app.busy("install mariadb")
+        app.tick()
+        app.busy(None)
+
+    async def test_a_note_survives_it_too(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+        app.note("  (31s)")
+
+    async def test_the_log_is_not_queried_from_the_worker_thread(self):
+        # The DOM belongs to the message loop. Reaching into it from the thread
+        # running a command is what turned a missing widget into a dead thread
+        # rather than a missed line.
+        # Collapsed, because the call that started this was split across two
+        # lines and a literal search for it found nothing — a guard that passes
+        # against the code it was written to catch guards nothing.
+        source = " ".join(inspect.getsource(dash.build).split())
+
+        assert "call_from_thread( self.query_one" not in source
+        assert "call_from_thread(self.query_one" not in source

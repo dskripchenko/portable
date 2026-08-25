@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.1 — 2026-08-25
+
+### Fixed — a command finishing at the wrong moment
+
+The dashboard runs each typed command in its own thread. That thread outlives
+neither the screen's arrival nor its departure, and it touches the screen three
+times: to raise the busy bar, to write how long the command took, to lower the
+bar again.
+
+- **The log pane was looked up in the worker thread**, not on the message loop
+  the screen belongs to — and the lookup sat immediately before the line that
+  lowers the bar. A command finishing a moment after F10 would have taken the
+  thread down there, leaving the bar spinning over something already done.
+- **Every screen lookup reachable from a command now tolerates the screen not
+  being there**, which is the honest state of affairs between `F10` and the
+  process exiting.
+
+Caught by one of four CI machines rather than by reasoning, and only because
+the dashboard tests run there — this machine's interpreter has no textual, so
+nine of them had been quietly skipping locally.
+
 ## 1.3.0 — 2026-08-25
 
 ### Fixed — five retries meant five, not twenty-five
