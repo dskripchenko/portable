@@ -86,6 +86,13 @@ def start_detached(
     """
     # Same reasoning as `start_child`: the child gets its own descriptor, ours
     # is closed the moment it is no longer needed.
+    if log is not None:
+        # The directory may not exist yet. Most callers run after
+        # `ensure_layout`, but not all of them do — `upgrade` can be the first
+        # command anyone runs — and a detached process that cannot start because
+        # its log file has nowhere to live is a confusing way to fail.
+        log.parent.mkdir(parents=True, exist_ok=True)
+
     stdout = open(log, "ab", buffering=0) if log else subprocess.DEVNULL  # noqa: SIM115
     close_after = log is not None
 
@@ -192,6 +199,13 @@ def start_child(
     # into the child, so the parent's copy is dead weight — and a pool member
     # recycling once a minute would otherwise leak one handle per restart until
     # the daemon ran out of them, days later, far from the cause.
+    if log is not None:
+        # The directory may not exist yet. Most callers run after
+        # `ensure_layout`, but not all of them do — `upgrade` can be the first
+        # command anyone runs — and a detached process that cannot start because
+        # its log file has nowhere to live is a confusing way to fail.
+        log.parent.mkdir(parents=True, exist_ok=True)
+
     stdout = open(log, "ab", buffering=0) if log else subprocess.DEVNULL  # noqa: SIM115
 
     try:

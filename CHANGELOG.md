@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — `portable upgrade`
+
+Replaces this tool with the newest release, without going to a browser.
+`--check` says whether there is one and changes nothing.
+
+The download is the easy half. The hard half is that **a running program's files
+cannot be replaced on Windows**, and this command is executed by the very
+interpreter inside the bundle being replaced, with `cmd.exe` holding
+`portable.cmd` open besides. Unpacking over the top is not unwise, it is refused
+by the operating system.
+
+So the new version is unpacked beside the old one, verified against the digest
+published with it, and **run once** — before anything existing is touched. Then
+the directories are exchanged by the system's own shell, from a script that
+lives outside both bundles.
+
+Outside both, and that is the whole design. Windows will not rename a directory
+containing a running executable, so a helper started from the new bundle cannot
+move the new bundle and one started from the old cannot move the old. The first
+attempt at this ran the helper from the new bundle and worked perfectly on
+macOS — which permits it, and would have hidden the problem until somebody on
+the target platform found it. There is a test asserting the restriction, skipped
+where it does not apply, so if it ever stops holding this can be simplified.
+
+If the exchange fails the previous installation is put back: a tool that is
+merely out of date is a great deal better than one that is not there. The old
+version is kept beside the new one until you delete it.
+
+Two refusals worth naming. A release publishing no digest is declined outright —
+elsewhere "the publisher listed no checksum" is recorded and accepted, but this
+*is* the program. And a bundle that arrives intact and then does not start is
+never swapped in, which is why it is run first.
+
+### Fixed
+
+- **A detached process whose log directory did not exist failed to start.** Most
+  callers run after `ensure_layout`; `upgrade` can be the first command anybody
+  runs. Found by it failing exactly that way.
+
 ### Changed
 
 - **The release no longer builds a macOS bundle.** It was justified as a check

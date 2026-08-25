@@ -15,13 +15,15 @@ sentences written for people is a client that breaks when a sentence is reworded
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, paths, spawn
+from . import VERSION, catalog, paths, selfupdate, spawn
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -71,6 +73,7 @@ anything else
   portable home set D:\\portable      or --beside, to keep it next to the launcher
   portable version                   this, the interpreter, and the running daemon
   portable help                      this list on its own
+  portable upgrade [--check]         replace this tool with the newest release
 
 every command takes --json, and --home PATH to use a different installation once.
 """
@@ -141,6 +144,13 @@ def _parser() -> argparse.ArgumentParser:
 
     add("version", "What this is, and where it keeps things.", _version)
     add("help", "Everything below, on its own.", _help)
+
+    upgrade = add("upgrade", "Replace this tool with the newest release.", _upgrade)
+    upgrade.add_argument(
+        "--check",
+        action="store_true",
+        help="Say whether there is a newer one, and change nothing.",
+    )
 
     add("up", "Start the daemon.", _up)
     add("down", "Stop the daemon and everything it supervises.", _down)
@@ -340,6 +350,93 @@ def _parser() -> argparse.ArgumentParser:
     home.set_defaults(run=_home_show, home_command=None)
 
     return parser
+
+
+def _upgrade(args) -> int:
+    """
+    Replace the bundle this is running from.
+
+    The one command that does its work here rather than asking the daemon —
+    because the daemon is part of what is being replaced, and has to be stopped
+    before the directories can be exchanged.
+    """
+    try:
+        bundle = selfupdate.can_upgrade()
+        release = selfupdate.latest()
+    except selfupdate.UpgradeFailed as error:
+        return _fail(args, "upgrade-failed", str(error))
+
+    if not selfupdate.newer(release.version, VERSION):
+        return _emit(
+            args,
+            {"current": VERSION, "latest": release.version, "upgraded": False},
+            f"{VERSION} is the newest there is.",
+        )
+
+    if args.check:
+        return _emit(
+            args,
+            {"current": VERSION, "latest": release.version, "upgraded": False},
+            f"{release.version} is available. You have {VERSION}.\n"
+            f"portable upgrade",
+        )
+
+    workspace = selfupdate.workspace(bundle)
+
+    try:
+        print(f"Fetching {release.version}...", file=sys.stderr)
+        unpacked = selfupdate.fetch(release, workspace)
+
+        # Before anything existing is touched. A bundle that arrived intact and
+        # still will not start is exactly what must not be swapped in.
+        reported = selfupdate.works(unpacked)
+        print(f"It runs and reports {reported}. Stopping the daemon...", file=sys.stderr)
+    except selfupdate.UpgradeFailed as error:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+        return _fail(args, "upgrade-failed", str(error))
+
+    # It lives inside the directory about to be renamed, and Windows will not
+    # rename a directory holding a running executable.
+    with contextlib.suppress(NotRunning, CallFailed):
+        Client().shutdown()
+
+    _await_gone()
+
+    keep = selfupdate.previous(bundle, VERSION)
+    pid = selfupdate.swap(bundle, unpacked, keep)
+
+    result = {
+        "current": VERSION,
+        "latest": release.version,
+        "upgraded": True,
+        "swapping": pid,
+        "previous": str(keep),
+    }
+
+    # Said before returning, because the swap happens *after* this process
+    # exits — there is no later moment at which anything here can speak.
+    return _emit(
+        args,
+        result,
+        f"Upgrading to {release.version}. This window's work is done; the exchange "
+        f"finishes as it closes.\n"
+        f"The previous version is kept at {keep} until you delete it.\n"
+        f"Run `portable version` in a new window to confirm, then `portable up`.",
+    )
+
+
+def _await_gone(timeout: float = 20.0) -> None:
+    """Wait for the daemon to actually exit, not merely to promise to."""
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        endpoint = discovery.read()
+
+        if endpoint is None or not spawn.is_running(endpoint.pid):
+            return
+
+        time.sleep(0.2)
 
 
 def _help(args) -> int:

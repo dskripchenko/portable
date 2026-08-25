@@ -13,9 +13,20 @@ this page.
 | `portable status` | What is running, on which port, and why nothing is being served if nothing is. |
 | `portable version` | This build, the interpreter behind it, where things are kept, and the running daemon's version. |
 | `portable help` | Every command, grouped, with an example each. |
+| `portable upgrade [--check]` | Replace this tool with the newest release. |
 
 `status` and `version` both work with nothing running — which is the state of a
 machine where the question tends to come up.
+
+`upgrade` downloads the newest release, verifies it against the digest published
+beside it, and runs it once before touching anything that already exists. Only
+then is the old installation moved aside and the new one put in its place — by
+the system's own shell, from a script outside both, because Windows will not
+rename a directory containing a running program.
+
+The previous version is kept beside the new one until you delete it, and if the
+exchange fails the old one is put back. A tool that is merely out of date is a
+great deal better than one that is not there.
 
 ## Runtimes
 
