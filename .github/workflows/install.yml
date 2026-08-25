@@ -1,0 +1,56 @@
+name: install
+
+# The one-liner, run the way a person runs it, against the real published
+# release. A script that is only ever read is a script that works until somebody
+# tries it.
+on:
+  push:
+    paths: ['install.ps1', '.github/workflows/install.yml']
+  release:
+    types: [published]
+  schedule:
+    # Weekly. It depends on GitHub's API, on a published release and on what a
+    # stock Windows carries, and none of those change when this repository does.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  one-liner:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Restricted is the default on a machine nobody has changed, and the
+      # setting most often enforced on a managed one. It blocks a .ps1 on disk
+      # and permits a string through `iex`, which is the whole reason the
+      # instruction is written the way it is — so the test has to run under it.
+      - name: Install under a Restricted execution policy
+        shell: powershell
+        env:
+          PORTABLE_INSTALL_DIR: D:\test-install\portable
+          PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-ExecutionPolicy -Scope Process Restricted -Force
+          Get-Content install.ps1 -Raw | Invoke-Expression
+
+      - name: It is there and it runs
+        shell: powershell
+        run: |
+          $reported = & D:\test-install\portable\portable.cmd version --json | ConvertFrom-Json
+          Write-Output "installed $($reported.version)"
+
+          if (-not $reported.version) { throw "it does not report a version" }
+
+      - name: Installing again refuses rather than overwriting
+        shell: powershell
+        env:
+          PORTABLE_INSTALL_DIR: D:\test-install\portable
+          PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-ExecutionPolicy -Scope Process Restricted -Force
+          $output = (Get-Content install.ps1 -Raw | Invoke-Expression) 2>&1 | Out-String
+
+          if ($LASTEXITCODE -eq 0) { throw "a second install was allowed to proceed" }
+
+          Write-Output $output
