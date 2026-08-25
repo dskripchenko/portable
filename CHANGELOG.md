@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.2 — 2026-08-25
+
+Getting it, and keeping it current, without a browser: one line to install and
+one command to replace itself.
+
+Everything below was found by running it on Windows rather than by reading it,
+which is becoming the pattern — three of these are behaviours of Windows
+PowerShell that no amount of care would have predicted, and one is a belief
+about Windows that a test disproved.
+
 ### Added — installing in one line
 
 ```powershell
