@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.1 — 2026-08-25
+
+Three defects found by running several versions of everything side by side,
+which is what the question "can PHP 8.2 and 8.4 serve at the same time" turned
+into. The answer was yes; the trouble was next door.
+
 ### Fixed — MariaDB could not be created, and then could not be connected to
 
 Both found by running several versions side by side, which is what the question
