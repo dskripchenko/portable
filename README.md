@@ -80,7 +80,17 @@ without touching the machine's trust store.
 
 ## Using it
 
-Download the bundle for your platform from the
+In PowerShell, no administrator rights needed:
+
+```powershell
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+Piped into `iex` rather than saved and run, because under the `Restricted`
+execution policy — the default, and the setting most often enforced on a managed
+machine — a `.ps1` file on disk will not run while a string does.
+
+Or download the bundle from the
 [releases](https://github.com/dskripchenko/portable/releases), unzip it
 anywhere, and run the launcher beside it. There is nothing to install — the
 interpreter ships with the tool, because a program that installs runtimes on a

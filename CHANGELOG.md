@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — installing in one line
+
+```powershell
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+Piped into `iex` rather than saved and run, and that is not a stylistic
+preference. Under the `Restricted` execution policy — the default on a machine
+nobody has changed, and the setting most often enforced on a managed one — a
+`.ps1` file on disk will not run while a string does. Measured on Windows rather
+than assumed, along with the rest: PowerShell 5.1, `curl.exe` and `tar.exe` in
+System32 since Windows 10 1803, `Expand-Archive` and `Get-FileHash`. The
+installer needs none of them beyond PowerShell itself.
+
+It verifies the bundle against the checksum published beside it, runs it once
+before saying it worked, and refuses to install over an existing copy — for
+which there is `portable upgrade`, and over which an install would leave
+whichever files the new version happens not to have.
+
+**PATH is not touched**, because the tool's promise is that deleting its
+directory removes it completely. `PORTABLE_ADD_TO_PATH=1` asks for an entry
+anyway, and it is named as the only thing written outside the install directory.
+
+Three things only running it on Windows could have found:
+
+- **Windows PowerShell hands responses to Internet Explorer's engine** to build
+  a DOM unless told `-UseBasicParsing`, and Windows 11 has no Internet Explorer —
+  so reading the checksum threw "Object reference not set to an instance of an
+  object". The bundle download escaped it only because `-OutFile` skips parsing.
+- **GitHub serves the checksum as `application/octet-stream`**, so `.Content` is
+  a byte array, and splitting a byte array on whitespace yields the first byte as
+  a number. It compared `50` — the code of `2`, the digest's first character —
+  against the hash and reported a mismatch. Read through a file now.
+- **`exit` inside `iex` ends the person's shell**, closing the window on the
+  explanation just printed. `throw` stops the install and leaves them where they
+  were. There is a test asserting the window survives a refusal.
+
+A workflow installs it on `windows-latest` under `Restricted`, from the real
+published release, weekly — it depends on GitHub's API, on a release existing and
+on what a stock Windows carries, and none of those change when this repository
+does.
+
+Only ASCII in the script: Windows PowerShell reads a file without a byte order
+mark as ANSI, and anything else arrives as mojibake on a machine whose code page
+differs. Learned by writing a diagnostic in Russian and getting it back
+unreadable.
+
 ### Added — `portable upgrade`
 
 Replaces this tool with the newest release, without going to a browser.

@@ -2,6 +2,37 @@
 
 ## Install
 
+In PowerShell, from an ordinary window:
+
+```powershell
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+To choose where it goes, or which version:
+
+```powershell
+$env:PORTABLE_INSTALL_DIR = 'D:\portable'
+$env:PORTABLE_VERSION = '0.1.1'
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+Piped into `iex` rather than saved and run, and that is not a stylistic
+preference: under the `Restricted` execution policy — the default on a machine
+nobody has changed, and the setting most often enforced on a managed one — a
+`.ps1` file on disk will not run, while a string does.
+
+It needs nothing that a stock Windows does not already have, checks the bundle
+against the checksum published beside it, runs it once before saying it worked,
+and refuses to install over an existing copy — for which there is
+`portable upgrade`.
+
+**Your PATH is not touched.** The tool's promise is that deleting its directory
+removes it completely, and an entry in PATH would be an exception to that. Set
+`$env:PORTABLE_ADD_TO_PATH = '1'` if you want one anyway; it is the only thing
+the installer writes outside the install directory.
+
+### Or download it by hand
+
 Download `portable-x86_64-pc-windows-msvc.zip` from the
 [releases](https://github.com/dskripchenko/portable/releases) and unzip it
 anywhere — a folder on your desktop, a second drive, a flash drive. There is

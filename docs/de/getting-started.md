@@ -2,6 +2,38 @@
 
 ## Installation
 
+In PowerShell, aus einem gewöhnlichen Fenster:
+
+```powershell
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+Um Ort oder Version zu wählen:
+
+```powershell
+$env:PORTABLE_INSTALL_DIR = 'D:\portable'
+$env:PORTABLE_VERSION = '0.1.1'
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+Durch `iex` geleitet statt gespeichert und ausgeführt, und das ist keine
+Geschmacksfrage: Unter der Ausführungsrichtlinie `Restricted` — der
+Voreinstellung auf einem unveränderten Rechner und der auf einem verwalteten am
+häufigsten erzwungenen — läuft eine `.ps1`-Datei von der Platte nicht, eine
+Zeichenkette dagegen schon.
+
+Es braucht nichts, was ein Windows nicht ohnehin mitbringt, prüft das Bündel
+gegen die daneben veröffentlichte Prüfsumme, startet es einmal, bevor es Erfolg
+meldet, und weigert sich, über eine vorhandene Installation zu schreiben —
+dafür gibt es `portable upgrade`.
+
+**Ihr PATH wird nicht angefasst.** Das Versprechen lautet, dass das Löschen des
+Verzeichnisses alles entfernt, und ein PATH-Eintrag wäre eine Ausnahme davon.
+Mit `$env:PORTABLE_ADD_TO_PATH = '1'` bekommen Sie trotzdem einen; es ist das
+Einzige, was der Installer außerhalb des Installationsverzeichnisses schreibt.
+
+### Oder von Hand
+
 Laden Sie `portable-x86_64-pc-windows-msvc.zip` von den
 [Releases](https://github.com/dskripchenko/portable/releases) und entpacken Sie
 es irgendwohin — einen Ordner auf dem Desktop, eine zweite Festplatte, einen

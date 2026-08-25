@@ -2,6 +2,34 @@
 
 ## 安装
 
+在普通的 PowerShell 窗口里：
+
+```powershell
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+要指定位置或版本：
+
+```powershell
+$env:PORTABLE_INSTALL_DIR = 'D:\portable'
+$env:PORTABLE_VERSION = '0.1.1'
+irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | iex
+```
+
+用管道交给 `iex` 而不是存下来再执行，这不是风格偏好：在 `Restricted` 执行策略下
+——没人动过的机器上的默认值，也是受管控机器上最常被强制的设置——磁盘上的 `.ps1`
+文件不会运行，而字符串会。
+
+它不需要原装 Windows 之外的任何东西，会用发布方在旁边公布的校验和核对压缩包，在
+宣布成功之前先运行它一次，并且拒绝覆盖已有的安装 —— 那是 `portable upgrade` 的
+事。
+
+**不会碰你的 PATH。** 这个工具的承诺是删掉它的目录就等于彻底移除，而 PATH 里的
+一条记录会是这个承诺的例外。如果你仍然想要，设置
+`$env:PORTABLE_ADD_TO_PATH = '1'`；那是安装器唯一写在安装目录之外的东西。
+
+### 或者手动下载
+
 从[发布页](https://github.com/dskripchenko/portable/releases)下载
 `portable-x86_64-pc-windows-msvc.zip`，解压到任何地方 —— 桌面上的一个文件夹、第二
 块硬盘、U 盘都行。没有什么要安装的，也没有安装程序。
