@@ -13,6 +13,7 @@ aus.
 | `portable status` | Was läuft, auf welchem Port, und warum nichts ausgeliefert wird, falls nichts ausgeliefert wird. |
 | `portable version` | Dieser Build, der Interpreter dahinter, wo die Daten liegen, und die Version des laufenden Daemons. |
 | `portable help` | Alle Befehle, gruppiert, mit je einem Beispiel. |
+| `portable dash` | Vollbildansicht: Prozesse, Websites, Datenbanken und laufende Protokolle zusammen. |
 | `portable shell` | Befehle nacheinander ausführen, ohne jedes Mal `portable` zu tippen. |
 | `portable logs [name] [-f]` | Was die beaufsichtigten Prozesse schreiben. Ein Name oder dessen Anfang. |
 | `portable upgrade [--check]` | Dieses Werkzeug durch die neueste Ausgabe ersetzen. |
@@ -42,6 +43,19 @@ Daemon — und dann wird die Frage meist gestellt.
 die Windows-Builds von CPython nicht mitbringen; Vervollständigung bräuchte
 also eine Bibliothek, und das Bündel hat bewusst keine Abhängigkeiten. Verlauf
 und Pfeiltasten liefert die Konsole.
+
+`dash` zeigt alles auf einmal, weil die Antworten meist zusammen gebraucht
+werden: welcher Arbeiter starb, ist eine Frage ans Protokoll; ob er zurückkam,
+eine an die Prozesstabelle — und sie nacheinander zu lesen heißt, zwischen zwei
+Befehlen zu wechseln, während sich das Beobachtete bewegt. `q` beendet, `r`
+aktualisiert, `f` pausiert das Protokoll. `dash php` folgt unten nur PHP.
+
+Es ist der einzige Teil des Werkzeugs mit Bibliotheken außerhalb der
+Standardbibliothek. Vier davon, ins Bündel eingelegt: `textual` nennt sechs
+weitere, nach denen hier nichts greift, und sie mitzuführen hieße, viereinhalb
+Megabyte Syntax-Lexer für einen Bildschirm mitzunehmen, der nichts hervorhebt.
+Ein Test blockiert deren Importe und startet die Ansicht trotzdem, damit das so
+bleibt.
 
 ## Laufzeitumgebungen
 

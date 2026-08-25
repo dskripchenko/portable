@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.1.0 — 2026-08-25
+
+### Added — `portable dash`
+
+A full-screen view: the process table, sites, databases and a live log, in one
+screen. Everything in it is already available from the command line — and the
+reason to have it together is that the answers usually are wanted together.
+Which worker died is a question about the log; whether it came back is a
+question about the process table; and reading them in turn means alternating
+between two commands while the thing being watched moves.
+
+It is a client of the daemon like every other command. Nothing was added to the
+daemon for it, which is what building the API first was for.
+
+**Four libraries are vendored, not ten, and that is measured.** `textual` names
+six more dependencies — pygments, markdown-it-py and its plugins among them —
+and the dashboard was run under the test harness with `sys.modules` inspected
+afterwards: none of them is loaded. Carrying them would add four and a half
+megabytes of syntax lexers to a screen that highlights nothing.
+
+Measurements go stale, so there is a guard: a test blocks those imports and runs
+the dashboard anyway. The day something reaches for one, it is a failing test
+rather than a bundle that crashes on somebody else's machine.
+
+The wheels come from PyPI, are checked against the digest published with them,
+and are unpacked by hand. No pip — it would have to be present, would choose
+versions of its own, and would turn a directory that is copied into an install.
+Versions are pinned exactly, because the archive gets a checksum and "whatever
+was newest that morning" is not something a checksum can mean. A wheel carrying
+a compiled file is refused outright: it is built for one interpreter and one
+platform.
+
+The bundle grew from 39 MB to 40 MB compressed.
+
+This is the only part of the tool that is not standard library alone. `dash`
+says so and points at the command-line equivalents when the libraries are
+missing, which is the case in a source checkout.
+
 ## 1.0.0 — 2026-08-25
 
 Everything the tool promised is now either true or stated plainly as not, and

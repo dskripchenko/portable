@@ -13,6 +13,7 @@ this page.
 | `portable status` | What is running, on which port, and why nothing is being served if nothing is. |
 | `portable version` | This build, the interpreter behind it, where things are kept, and the running daemon's version. |
 | `portable help` | Every command, grouped, with an example each. |
+| `portable dash` | A full-screen view: processes, sites, databases and live logs together. |
 | `portable shell` | Run commands one after another without retyping `portable`. |
 | `portable logs [name] [-f]` | What the supervised processes are writing. A name, or the start of one. |
 | `portable upgrade [--check]` | Replace this tool with the newest release. |
@@ -42,6 +43,18 @@ the question tends to be asked.
 builds of CPython do not carry, so completion would need a library, and the
 bundle deliberately has no dependencies. The console provides history and arrow
 keys.
+
+`dash` shows everything at once because the answers are usually wanted together:
+which worker died is a question about the log, whether it came back is a
+question about the process table, and reading them in turn means alternating
+between two commands while the thing you are watching moves. `q` quits, `r`
+refreshes, `f` pauses the log. `dash php` follows only PHP in the bottom pane.
+
+It is the one part of the tool with libraries that are not the standard one.
+Four of them, vendored into the bundle — `textual` names six more that nothing
+here reaches for, and carrying those would add four and a half megabytes of
+syntax lexers to a screen that highlights nothing. A test blocks their imports
+and runs the dashboard anyway, so that stays true.
 
 ## Runtimes
 
