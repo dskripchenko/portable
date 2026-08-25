@@ -35,7 +35,11 @@ function Fail($message) {
     Write-Host $message -ForegroundColor Red
     Write-Host ""
 
-    exit 1
+    # `throw`, not `exit`. This script is executed by `iex` inside the person's
+    # own shell, and `exit` there ends the shell - closing the window on the
+    # explanation that was just printed, which is the one moment they need to
+    # read it. `throw` stops this and leaves them where they were.
+    throw 'portable was not installed.'
 }
 
 if ([Environment]::OSVersion.Platform -ne 'Win32NT') {

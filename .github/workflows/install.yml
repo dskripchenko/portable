@@ -49,8 +49,25 @@ jobs:
           PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Set-ExecutionPolicy -Scope Process Restricted -Force
-          $output = (Get-Content install.ps1 -Raw | Invoke-Expression) 2>&1 | Out-String
+          $refused = $false
 
-          if ($LASTEXITCODE -eq 0) { throw "a second install was allowed to proceed" }
+          try {
+            Get-Content install.ps1 -Raw | Invoke-Expression
+          } catch {
+            $refused = $true
+            Write-Output "refused: $_"
+          }
 
-          Write-Output $output
+          if (-not $refused) { throw "a second install was allowed to proceed" }
+
+      # The failure has to leave the shell alive, or the person never reads it.
+      # `exit` inside `iex` ends the session, taking the explanation with it.
+      - name: A refusal does not close the window
+        shell: powershell
+        env:
+          PORTABLE_INSTALL_DIR: D:\test-install\portable
+          PORTABLE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          try { Get-Content install.ps1 -Raw | Invoke-Expression } catch { }
+
+          Write-Output "still here, which is the point"
