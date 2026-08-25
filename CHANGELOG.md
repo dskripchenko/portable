@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.4 — 2026-08-25
+
+Seeing what the thing is doing: a live view of everything the supervised
+processes write, and a loop that runs commands without `portable` in front of
+each one. Both are standard library only — the bundle still carries no
+dependencies, which is what keeps it a directory to copy rather than an install.
+
+Also: **port 80 without administrator rights is confirmed on real Windows**, by
+somebody running it on their own machine. It is the premise the whole design
+rests on, and until now it was an expectation.
+
 ### Added — `portable logs` and `portable shell`
 
 `logs [name] [-f]` shows and follows what the supervised processes write. A name
