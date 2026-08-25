@@ -776,7 +776,25 @@ def _upgrade(args) -> int:
     _await_gone()
 
     keep = selfupdate.previous(bundle, VERSION)
-    pid = selfupdate.swap(bundle, unpacked, keep)
+
+    try:
+        pid = selfupdate.swap(bundle, unpacked, keep)
+    except OSError as error:
+        # The daemon is already stopped by this point, so a traceback here
+        # leaves somebody with no supervisor, no upgrade and no sentence about
+        # either. The download is kept: it is verified and it runs, and the next
+        # attempt should not have to fetch it again.
+        return _fail(
+            args,
+            "swap-failed",
+            f"{release.version} was downloaded and checked, and the exchange could not "
+            f"be started: {error}\n\n"
+            f"Nothing was replaced — this is still {VERSION}, and the daemon is "
+            f"stopped.\n"
+            f"    portable up        to carry on as before\n"
+            f"    portable upgrade   to try again; the download is kept in "
+            f"{workspace.name}",
+        )
 
     result = {
         "current": VERSION,

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.1.1 — 2026-08-25
+
+### Fixed — `upgrade` could not start the process that finishes it
+
+Reported from Windows: `CreateProcess` refused with `WinError 5`, access denied,
+on the freshly extracted `python.exe` — one second after that same interpreter
+had run successfully through the launcher, which is how the upgrade had just
+verified the download.
+
+A file written moments ago can be held open by whatever scans it. Two changes,
+either of which would have been enough, and both worth having:
+
+- **The helper runs on the interpreter already executing.** Using the new
+  bundle's was the obvious choice and the wrong one: it had existed for about a
+  second. The one already running cannot be locked, because it is already
+  running — and renaming the directory it runs from is permitted on Windows,
+  which is what makes this possible and which a test records.
+- **A start refused as "access denied" is retried** for fifteen seconds. It is a
+  lock being released, not a permission that will change. Anything else — a
+  missing file, say — is raised at once, since waiting only delays the answer.
+
+- **A swap that cannot start now says so in a sentence.** The daemon is stopped
+  by that point, so a traceback left somebody with no supervisor, no upgrade and
+  no account of either. It now says nothing was replaced, that the daemon is
+  stopped, how to carry on, and that the verified download is kept for the next
+  attempt.
+
+**This does not help an installation older than 1.1.1 upgrade itself** — the
+code doing the upgrading is the one already installed. One manual hop is needed:
+unpack the new bundle beside the old one and delete the old.
+
 ## 1.1.0 — 2026-08-25
 
 ### Added — `portable dash`

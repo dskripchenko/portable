@@ -299,3 +299,114 @@ class TestWhyTheHelperIsOutside:
         finally:
             running.kill()
             running.wait(timeout=10)
+
+
+class TestStartingTheSwap:
+    """
+    Reported from Windows: `CreateProcess` refused with access denied on a
+    freshly extracted `python.exe` — one second after that same interpreter had
+    run successfully through the launcher.
+    """
+
+    def test_the_helper_runs_on_the_interpreter_already_running(self, tmp_path, monkeypatch):
+        """
+        Not the new bundle's, which was the obvious choice and the wrong one.
+
+        A file written moments ago can be held open by whatever scans it. The
+        one already executing cannot be, because it is already executing —
+        and renaming the directory it runs from is permitted on Windows, which
+        is what makes this possible at all.
+        """
+        started: list = []
+        monkeypatch.setattr(
+            selfupdate.spawn, "start_detached", lambda argv, **k: started.append(argv) or 1
+        )
+
+        current = tmp_path / "current"
+        current.mkdir()
+        replacement = tmp_path / "new"
+        (replacement / "python").mkdir(parents=True)
+        (replacement / "python" / "python.exe").write_text("", encoding="utf-8")
+
+        selfupdate.swap(current, replacement, tmp_path / "kept")
+
+        assert started[0][0] == sys.executable
+        assert str(replacement) not in started[0][0]
+
+    def test_a_refused_start_is_retried_rather_than_raised(self, monkeypatch, tmp_path):
+        # It is a lock being released, not a permission that is going to
+        # change, so waiting is the whole of the fix.
+        from portable import spawn
+
+        attempts = []
+        # Kept before patching, or the replacement calls itself.
+        real = spawn.subprocess.Popen
+
+        def denied_then_fine(argv, **kwargs):
+            attempts.append(1)
+
+            if len(attempts) < 3:
+                raise PermissionError(5, "Access is denied")
+
+            return real([sys.executable, "-c", "pass"], stdout=subprocess.DEVNULL)
+
+        monkeypatch.setattr(spawn.subprocess, "Popen", denied_then_fine)
+        monkeypatch.setattr(spawn, "DENIED_SECONDS", 5.0)
+
+        process = spawn._with_retries([sys.executable, "-c", "pass"])
+        process.wait(timeout=10)
+
+        assert len(attempts) == 3
+
+    def test_something_that_is_not_a_lock_is_not_retried(self, monkeypatch):
+        # A missing file will still be missing in fifteen seconds, and waiting
+        # for it only delays the answer.
+        from portable import spawn
+
+        attempts = []
+
+        def missing(argv, **kwargs):
+            attempts.append(1)
+
+            raise FileNotFoundError(2, "The system cannot find the file specified")
+
+        monkeypatch.setattr(spawn.subprocess, "Popen", missing)
+
+        with pytest.raises(FileNotFoundError):
+            spawn._with_retries(["nothing"])
+
+        assert len(attempts) == 1
+
+    def test_a_swap_that_cannot_start_leaves_a_sentence_and_not_a_traceback(
+        self, monkeypatch, capsys, tmp_path
+    ):
+        """
+        The daemon is already stopped by then.
+
+        A traceback there leaves somebody with no supervisor, no upgrade and no
+        sentence about either.
+        """
+        from portable import cli, paths
+
+        monkeypatch.setattr(paths, "bundle", lambda: tmp_path / "bundle")
+        monkeypatch.setattr(
+            selfupdate,
+            "latest",
+            lambda: selfupdate.Release(version="99.0.0", url="x", digest_url="y"),
+        )
+        monkeypatch.setattr(selfupdate, "can_upgrade", lambda: tmp_path / "bundle")
+        monkeypatch.setattr(selfupdate, "fetch", lambda release, into: tmp_path / "unpacked")
+        monkeypatch.setattr(selfupdate, "works", lambda root: "99.0.0")
+        monkeypatch.setattr(cli, "_await_gone", lambda timeout=20: None)
+        monkeypatch.setattr(
+            selfupdate,
+            "swap",
+            lambda *a: (_ for _ in ()).throw(PermissionError(5, "Access is denied")),
+        )
+
+        assert cli.main(["upgrade"]) == 1
+
+        said = capsys.readouterr().err
+
+        assert "still 1." in said or "this is still" in said.lower()
+        assert "portable up" in said, "it should say how to carry on"

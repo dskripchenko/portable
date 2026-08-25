@@ -219,17 +219,21 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     """
     Start the process that exchanges the directories, and return its pid.
 
-    Run by the **new** bundle's interpreter — the one just proven to work — from
-    a script written beside both bundles rather than inside either, so that
-    nothing has to tidy up a file in a directory it has since renamed.
+    Run by the interpreter **already executing** — this one — from a script
+    written beside both bundles rather than inside either, so that nothing has
+    to tidy up a file in a directory it has since renamed.
 
-    The first version of this used PowerShell, on the belief that Windows
-    refuses to rename a directory containing a running executable and that
-    therefore no interpreter from either bundle could do the job. The belief was
-    wrong: since Vista the loader maps images with `FILE_SHARE_DELETE`, and
-    renaming is permitted — deleting is what is not. A test records that. So
-    this is Python again, which is one language instead of two and can be tested
-    on both platforms.
+    The obvious choice was the new bundle's interpreter, since it had just been
+    proven to start. It was the wrong one: a freshly extracted `python.exe` can
+    be held by whatever is scanning it, and `CreateProcess` then fails with
+    access denied — reported from Windows, one second after that same
+    interpreter had run successfully through the launcher. The one already
+    running has no such problem, because it is already running.
+
+    Renaming the directory it is running from is permitted: since Vista the
+    loader maps images with `FILE_SHARE_DELETE`, so renaming works and deleting
+    is what does not. A test records that, and it is why this can be the current
+    interpreter rather than the new one.
 
     It waits for the calling process to exit first, because until then that
     process is running from `current`, and on Windows `cmd.exe` still holds
@@ -238,20 +242,9 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     helper = current.parent / "portable-swap.py"
     helper.write_text(_HELPER, encoding="utf-8")
 
-    interpreter = (
-        replacement / "python" / "python.exe"
-        if os.name == "nt"
-        else replacement / "python" / "bin" / "python3"
-    )
-
-    # A bare interpreter when the replacement has none — which is every test
-    # that swaps two ordinary directories, and nothing else.
-    if not interpreter.exists():
-        interpreter = Path(sys.executable)
-
     return spawn.start_detached(
         [
-            str(interpreter),
+            sys.executable,
             str(helper),
             str(os.getpid()),
             str(current),

@@ -29,6 +29,7 @@ import os
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 
 WINDOWS = os.name == "nt"
@@ -162,6 +163,34 @@ def _swallow_exit(process: subprocess.Popen) -> None:
 broke_away = True
 
 
+#: How long to keep trying to start a program that answers "access denied".
+#:
+#: A file that was written moments ago can be held open by whatever scans it,
+#: and `CreateProcess` then fails with `WinError 5` — reported from Windows one
+#: second after the very same interpreter had run successfully. It is a lock
+#: being released, not a permission that is going to change, so waiting is the
+#: whole of the fix.
+DENIED_SECONDS = 15.0
+
+
+def _with_retries(argv, **kwargs):
+    """`Popen`, retried while Windows says access is denied."""
+    deadline = time.monotonic() + DENIED_SECONDS
+    last: OSError | None = None
+
+    while time.monotonic() < deadline:
+        try:
+            return subprocess.Popen(argv, **kwargs)
+        except PermissionError as error:
+            last = error
+            time.sleep(0.5)
+        except OSError:
+            # Anything else is not a lock waiting to be released.
+            raise
+
+    raise last if last is not None else OSError(f"could not start {argv[0]}")
+
+
 def _start_windows(argv, cwd, env, stdout):
     """
     Try to break away from the job; fall back when the job forbids it.
@@ -181,7 +210,7 @@ def _start_windows(argv, cwd, env, stdout):
     try:
         broke_away = True
 
-        return subprocess.Popen(
+        return _with_retries(
             argv,
             cwd=cwd,
             env=env,
@@ -197,7 +226,7 @@ def _start_windows(argv, cwd, env, stdout):
         # that is worth saying rather than discovering.
         broke_away = False
 
-        return subprocess.Popen(
+        return _with_retries(
             argv,
             cwd=cwd,
             env=env,
