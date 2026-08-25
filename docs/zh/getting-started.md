@@ -28,6 +28,29 @@ irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | i
 一条记录会是这个承诺的例外。如果你仍然想要，设置
 `$env:PORTABLE_ADD_TO_PATH = '1'`；那是安装器唯一写在安装目录之外的东西。
 
+### 如果被封的是 PowerShell 本身
+
+有些机器锁住的不是这个工具，而是 PowerShell：AppLocker 和 WDAC 会把它置于
+Constrained Language Mode，在那里连 `Get-FileHash` 和 `Expand-Archive` 都拒绝
+运行。上面写的一切都不是必需的。在 `cmd` 里：
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+
+certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
+
+tar -xf portable.zip
+```
+
+自己比对这两个哈希，然后运行出现的文件夹里的 `portable.cmd`。整个过程不执行任何
+脚本，所以执行策略、语言模式和脚本规则都与此无关。`curl.exe`、`tar.exe` 和
+`certutil.exe` 自 Windows 10 1803 起就在 `System32` 里。
+
+`-f` 很重要：没有它，curl 会把“未找到”的页面存成压缩包并报告成功，随后 `tar`
+会去抱怨压缩包，而不是地址。
+
 ### 或者手动下载
 
 从[发布页](https://github.com/dskripchenko/portable/releases)下载

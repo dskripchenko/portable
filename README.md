@@ -90,6 +90,16 @@ Piped into `iex` rather than saved and run, because under the `Restricted`
 execution policy — the default, and the setting most often enforced on a managed
 machine — a `.ps1` file on disk will not run while a string does.
 
+Where PowerShell itself is locked down — AppLocker and WDAC put it into
+Constrained Language Mode, in which even `Get-FileHash` refuses to run — nothing
+above is required. From `cmd`, executing no script at all:
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+certutil -hashfile portable.zip SHA256
+tar -xf portable.zip
+```
+
 Or download the bundle from the
 [releases](https://github.com/dskripchenko/portable/releases), unzip it
 anywhere, and run the launcher beside it. There is nothing to install — the

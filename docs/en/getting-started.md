@@ -31,6 +31,30 @@ removes it completely, and an entry in PATH would be an exception to that. Set
 `$env:PORTABLE_ADD_TO_PATH = '1'` if you want one anyway; it is the only thing
 the installer writes outside the install directory.
 
+### If PowerShell is blocked
+
+Some machines lock PowerShell down rather than the tool — AppLocker and WDAC put
+it into Constrained Language Mode, where even `Get-FileHash` and
+`Expand-Archive` refuse to run. Nothing above is required. From `cmd`:
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+
+certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
+
+tar -xf portable.zip
+```
+
+Compare the two hashes yourself, then run the `portable.cmd` inside the folder
+that appeared. No script is executed at any point, so no execution policy, no
+language mode and no script rule applies. `curl.exe`, `tar.exe` and
+`certutil.exe` have all been in `System32` since Windows 10 1803.
+
+The `-f` matters: without it curl saves the "not found" page as the archive and
+reports success, and `tar` then complains about the archive rather than the URL.
+
 ### Or download it by hand
 
 Download `portable-x86_64-pc-windows-msvc.zip` from the

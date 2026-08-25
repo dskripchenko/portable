@@ -31,6 +31,30 @@ irm https://raw.githubusercontent.com/dskripchenko/portable/main/install.ps1 | i
 нужна — `$env:PORTABLE_ADD_TO_PATH = '1'`; это единственное, что установщик
 пишет вне каталога установки.
 
+### Если заблокирован сам PowerShell
+
+Бывает, что зажимают не инструмент, а PowerShell: AppLocker и WDAC переводят
+его в Constrained Language Mode, где отказываются работать даже `Get-FileHash`
+и `Expand-Archive`. Ничего из написанного выше не обязательно. Из `cmd`:
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+
+certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
+
+tar -xf portable.zip
+```
+
+Сверьте два хеша глазами и запустите `portable.cmd` из появившейся папки. Ни
+один скрипт при этом не исполняется, поэтому ни политика выполнения, ни режим
+языка, ни правила для скриптов сюда не относятся. `curl.exe`, `tar.exe` и
+`certutil.exe` лежат в `System32` начиная с Windows 10 1803.
+
+Ключ `-f` важен: без него curl сохранит страницу «не найдено» как архив и
+отчитается об успехе, а `tar` потом пожалуется на архив вместо адреса.
+
 ### Или вручную
 
 Скачайте `portable-x86_64-pc-windows-msvc.zip` со страницы

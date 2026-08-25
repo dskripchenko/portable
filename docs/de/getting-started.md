@@ -32,6 +32,33 @@ Verzeichnisses alles entfernt, und ein PATH-Eintrag wäre eine Ausnahme davon.
 Mit `$env:PORTABLE_ADD_TO_PATH = '1'` bekommen Sie trotzdem einen; es ist das
 Einzige, was der Installer außerhalb des Installationsverzeichnisses schreibt.
 
+### Wenn PowerShell selbst gesperrt ist
+
+Manche Rechner sperren nicht das Werkzeug, sondern PowerShell: AppLocker und
+WDAC versetzen es in den Constrained Language Mode, in dem sogar `Get-FileHash`
+und `Expand-Archive` den Dienst verweigern. Nichts von oben ist nötig. Aus
+`cmd`:
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+
+certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
+
+tar -xf portable.zip
+```
+
+Vergleichen Sie die beiden Prüfsummen selbst und starten Sie dann die
+`portable.cmd` im entstandenen Ordner. Es wird kein Skript ausgeführt, also
+greift weder eine Ausführungsrichtlinie noch ein Sprachmodus noch eine
+Skriptregel. `curl.exe`, `tar.exe` und `certutil.exe` liegen seit Windows 10
+1803 in `System32`.
+
+Das `-f` ist wichtig: Ohne es speichert curl die „nicht gefunden"-Seite als
+Archiv und meldet Erfolg, und `tar` beschwert sich dann über das Archiv statt
+über die Adresse.
+
 ### Oder von Hand
 
 Laden Sie `portable-x86_64-pc-windows-msvc.zip` von den

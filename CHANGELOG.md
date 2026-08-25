@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.3 — 2026-08-25
+
+Installing on a machine that has been locked down, which turned out to mean
+something stricter than the execution policy.
+
+### Added — installing where PowerShell is the thing that is blocked
+
+```bat
+curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+certutil -hashfile portable.zip SHA256
+tar -xf portable.zip
+```
+
+No script is executed at any point, so no execution policy, no language mode and
+no script rule applies. `curl.exe`, `tar.exe` and `certutil.exe` have all been in
+`System32` since Windows 10 1803.
+
+Releases now also carry the bundle under a name that never changes, so that URL
+is one a document can print without going stale.
+
+### Fixed — the installer did not survive a locked-down PowerShell
+
+The execution policy was handled; Constrained Language Mode was not, and it is
+what AppLocker and WDAC actually impose. Measured on Windows, each of these
+having been found only by running it:
+
+- **Assigning to a property is refused**, so setting
+  `[Net.ServicePointManager]::SecurityProtocol` failed. A first measurement
+  passed because it *read* the property — reading is allowed, and that is the
+  whole difference. Now guarded, and nothing is lost: TLS 1.2 has been the
+  default since Windows 10.
+- **`Get-FileHash` cannot run at all** — "Cannot create type". So the checksum
+  comes from `certutil`, a program rather than a cmdlet, to which no language
+  mode applies.
+- **`Expand-Archive` cannot either**, being itself written in PowerShell. Unlike
+  the others, `Get-Command Expand-Archive` succeeds, which is how a measurement
+  said it was fine — presence is not execution. Unpacking is `tar.exe` now,
+  which is what the script-free instructions use as well, so there is one tool
+  less rather than one more.
+- **`curl` without `-f` saves the "not found" page as the archive** and reports
+  success, after which `tar` complains about the archive rather than the URL.
+
+The installer is now tested three ways on `windows-latest`: under `Restricted`,
+under `ConstrainedLanguage`, and with no script executed at all.
+
 ## 0.1.2 — 2026-08-25
 
 Getting it, and keeping it current, without a browser: one line to install and
