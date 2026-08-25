@@ -111,10 +111,13 @@ jobs:
     steps:
       - shell: cmd
         run: |
-          curl -sSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+          rem -f, or curl saves the 404 page as the archive and reports success.
+          rem tar then says "Unrecognized archive format", which sends the reader
+          rem looking at their unpacking rather than at the URL.
+          curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
           if errorlevel 1 (echo the stable download URL does not work & exit /b 1)
 
-          curl -sSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+          curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
           if errorlevel 1 (echo the stable checksum URL does not work & exit /b 1)
 
           certutil -hashfile portable.zip SHA256

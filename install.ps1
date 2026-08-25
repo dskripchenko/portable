@@ -36,7 +36,15 @@ $ErrorActionPreference = 'Stop'
 # Windows PowerShell 5.1 still negotiates TLS 1.0 by default on some builds, and
 # GitHub has not accepted that for years. The failure is a closed connection with
 # no explanation, which sends people looking at their firewall.
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+#
+# Guarded, because assigning to a property is refused under Constrained Language
+# Mode - reading one is allowed, which is how this got past a first measurement.
+# Nothing is lost: TLS 1.2 has been the default since Windows 10 and .NET 4.7,
+# and the machines old enough to need the assignment are not the ones running
+# WDAC.
+if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+}
 
 # Invoke-WebRequest draws a progress bar by repainting the console for every
 # chunk, and on a forty-megabyte download that costs more than the download.
