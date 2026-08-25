@@ -122,13 +122,23 @@ Chrome, Edge and anything else reading the system store are covered by
 
 ## The supervisor died when I closed the terminal
 
-It is not supposed to. Detaching from the console, the process group and the job
-object is handled explicitly — but this is one of two things that have not yet
-been confirmed on real Windows, and IDEs in particular like to put their children
-in a job with kill-on-close.
+Then that terminal put it in a **job object** it was not allowed to leave, and
+`portable up` will have said so when it started:
 
-If it happens, please report it with which terminal or IDE you started it from.
-That detail is the whole of the diagnosis.
+> This terminal put it in a job it could not leave, so closing this window may
+> stop it.
+
+A job object is how a launcher makes sure everything it started is cleaned up
+when it quits, and some editors use one for their run configurations. Windows
+lets a process step out of a job only if the job permits it — a flag the job's
+creator sets — and against one that does not, nothing at the process level can
+escape. Measured on Windows both ways, and tested on every run.
+
+Start it from a plain PowerShell window and it survives that window closing.
+
+Everything else about detaching is handled: the console and the process group
+are left behind in all cases, which is what an ordinary terminal closing takes
+with it.
 
 ## An extension is enabled and PHP does not have it
 

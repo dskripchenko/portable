@@ -95,6 +95,16 @@ Databases work the same way but per instance rather than per version:
 `--name` gives a second one its own data directory and port, and `--version`
 pins which installed build it runs.
 
+`purge` is what makes "delete the folder and it is gone" true again. Four things
+can end up outside it — the data directory, a PATH entry, a trusted
+certificate, and the copy an upgrade kept — and three of them nobody would
+remember. It finds what is really there, lists it with sizes, asks, and removes
+it.
+
+It does not remove the folder itself: this is running from inside it, and
+Windows will not delete a directory holding a running program. After it, that
+folder is the only thing left.
+
 ## PHP extensions
 
 | | |
@@ -145,6 +155,7 @@ person.
 | `portable home set <path>` | Keep it somewhere else. `--beside` keeps it next to the launcher. |
 | `portable home clear` | Back to the default. |
 | `portable path` | Whether this is on your PATH. |
+| `portable purge` | Remove everything this has put outside its own folder. |
 | `portable path add` | Put it there, for **you** — no administrator. `remove` undoes it. |
 
 `path add` writes to `HKEY_CURRENT_USER` — your own environment, which needs no

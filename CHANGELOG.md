@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.0.0 — 2026-08-25
+
+Everything the tool promised is now either true or stated plainly as not, and
+the last claim that was an expectation has been measured.
+
+### Added — `portable purge`
+
+The README has promised from the first day that deleting one directory removes
+the tool completely. That was true and quietly stopped being so: the data
+directory can be moved elsewhere, `path add` writes to the registry, `trust`
+puts a certificate in the user's store, and `upgrade` keeps the previous version
+beside the new one. Four things, three of which nobody would remember.
+
+`purge` finds what is really there, lists it with sizes, asks, and takes it
+back. It does not remove the bundle itself — this runs from inside it, and
+Windows will not delete a directory holding a running program — so after it
+there is exactly one thing left, which is the promise restored rather than
+merely re-worded.
+
+Declining removes nothing, one item refusing to go does not leave the rest
+behind, and `--json` lists without touching anything so a plugin can show what
+would go.
+
+### Added — `portable path add`
+
+Puts the installation on **your** PATH, in `HKEY_CURRENT_USER`, which needs no
+administrator. The machine's PATH needs one and is never touched — there is no
+option to touch it. Three ways this is routinely got wrong are avoided by name:
+reading `os.environ["PATH"]` and writing it back, which copies every system
+entry into the user's copy; writing `REG_SZ` over a `REG_EXPAND_SZ`, which
+freezes a `%USERPROFILE%` that was meant to expand; and telling nobody, since a
+registry write alone reaches no running program.
+
+The installer no longer writes the PATH itself. It used
+`[Environment]::SetEnvironmentVariable`, which is precisely the second mistake.
+
+### Measured — the job object, which was the last open question
+
+A launcher can put everything it starts into a **job object** that kills its
+members when it closes, and some editors do for their run configurations. The
+tool has always passed `CREATE_BREAKAWAY_FROM_JOB` and the README has always
+listed this as unverified.
+
+It is verified now, and the answer is in two parts. Against a job that permits
+breakaway, the supervisor leaves it and survives — the flag does its work.
+Against one that forbids it, nothing at the process level escapes, and the
+supervisor dies with the launcher. Both are tested on `windows-latest` on every
+run, and the second is why `portable up` now says when it is caught in such a
+job rather than leaving that to be discovered afterwards.
+
+### Fixed — the daemon held the directory it was started from
+
+A process holds its working directory open, and on Windows a folder held open
+cannot be deleted or renamed. The daemon inherited whichever directory
+`portable up` was typed in, and everything it supervises inherited that in turn,
+so starting it once inside a project folder locked that folder for as long as it
+ran.
+
+Unnoticed while the tool was run from where it lives; not once it is on a PATH.
+It and every supervised process now stand in the installation's own directory.
+What still follows the caller is what should: `site add demo .` means the
+directory you are in.
+
+### Confirmed on real Windows
+
+Serving PHP through the pool. Binding port 80 as an ordinary user — the premise
+the whole design rests on. Downloading over a network that resets TLS handshakes
+mid-record. Installing under a PowerShell locked into Constrained Language Mode.
+Detaching from the console and the process group.
+
 ### Added — `portable path add`
 
 Puts the installation on **your** PATH, in `HKEY_CURRENT_USER`, which needs no

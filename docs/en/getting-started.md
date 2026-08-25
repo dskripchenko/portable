@@ -189,6 +189,15 @@ whole shell session instead, `portable env` prints them.
 Everything stops: the router, the PHP workers, the databases. Ports are free
 when the command returns.
 
-To remove the tool entirely, delete the directory it keeps things in — `portable
-home` says where that is — and the folder you unzipped. There is nothing else:
-no registry keys, no services, no changes to PATH.
+To remove it entirely:
+
+```powershell
+.\portable.cmd purge
+```
+
+That takes back everything outside this folder — the data directory wherever you
+put it, the PATH entry if you added one, the certificate if you trusted it, and
+any copy an upgrade kept. It lists what it found, with sizes, and asks first.
+
+Then delete the folder you unzipped, and none of it was ever there. No registry
+keys, no services, nothing left behind.

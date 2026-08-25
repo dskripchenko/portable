@@ -131,13 +131,25 @@ Chrome, Edge und alles andere, das den Systemspeicher liest, deckt
 
 ## Der Supervisor starb, als ich das Terminal schloss
 
-Das soll er nicht. Das Ablösen von Konsole, Prozessgruppe und Job-Objekt ist
-ausdrücklich behandelt — aber es ist eines der beiden Dinge, die auf echtem
-Windows noch nicht bestätigt sind, und gerade IDEs stecken ihre Kinder gern in
-ein Job-Objekt, das beim Schließen tötet.
+Dann hat dieses Terminal ihn in ein **Job-Objekt** gesteckt, das er nicht
+verlassen durfte — und `portable up` hat das beim Start gesagt:
 
-Passiert es, melden Sie bitte, aus welchem Terminal oder welcher IDE Sie ihn
-gestartet haben. Diese Einzelheit ist die ganze Diagnose.
+> This terminal put it in a job it could not leave, so closing this window may
+> stop it.
+
+Ein Job-Objekt ist die Art, wie ein Starter sicherstellt, dass alles von ihm
+Gestartete beim Beenden aufgeräumt wird; manche Editoren nutzen eines für ihre
+Startkonfigurationen. Windows lässt einen Prozess ein Job-Objekt nur verlassen,
+wenn dieses es erlaubt — ein Flag, das sein Erzeuger setzt —, und gegen eines,
+das es nicht erlaubt, entkommt auf Prozessebene nichts. Auf Windows in beide
+Richtungen gemessen und bei jedem Lauf geprüft.
+
+Starten Sie ihn aus einem gewöhnlichen PowerShell-Fenster, dann überlebt er
+dessen Schließen.
+
+Alles Übrige am Ablösen funktioniert: Konsole und Prozessgruppe bleiben in jedem
+Fall zurück, und das ist es, was ein gewöhnliches Terminal beim Schließen
+mitnimmt.
 
 ## Eine Erweiterung ist aktiviert, und PHP hat sie nicht
 

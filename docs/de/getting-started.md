@@ -200,6 +200,17 @@ Einstellungen für eine ganze Shell-Sitzung, gibt `portable env` sie aus.
 Alles hält an: der Router, die PHP-Arbeiter, die Datenbanken. Wenn der Befehl
 zurückkehrt, sind die Ports frei.
 
-Um das Werkzeug vollständig zu entfernen, löschen Sie das Verzeichnis, in dem es
-seine Daten hält — `portable home` sagt welches — und den entpackten Ordner. Mehr
-gibt es nicht: keine Registry-Schlüssel, keine Dienste, keine PATH-Änderungen.
+Um es vollständig zu entfernen:
+
+```powershell
+.\portable.cmd purge
+```
+
+Das holt alles zurück, was außerhalb dieses Ordners liegt: das Datenverzeichnis,
+wo auch immer Sie es hingelegt haben, den PATH-Eintrag, falls Sie einen
+hinzugefügt haben, das Zertifikat, falls Sie ihm vertraut haben, und jede Kopie,
+die ein Upgrade behalten hat. Es listet das Gefundene mit Größen auf und fragt
+zuerst.
+
+Löschen Sie dann den entpackten Ordner, und nichts davon war je da. Keine
+Registry-Schlüssel, keine Dienste, nichts zurückgelassen.

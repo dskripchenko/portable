@@ -97,6 +97,16 @@ Bei Datenbanken gilt dasselbe, nur je Instanz statt je Version: `--name` gibt
 einer zweiten ein eigenes Datenverzeichnis und einen eigenen Port, `--version`
 legt fest, welchen installierten Build sie ausführt.
 
+`purge` macht „den Ordner löschen und es ist weg" wieder wahr. Vier Dinge können
+außerhalb landen — das Datenverzeichnis, ein PATH-Eintrag, ein vertrautes
+Zertifikat und die Kopie, die ein Upgrade behalten hat — und an drei davon
+erinnert sich niemand. Der Befehl findet, was wirklich da ist, listet es mit
+Größen auf, fragt nach und entfernt es.
+
+Den Ordner selbst entfernt er nicht: Dies läuft aus ihm heraus, und Windows
+löscht kein Verzeichnis, in dem ein Programm läuft. Danach ist dieser Ordner das
+Einzige, was übrig ist.
+
 ## PHP-Erweiterungen
 
 | | |
@@ -148,6 +158,7 @@ heraus, der bei einer Person durchläuft.
 | `portable home set <pfad>` | Woanders ablegen. `--beside` legt es neben den Starter. |
 | `portable home clear` | Zurück zur Voreinstellung. |
 | `portable path` | Ob dies im PATH steht. |
+| `portable purge` | Alles entfernen, was außerhalb des eigenen Ordners abgelegt wurde. |
 | `portable path add` | Eintragen — für **Sie**, ohne Administrator. `remove` nimmt es zurück. |
 
 `path add` schreibt nach `HKEY_CURRENT_USER` — in Ihre eigene Umgebung, wofür

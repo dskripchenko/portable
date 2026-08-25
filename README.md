@@ -3,10 +3,10 @@
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **released, nearly verified.** PHP, Caddy, PostgreSQL, MariaDB, Redis
-> and Node install and run; sites are served at `*.localhost`. Serving PHP and
-> binding port 80 are confirmed on real Windows; one thing is not — see the note
-> at the end.
+> Status: **1.0.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
+> run; sites are served at `*.localhost`, over HTTP and HTTPS. Verified on real
+> Windows — see the note at the end for what that covers and the one limitation
+> it found.
 
 Documentation: [English](docs/en/) · [Русский](docs/ru/) · [Deutsch](docs/de/) ·
 [中文](docs/zh/)
@@ -199,18 +199,19 @@ its `PATH` pointing at nothing.
 Most of that was on macOS, which shares `php-cgi`, the FastCGI protocol and the
 archive formats with the target but not everything else.
 
-**Confirmed on real Windows since:** `php-cgi.exe` serving a Laravel project
-through the pool; **port 80 bound by an ordinary user, with no administrator
-rights** — the premise the whole design rests on; runtimes downloading and
-unpacking over a network that resets TLS connections mid-handshake; and
-installing under a PowerShell locked into Constrained Language Mode.
+**Confirmed on real Windows:** `php-cgi.exe` serving a Laravel project through
+the pool; **port 80 bound by an ordinary user, with no administrator rights** —
+the premise the whole design rests on; runtimes downloading and unpacking over a
+network that resets TLS connections mid-handshake; installing under a PowerShell
+locked into Constrained Language Mode; and detaching from the console and the
+process group.
 
-**Still open, and answerable only there:** detaching from the console, the
-process group and the job object — in particular the case where an IDE puts its
-children in a job with kill-on-close.
-
-CI runs the whole suite on `windows-latest`, which covers the logic and not
-that.
+**One limitation, measured rather than promised.** A process can leave a job
+object only if that job permits it, and some launchers create one that does not.
+Against such a job nothing at the process level escapes, so the supervisor dies
+when the launcher closes — and `portable up` says when it is in one, rather than
+leaving that to be found out later. Both cases are tested on `windows-latest` on
+every run.
 
 **macOS is not a target.** Every catalog resolves Windows archives and nothing
 else, so the tool runs there but installs binaries that machine cannot execute.

@@ -25,13 +25,15 @@ Werkzeuge dieser Art sich sonst gar nicht installieren lassen.
 
 ## Stand
 
-Veröffentlicht und beinahe vollständig geprüft. Das Ausliefern von PHP auf
-echtem Windows ist bestätigt, und **Port 80 als gewöhnlicher Benutzer zu
-belegen** ebenfalls — die Voraussetzung, auf der der ganze Entwurf ruht, denn
-ein lokaler Webserver, der erhöhte Rechte bräuchte, bräuchte sie täglich.
+Veröffentlicht und auf echtem Windows geprüft: PHP durch den Pool ausliefern,
+Port 80 als gewöhnlicher Benutzer belegen, und das Schließen der Konsole
+überleben.
 
-Eines nicht: das Überleben von Konsole und Job-Objekt, wenn ein Terminal oder
-eine IDE geschlossen wird. Es steht in [Fehlerbehebung](troubleshooting.md).
+Eine Einschränkung ist gemessen statt versprochen. Ein Terminal, das Gestartetes
+in ein **Job-Objekt ohne Breakaway-Erlaubnis** steckt, nimmt den Supervisor beim
+Schließen mit — aus einem solchen Job entkommt auf Prozessebene nichts, weshalb
+`portable up` sagt, wenn es in einem steckt. Siehe
+[Fehlerbehebung](troubleshooting.md).
 
 macOS und Linux sind keine Ziele. Alle Kataloge lösen Windows-Archive auf; das
 Werkzeug läuft dort zwar, installiert aber Binärdateien, die jene Maschine nicht

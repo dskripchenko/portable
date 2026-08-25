@@ -26,12 +26,14 @@ this class of tool usually cannot be installed at all.
 
 ## Status
 
-Released and nearly verified. Serving PHP on real Windows is confirmed, and so
-is **binding port 80 as an ordinary user** — the premise the whole design rests
-on, since a local web server that needed elevation would need it every day.
+Released and verified on real Windows: serving PHP through the pool, binding
+port 80 as an ordinary user, and surviving the console being closed.
 
-One thing is not: surviving the console and the job object when a terminal or an
-IDE closes. It is named in [troubleshooting](troubleshooting.md).
+One limitation is measured rather than promised. A terminal that puts what it
+starts into a **job object forbidding breakaway** takes the supervisor with it
+when it closes — nothing at the process level can escape such a job, so
+`portable up` says when it is in one instead of leaving it to be discovered.
+See [troubleshooting](troubleshooting.md).
 
 macOS and Linux are not targets. Every catalog resolves Windows archives, so the
 tool runs elsewhere but installs binaries that machine cannot execute.
