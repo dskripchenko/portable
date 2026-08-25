@@ -251,10 +251,20 @@ class TestTheSwap:
         )
         assert not keep.exists(), "the original was left under the wrong name"
 
-    def test_the_helper_lives_outside_both_bundles(self, tmp_path, monkeypatch):
-        written: list[Path] = []
+    def test_nothing_is_written_to_disk_to_be_blocked(self, tmp_path, monkeypatch):
+        """
+        A script on disk is what application control policies exist to stop.
+
+        Reported from Windows: "portable-swap.py was blocked in accordance with
+        application control policies". The same lesson the installer already
+        carries — a `.ps1` on disk will not run under the default execution
+        policy while a string handed to `iex` will — so the code goes in as an
+        argument, and there is no file for a rule to match.
+        """
+        started: list = []
+
         def remember(argv, **_kwargs):
-            written.append(next(Path(part) for part in argv if part.endswith(".py")))
+            started.append(argv)
 
             return 1
 
@@ -265,11 +275,12 @@ class TestTheSwap:
 
         selfupdate.swap(current, replacement, tmp_path / "kept")
 
-        helper = written[0]
+        argv = started[0]
 
-        assert helper.parent == tmp_path
-        assert current not in helper.parents
-        assert replacement not in helper.parents
+        assert argv[1] == "-c", "the helper is not passed as code"
+        assert not any(str(part).endswith(".py") for part in argv), "a script is named"
+        assert not list(tmp_path.rglob("*.py")), "a script was written to disk"
+
 
 
 @pytest.mark.skipif(os.name != "nt", reason="the restriction being documented is Windows-only")

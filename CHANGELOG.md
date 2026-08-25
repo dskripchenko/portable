@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.1 — 2026-08-25
+
+### Fixed — the upgrade helper was blocked by application control
+
+Reported from Windows: "portable-swap.py was blocked in accordance with
+application control policies". The helper that finishes an upgrade was written
+to disk and then run, and a script on disk is exactly what those policies exist
+to stop.
+
+This lesson was already in the project. The installer is piped into `iex` rather
+than saved and run, because a `.ps1` on disk will not start under the default
+execution policy while a string will — measured on Windows and written down at
+the time. The same reasoning applies here and was not applied.
+
+The helper's code now goes to the interpreter as an argument. Nothing is
+written, so there is no file for a rule to match, and nothing is left beside the
+bundle afterwards either.
+
+### Fixed — a test that waited for a file during the moment it does not exist
+
+Between the two renames neither name exists, and a condition that reads a file
+in that instant raises rather than answers. The helper became quick enough to
+land in that window when it moved to the already-running interpreter, which is
+how the test gave itself away. The swap was working.
+
 ## 1.2.0 — 2026-08-25
 
 ### Added — the dashboard is somewhere to type, not only to watch

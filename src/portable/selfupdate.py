@@ -219,33 +219,33 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     """
     Start the process that exchanges the directories, and return its pid.
 
-    Run by the interpreter **already executing** — this one — from a script
-    written beside both bundles rather than inside either, so that nothing has
-    to tidy up a file in a directory it has since renamed.
+    Run by the interpreter **already executing** — this one — with the code
+    passed as an argument rather than written to a file.
 
-    The obvious choice was the new bundle's interpreter, since it had just been
-    proven to start. It was the wrong one: a freshly extracted `python.exe` can
+    That last part is the whole of it. A script on disk is a thing application
+    control policies exist to stop, and on a managed machine they do: reported
+    from Windows as "portable-swap.py was blocked in accordance with application
+    control policies". The same lesson the installer already carries — a `.ps1`
+    on disk will not run under the default execution policy while a string
+    passed to `iex` will — and it applies here for the same reason. Nothing is
+    written, so there is no file for a rule to match.
+
+    The interpreter is the running one rather than the new bundle's, which was
+    the obvious choice and the wrong one: a freshly extracted `python.exe` can
     be held by whatever is scanning it, and `CreateProcess` then fails with
-    access denied — reported from Windows, one second after that same
-    interpreter had run successfully through the launcher. The one already
-    running has no such problem, because it is already running.
-
-    Renaming the directory it is running from is permitted: since Vista the
-    loader maps images with `FILE_SHARE_DELETE`, so renaming works and deleting
-    is what does not. A test records that, and it is why this can be the current
-    interpreter rather than the new one.
+    access denied. The one already running cannot be, because it is already
+    running — and renaming the directory it runs from is permitted, since the
+    loader maps images with `FILE_SHARE_DELETE`. A test records that.
 
     It waits for the calling process to exit first, because until then that
     process is running from `current`, and on Windows `cmd.exe` still holds
     `portable.cmd` open.
     """
-    helper = current.parent / "portable-swap.py"
-    helper.write_text(_HELPER, encoding="utf-8")
-
     return spawn.start_detached(
         [
             sys.executable,
-            str(helper),
+            "-c",
+            _HELPER,
             str(os.getpid()),
             str(current),
             str(replacement),
@@ -256,11 +256,14 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
     )
 
 
-#: Written beside both bundles and run by the new one's interpreter.
+#: Passed to the interpreter as an argument, never written down.
 #:
 #: Standalone rather than a function in this package: at the moment it runs there
 #: are two installations on disk, and importing from either would tie the swap to
 #: something it is in the middle of moving.
+#:
+#: With `-c`, `sys.argv[0]` is `"-c"` and everything after it follows, which is
+#: why the arguments below start at 1 exactly as they would for a script.
 _HELPER = '''"""Exchange two directories once the process using the first has gone."""
 
 import os
@@ -335,19 +338,10 @@ def main():
         os.rename(keep, current)
 
         print(f"swap failed and was undone: {error}", flush=True)
-        cleanup()
 
         raise SystemExit(1)
 
     print(f"swapped: {current} replaced, previous kept at {keep}", flush=True)
-    cleanup()
-
-
-def cleanup():
-    try:
-        os.remove(os.path.abspath(__file__))
-    except OSError:
-        pass
 
 
 main()
