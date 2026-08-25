@@ -109,10 +109,14 @@ class Snapshot:
         if not self.running:
             return f"portable {VERSION} — daemon not running — {self.home}"
 
-        where = f"http://…:{self.port}" if self.port else "nothing served"
+        # `http :80` rather than `http://…:80`. The ellipsis stood in for a
+        # hostname that is different for every site, and the sites table below
+        # gives each of them in full — so it was punctuation pretending to be
+        # information.
+        where = f"http :{self.port}" if self.port else "nothing served"
 
         if self.https_port:
-            where += f"  https://…:{self.https_port}"
+            where += f"   https :{self.https_port}"
 
         return (
             f"portable {VERSION} — {where} — "
@@ -247,23 +251,64 @@ def build() -> Any:
             "`service list`, `logs -f`."
         )
 
+    from rich.text import Text
     from textual.app import App, ComposeResult
     from textual.binding import Binding
     from textual.containers import Horizontal, Vertical
     from textual.suggester import SuggestFromList
-    from textual.widgets import DataTable, Footer, Header, Input, RichLog, Static
+    from textual.widgets import DataTable, Footer, Input, RichLog, Static
 
     class Dashboard(App):
+        # Every pane is bordered and titled. Without that the screen is four
+        # tables of anonymous columns and a stream, and telling where one ends
+        # and the next begins is left to the reader — who has to do it every
+        # time they look.
         CSS = """
-        Screen { layout: vertical; }
-        #summary { height: 1; padding: 0 1; background: $panel; color: $text; }
-        #tables { height: 40%; }
-        #busy { dock: bottom; height: 1; padding: 0 1; background: $warning; color: $text; }
-        #command { dock: bottom; border: none; background: $surface; }
-        #processes { width: 55%; }
-        #right { width: 45%; }
-        DataTable { height: 1fr; }
-        RichLog { height: 1fr; border-top: solid $primary; }
+        Screen { layout: vertical; background: $surface; }
+
+        #summary {
+            height: 1;
+            padding: 0 1;
+            background: $primary;
+            color: $text;
+            text-style: bold;
+        }
+
+        #tables { height: 45%; }
+
+        #processes { width: 3fr; }
+        #right { width: 2fr; }
+
+        DataTable {
+            border: round $panel;
+            padding: 0 1;
+            scrollbar-size: 1 1;
+        }
+
+        #processes { height: 100%; }
+        #sites, #services { height: 1fr; }
+
+        RichLog {
+            border: round $panel;
+            padding: 0 1;
+            scrollbar-size: 1 1;
+        }
+
+        #busy {
+            height: 1;
+            padding: 0 1;
+            background: $warning;
+            color: $text 90%;
+            text-style: bold;
+        }
+
+        #command {
+            dock: bottom;
+            border: none;
+            border-top: solid $panel;
+            background: $surface;
+            padding: 0 1;
+        }
         """
 
         # Function keys, and `priority` so nothing swallows them.
@@ -278,8 +323,11 @@ def build() -> Any:
             Binding("f10", "quit", "Quit", priority=True),
             Binding("f5", "refresh", "Refresh", priority=True),
             Binding("f2", "toggle_follow", "Pause logs", priority=True),
-            Binding("up", "earlier", "Previous", priority=True),
-            Binding("down", "later", "Next", priority=True),
+            # Not shown in the footer: arrows recalling history is what arrows
+            # do in every shell, and the room is better spent on the keys nobody
+            # would guess.
+            Binding("up", "earlier", "Previous", priority=True, show=False),
+            Binding("down", "later", "Next", priority=True, show=False),
         ]
 
         TITLE = "portable"
@@ -297,7 +345,10 @@ def build() -> Any:
             self._leaving = False
 
         def compose(self) -> ComposeResult:
-            yield Header()
+            # No `Header`: it draws the application's name in a bar of its own,
+            # and the line below already says the name along with everything
+            # else worth knowing. Two of the three lines at the top used to say
+            # "portable" and nothing more.
             yield Static("starting…", id="summary")
 
             with Horizontal(id="tables"):
@@ -308,20 +359,35 @@ def build() -> Any:
                     yield DataTable(id="services")
 
             yield RichLog(id="log", highlight=False, markup=False, max_lines=SCROLLBACK)
+            # In the flow rather than docked. Two widgets both claiming the
+            # bottom edge fought over it, and the one that lost was the one that
+            # exists to be noticed.
+            yield Static("", id="busy")
             yield Input(
                 placeholder="a command, without `portable` in front of it",
                 id="command",
                 suggester=SuggestFromList(_suggestions(), case_sensitive=False),
             )
-            yield Static("", id="busy")
             yield Footer()
 
         def on_mount(self) -> None:
-            self.query_one("#processes", DataTable).add_columns(
-                "process", "state", "pid", "restarts"
-            )
-            self.query_one("#sites", DataTable).add_columns("site", "url", "php")
-            self.query_one("#services", DataTable).add_columns("database", "kind", "port")
+            processes = self.query_one("#processes", DataTable)
+            processes.add_columns("process", "state", "pid", "restarts")
+            processes.border_title = "processes"
+
+            sites = self.query_one("#sites", DataTable)
+            sites.add_columns("site", "url", "php")
+            sites.border_title = "sites"
+
+            services = self.query_one("#services", DataTable)
+            services.add_columns("database", "kind", "port")
+            services.border_title = "databases"
+
+            log = self.query_one("#log", RichLog)
+            log.border_title = f"log — {self._follow or 'everything'}"
+
+            # No border title on the input: with only a top border it renders
+            # across the corner, and the placeholder already says what it is.
 
             self.query_one("#busy", Static).display = False
             self.set_interval(TICK, self.tick)
@@ -441,9 +507,9 @@ def build() -> Any:
             indicator = self.query_one("#busy", Static)
             indicator.display = line is not None
 
-            self.query_one("#command", Input).placeholder = (
-                f"running: {line}" if line else "a command, without `portable` in front of it"
-            )
+            # The bar above says what is running, loudly. Repeating it in the
+            # placeholder says it twice and takes away the one line telling
+            # somebody what the field is for.
 
             if line is None:
                 indicator.update("")
@@ -514,8 +580,18 @@ def build() -> Any:
 
         # ----------------------------------------------------------- rendering
 
+        #: How a line's severity is drawn. The same reading `portable logs`
+        #: does, arriving here rather than being thrown away: a screen whose
+        #: whole purpose is showing what went wrong should not render a failure
+        #: in the same grey as "config is unchanged".
+        SEVERITY: ClassVar = {"error": "bold red", "warn": "yellow", "": ""}
+
         def say(self, name: str, line: str, width: int) -> None:
-            self.query_one("#log", RichLog).write(logs.render(name, line, width, colour=False))
+            label = f"{name:<{width}} | " if width else f"{name} | "
+            written = Text(label, style="dim")
+            written.append(line, style=self.SEVERITY[logs.severity(line)])
+
+            self.query_one("#log", RichLog).write(written)
 
         def show(self, snapshot: Snapshot) -> None:
             running = f"  —  running: {self._busy}" if self._busy else ""
@@ -531,16 +607,42 @@ def build() -> Any:
             processes = self.query_one("#processes", DataTable)
             processes.clear()
 
+            # An empty table with column headings and nothing under them looks
+            # broken. Saying why it is empty, and what would fill it, costs one
+            # row and answers the question somebody is about to ask.
+            if not snapshot.processes:
+                # In the second column, not the last. A hint under "restarts"
+                # reads as a value of it.
+                # Short. A hint long enough to overflow its column turns the
+                # table into something with a scrollbar, which reads as data
+                # too wide to show rather than as a table with nothing in it.
+                processes.add_row(
+                    "daemon not running" if not snapshot.running else "nothing running",
+                    "type: up" if not snapshot.running else "",
+                    "",
+                    "",
+                )
+
             for entry in snapshot.processes:
+                state = entry.get("state", "")
+                restarts = entry.get("restarts", 0)
+
                 processes.add_row(
                     entry.get("name", ""),
-                    entry.get("state", ""),
+                    # Anything but running is the reason somebody opened this.
+                    Text(state, style="" if state == "running" else "bold red"),
                     str(entry.get("pid") or ""),
-                    str(entry.get("restarts", 0)),
+                    # A worker retiring itself is routine; a handful of restarts
+                    # is a worker that keeps dying, and the two look identical
+                    # as a number.
+                    Text(str(restarts), style="yellow" if restarts >= 3 else ""),
                 )
 
             sites = self.query_one("#sites", DataTable)
             sites.clear()
+
+            if not snapshot.sites:
+                sites.add_row("none yet", "type: site add", "")
 
             for entry in snapshot.sites:
                 sites.add_row(
@@ -549,6 +651,9 @@ def build() -> Any:
 
             services = self.query_one("#services", DataTable)
             services.clear()
+
+            if not snapshot.services:
+                services.add_row("none yet", "type: service add", "")
 
             for entry in snapshot.services:
                 services.add_row(

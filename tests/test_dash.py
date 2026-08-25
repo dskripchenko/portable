@@ -331,7 +331,9 @@ class TestSayingItIsBusy:
 
             assert dash._Streaming(app).isatty() is False
 
-    async def test_the_prompt_says_what_is_running(self):
+    async def test_the_bar_says_what_is_running_and_the_prompt_stays_a_prompt(self):
+        # It was said in both places, which took away the one line telling
+        # somebody what the field is for and said the same thing twice.
         application = dash.build()
         app = application()
 
@@ -339,12 +341,11 @@ class TestSayingItIsBusy:
             await pilot.pause()
 
             app.busy("install php")
+            app.tick()
 
-            assert "install php" in app.query_one("#command").placeholder
-
-            app.busy(None)
-
+            assert "install php" in str(app.query_one("#busy").content)
             assert "install php" not in app.query_one("#command").placeholder
+            assert "command" in app.query_one("#command").placeholder
 
 
 class TestLeavingWhileSomethingRuns:
@@ -466,3 +467,91 @@ class TestShowingItIsStillAlive:
         # A terminal that cannot draw braille would show the indicator as boxes
         # and make the screen look broken at the moment it is meant to reassure.
         assert all(character.isascii() for character in dash.FRAMES)
+
+
+class TestShowingWhatIsWrong:
+    """
+    The screen exists to make trouble visible.
+
+    Looked at rather than reasoned about: the dashboard renders to an image
+    headlessly, and a populated one showed a stopped Redis with five restarts
+    drawn exactly like the seven processes that were fine.
+    """
+
+    async def test_a_process_that_is_not_running_is_not_drawn_like_one_that_is(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.show(
+                dash.Snapshot(
+                    running=True,
+                    port=80,
+                    processes=[
+                        {"name": "caddy", "state": "running", "pid": 1, "restarts": 0},
+                        {"name": "redis", "state": "stopped", "pid": None, "restarts": 5},
+                    ],
+                )
+            )
+
+            rows = list(app.query_one("#processes").get_column_at(1))
+            healthy, stopped = rows[0], rows[1]
+
+            assert str(healthy.style or "") == "", "a running process is being shouted about"
+            assert "red" in str(stopped.style), "a stopped one looks like a running one"
+
+    async def test_a_process_that_keeps_restarting_is_marked(self):
+        # A worker retiring itself every few hundred requests is routine; one
+        # that keeps dying is not, and as a bare number the two are identical.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.show(
+                dash.Snapshot(
+                    running=True,
+                    port=80,
+                    processes=[
+                        {"name": "a", "state": "running", "pid": 1, "restarts": 1},
+                        {"name": "b", "state": "running", "pid": 2, "restarts": 9},
+                    ],
+                )
+            )
+
+            counts = list(app.query_one("#processes").get_column_at(3))
+
+            assert str(counts[0].style or "") == ""
+            assert "yellow" in str(counts[1].style)
+
+    async def test_a_failure_in_the_log_is_not_the_same_grey_as_everything_else(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.say("caddy", '{"level":"error","msg":"address already in use"}', 0)
+            await pilot.pause()
+
+            written = app.query_one("#log").lines[-1]
+
+            assert "red" in str(written), "a failure reads like `config is unchanged`"
+
+    async def test_the_empty_tables_say_why_they_are_empty(self):
+        # Column headings with nothing under them look broken. Saying why costs
+        # one row and answers the question somebody is about to ask.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=False))
+
+            assert app.query_one("#processes").row_count == 1
+            assert app.query_one("#sites").row_count == 1
+            assert app.query_one("#services").row_count == 1

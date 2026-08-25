@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.0 — 2026-08-25
+
+### Changed — the dashboard, looked at rather than reasoned about
+
+Textual renders a screen to an image without a terminal, so the dashboard can be
+built, filled with a running installation's worth of data, and examined. Doing
+that found things no amount of reading the layout would have:
+
+- **Three lines at the top, two of them saying "portable"** and nothing else.
+  The framework's header bar is gone; the summary line is the header.
+- **Tables were column headings with nothing under them**, which reads as
+  broken rather than as empty. Each now says why it is empty and what would fill
+  it, in a single short row — short because a hint long enough to overflow its
+  column adds a scrollbar, and a scrollbar says "too wide to show" rather than
+  "nothing here".
+- **Nothing separated one pane from another.** Each is bordered and titled now,
+  so where the processes end and the sites begin is a thing you see rather than
+  work out.
+- **The bar saying something is running was invisible**: it and the command line
+  both claimed the bottom edge, and the one that lost was the one whose entire
+  job is being noticed.
+- **A stopped process was drawn exactly like a running one.** On a populated
+  screen, a Redis that had died five times sat among seven healthy processes in
+  the same grey. Anything but `running` is red now, and a restart count that has
+  climbed is amber — a worker retiring itself is routine, one that keeps dying
+  is not, and as a bare number the two are identical.
+- **Failures in the log were the same colour as `config is unchanged`.** The
+  reading `portable logs` already does now arrives here too.
+- **`http://…:80`** in the header: an ellipsis standing in for a hostname that
+  differs per site, with every one of them listed in full immediately below. It
+  was punctuation pretending to be information.
+
+The keys that recall history are no longer advertised in the footer — arrows
+doing what arrows do in every shell is not worth the room, which now goes to the
+ones nobody would guess.
+
 ## 1.2.3 — 2026-08-25
 
 ### Fixed — upgrading an installation whose data lives inside it
