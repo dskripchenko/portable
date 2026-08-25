@@ -144,6 +144,16 @@ person.
 | `portable home` | Where everything is kept, and what decided that. |
 | `portable home set <path>` | Keep it somewhere else. `--beside` keeps it next to the launcher. |
 | `portable home clear` | Back to the default. |
+| `portable path` | Whether this is on your PATH. |
+| `portable path add` | Put it there, for **you** — no administrator. `remove` undoes it. |
+
+`path add` writes to `HKEY_CURRENT_USER` — your own environment, which needs no
+administrator. The machine's PATH lives elsewhere and is never touched; there is
+no option to touch it.
+
+It is the only thing this tool writes outside its own directory, which is why it
+is something you run rather than something an install does, and why `path
+remove` puts it back exactly as it was.
 
 `portable run node --version` will tell you if it is running a Node this tool
 does not manage — the machine's own, found on PATH — because that is otherwise

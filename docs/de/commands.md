@@ -147,6 +147,16 @@ heraus, der bei einer Person durchläuft.
 | `portable home` | Wo alles liegt und was das entschieden hat. |
 | `portable home set <pfad>` | Woanders ablegen. `--beside` legt es neben den Starter. |
 | `portable home clear` | Zurück zur Voreinstellung. |
+| `portable path` | Ob dies im PATH steht. |
+| `portable path add` | Eintragen — für **Sie**, ohne Administrator. `remove` nimmt es zurück. |
+
+`path add` schreibt nach `HKEY_CURRENT_USER` — in Ihre eigene Umgebung, wofür
+keine Administratorrechte nötig sind. Der PATH der Maschine liegt woanders und
+wird nie angefasst; eine Option dafür gibt es nicht.
+
+Es ist das Einzige, was dieses Werkzeug außerhalb seines eigenen Verzeichnisses
+schreibt — deshalb tun Sie es und nicht die Installation, und deshalb stellt
+`path remove` genau den vorherigen Zustand wieder her.
 
 `portable run node --version` sagt Ihnen, wenn es ein Node ausführt, das dieses
 Werkzeug nicht verwaltet — das der Maschine, im PATH gefunden. Damit lassen sich

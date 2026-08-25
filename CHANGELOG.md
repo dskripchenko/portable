@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — `portable path add`
+
+Puts the installation on **your** PATH, in `HKEY_CURRENT_USER`, which needs no
+administrator. The machine's PATH lives in `HKEY_LOCAL_MACHINE`, needs one, and
+is never touched — there is no option to touch it. `path` says whether it is
+there; `path remove` puts things back exactly as they were.
+
+It is the only thing this tool writes outside its own directory. That is why it
+is a command somebody runs rather than something an install performs quietly,
+and why undoing it is a first-class operation.
+
+Three ways this is routinely got wrong, each of which has cost somebody their
+PATH, are avoided by name:
+
+- **Reading `os.environ["PATH"]` and writing it back.** That variable is the
+  machine's PATH and the user's already joined, so writing it into the user's
+  copies every system entry into it — where they then persist after being
+  removed from the system, and the two disagree from then on. The registry
+  value is read directly.
+- **Writing `REG_SZ` over a `REG_EXPAND_SZ`.** A user PATH very often contains
+  `%USERPROFILE%\...`, and the expanding type is what makes that a path rather
+  than a literal percent sign. The existing type is read and preserved.
+- **Telling nobody.** A registry write reaches no running program: Explorer
+  re-reads the environment only when told the setting changed, so without the
+  broadcast the entry appears to do nothing until the next sign-in.
+
+The installer no longer writes the PATH itself. It used
+`[Environment]::SetEnvironmentVariable`, which is precisely the second mistake
+above — one implementation now, and one that can undo itself.
+
 ### Fixed — the daemon held the directory it was started from
 
 A process holds its working directory open, and on Windows a folder held open

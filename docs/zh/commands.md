@@ -126,6 +126,14 @@ PHP 7.2 构建，将来也不会；xdebug 2.9.8 可以。
 | `portable home` | 一切放在哪，以及是什么决定的。 |
 | `portable home set <路径>` | 放到别处。`--beside` 放在启动器旁边。 |
 | `portable home clear` | 回到默认。 |
+| `portable path` | 这个工具是否在你的 PATH 里。 |
+| `portable path add` | 加进去 —— 只对**你**，不需要管理员。`remove` 撤销。 |
+
+`path add` 写的是 `HKEY_CURRENT_USER` —— 你自己的环境，不需要管理员权限。机器的
+PATH 在别处，永远不会被碰；也没有去碰它的选项。
+
+这是这个工具唯一写在自身目录之外的东西 —— 所以它由你来执行，而不是由安装过程代
+劳，也所以 `path remove` 能把一切恢复成原样。
 
 `portable run node --version` 会在它运行的是本工具不管理的 Node —— 机器自己的、在
 PATH 里找到的那个 —— 时告诉你。否则这件事很容易耗掉二十分钟。
