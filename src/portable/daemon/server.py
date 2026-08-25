@@ -84,7 +84,7 @@ def net_read(url: str) -> str:
     return net.read_text(url)
 
 
-VERSION = "0.0.1"
+from .. import VERSION
 
 #: The API's own version, in the path. Present from the first release so that a
 #: plugin pinned to `/v1` keeps working while the CLI moves on.

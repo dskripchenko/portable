@@ -18,7 +18,7 @@ import time
 
 import pytest
 
-from portable import cli, paths, spawn
+from portable import VERSION, cli, paths, spawn
 from portable.cli import main
 from portable.daemon import discovery
 
@@ -208,3 +208,50 @@ class TestWaitingForTheDaemon:
 
         assert cli._await_daemon(pid=1234, timeout=1.0) is None
         assert len(answered) > 1, "it stopped polling while the daemon was still starting"
+
+
+class TestFindingOutWhatItDoes:
+    """
+    The two commands somebody runs before any other.
+
+    Both have to work with no daemon, no runtimes and nothing configured —
+    which is exactly the state of a machine where something has already gone
+    wrong and the first question is what version this even is.
+    """
+
+    def test_version_works_with_nothing_running(self, capsys):
+        assert cli.main(["version", "--json"]) == 0
+
+        reported = json.loads(capsys.readouterr().out)
+
+        assert reported["version"] == VERSION
+        assert reported["daemon"] is None
+        assert reported["home"] == str(paths.root())
+
+    def test_the_client_and_the_daemon_take_the_version_from_one_place(self):
+        # So that a mismatch after an upgrade is a real mismatch and not two
+        # constants drifting. The new command talking to the old daemon explains
+        # a great deal, and only if both numbers mean the same thing.
+        from portable.daemon import server
+
+        assert server.VERSION is VERSION
+
+    def test_help_names_every_command(self, capsys):
+        assert cli.main(["help"]) == 0
+
+        printed = capsys.readouterr().out
+        commands = cli._parser()._subparsers._group_actions[0].choices
+
+        missing = [name for name in commands if f"portable {name}" not in printed]
+
+        assert not missing, f"the overview does not mention: {', '.join(missing)}"
+
+    def test_install_offers_what_the_catalog_has(self, capsys):
+        # It said "php, caddy" for a while after four more were added.
+        from portable import catalog
+
+        cli.main(["help"])
+        printed = capsys.readouterr().out
+
+        for name in catalog.names():
+            assert name in printed, f"{name} is installable and unmentioned"

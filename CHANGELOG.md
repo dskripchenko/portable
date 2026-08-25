@@ -783,3 +783,43 @@ down", it is "ask again".
 Verified against php.net: a real download cut off at five megabytes resumed and
 finished, and the completed file matched the publisher's sha256.
 
+### Added — `portable version` and `portable help`
+
+`version` reports the build, the interpreter behind it, where it keeps things
+and which decided that, and the daemon's version beside its own — saying so when
+they differ, which after an upgrade explains every other oddity. It works with
+nothing running, which is the state of a machine where the question comes up.
+
+The client and the daemon now take that number from one place. Two constants can
+drift, and then a mismatch means nothing.
+
+`help` prints the overview on its own: every command grouped by what it is for,
+with a worked example each. `--help` prints it too, after the generated list —
+which no longer spills seventeen command names across the usage line. A test
+asserts the overview mentions every command there is, and every runtime that can
+be installed; `install` had advertised "php, caddy" for some time after four more
+were added.
+
+### Fixed — MariaDB when its download host cannot be reached
+
+Reported from Windows in Russia: `WinError 10060` against
+`downloads.mariadb.org`, a connect timeout rather than a reset, so retrying only
+takes longer to fail.
+
+`archive.mariadb.org` is a different host serving the same releases as a
+directory listing, with `sha256sums.txt` beside each one — so the way round is
+verified rather than merely available. It is used when the API host is
+unreachable, and `PORTABLE_MARIADB_ARCHIVE` points at a mirror instead.
+
+The archive says nothing about stability while the API marks each series Stable,
+RC or Preview, so something has to stand in for that mark when choosing
+`latest`. Maintenance history does: a series reaches its fifth patch release
+after about a year of being looked after. That excludes a preview with one
+release and a release candidate with two, today and in a year, and errs towards
+an older series than the API would name — the right direction for something
+chosen without being asked.
+
+Naming a series that does not exist lists the maintained ones first rather than
+the newest ten. The archive keeps every preview ever cut, and those crowd out
+exactly the long-lived series somebody typing a wrong number is looking for.
+

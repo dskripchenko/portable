@@ -111,6 +111,9 @@ portable run npm install             # with the installed runtimes reachable
 
 portable status
 portable down
+
+portable help                        # every command, with worked examples
+portable version                     # this, the interpreter, the running daemon
 ```
 
 Every command takes `--json`. The CLI holds no logic of its own: it asks the

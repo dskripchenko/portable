@@ -21,9 +21,59 @@ import sys
 import time
 from pathlib import Path
 
-from . import catalog, paths, spawn
+from . import VERSION, catalog, paths, spawn
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
+
+OVERVIEW = """
+getting started
+  portable up                        start the supervisor; everything else talks to it
+  portable install php               and: caddy, node, postgres, mariadb, redis
+  portable site add demo C:\\projects\\demo
+                                     served at http://demo.localhost
+  portable status                    what is running, and on which port
+  portable down                      stop everything
+
+runtimes
+  portable available php             what the publisher offers now
+  portable available php 8.3         including superseded patches from the archive
+  portable install php 8.3.20        a branch, an exact version, or latest
+  portable install php --from C:\\php  adopt one already on this machine
+  portable runtimes                  what is installed
+  portable update [--install]        newer releases on the same line
+  portable uninstall php 8.3.20      delete one and reclaim the disk
+
+sites
+  portable site add <name> [path]    serves public/ if the front controller is there
+  portable site add <name> <path> --exact
+                                     take the path exactly as given
+  portable site add <name> <path> --php 8.2
+                                     pin a version; the newest is the default
+  portable site list / site remove <name>
+  portable port 8888                 when 80 and 8080 are both taken; `auto` undoes it
+  portable trust                     trust the local authority, so https:// stops warning
+
+php extensions
+  portable ext list                  what this build ships, and what is loaded
+  portable ext enable sodium         a line in php.ini, nothing downloaded
+  portable ext install xdebug        not in the build: fetched to match it exactly
+  portable ext install xdebug 2.9.8  when the newest does not support this PHP
+
+databases
+  portable service add postgres      also mariadb, redis; on the conventional port
+  portable service list / service remove <name>
+                                     removing keeps the data
+
+anything else
+  portable run npm install           run a command with the installed runtimes on PATH
+  portable env                       print the settings a shell would need instead
+  portable home                      where everything is kept, and what decided that
+  portable home set D:\\portable      or --beside, to keep it next to the launcher
+  portable version                   this, the interpreter, and the running daemon
+  portable help                      this list on its own
+
+every command takes --json, and --home PATH to use a different installation once.
+"""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,8 +122,15 @@ def _parser() -> argparse.ArgumentParser:
         prog="portable",
         parents=[common],
         description="A development environment that installs beside the system, not into it.",
+        epilog=OVERVIEW,
+        # Otherwise argparse reflows the epilog into a paragraph, which is not
+        # what a list of commands is.
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    subparsers = parser.add_subparsers(dest="command")
+    # A placeholder rather than every command name in the usage line. Argparse
+    # prints all seventeen otherwise, wrapped across three lines, before saying
+    # anything useful — and the list is below in full anyway.
+    subparsers = parser.add_subparsers(dest="command", metavar="<command>")
 
     def add(name: str, help_text: str, run) -> argparse.ArgumentParser:
         sub = subparsers.add_parser(name, help=help_text, parents=[common])
@@ -82,11 +139,18 @@ def _parser() -> argparse.ArgumentParser:
 
         return sub
 
+    add("version", "What this is, and where it keeps things.", _version)
+    add("help", "Everything below, on its own.", _help)
+
     add("up", "Start the daemon.", _up)
     add("down", "Stop the daemon and everything it supervises.", _down)
     add("status", "What is running.", _status)
 
-    install = add("install", "Download a runtime — php, caddy.", _install)
+    install = add(
+        "install",
+        "Download a runtime: " + ", ".join(catalog.names()) + ".",
+        _install,
+    )
     # From the catalog rather than typed out again. The two lists were separate
     # once and drifted: this one offered four runtimes the daemon then refused.
     install.add_argument("runtime", choices=catalog.names())
@@ -276,6 +340,69 @@ def _parser() -> argparse.ArgumentParser:
     home.set_defaults(run=_home_show, home_command=None)
 
     return parser
+
+
+def _help(args) -> int:
+    """
+    The overview, without the generated part above it.
+
+    `--help` prints both, which is right for somebody scanning. `portable help`
+    is for somebody who wants the worked examples and has already seen the list
+    of names twice.
+    """
+    print(OVERVIEW.strip())
+
+    return 0
+
+
+def _version(args) -> int:
+    """
+    What is running, and from where.
+
+    Every field here answers a question asked when something is wrong: which
+    build is this, which interpreter is behind it, where is it keeping things,
+    and is the daemon the same version as the client talking to it. That last
+    one matters after an upgrade, when the new command is talking to the old
+    daemon and the mismatch explains everything.
+    """
+    home, source = paths.resolved()
+    payload = {
+        "version": VERSION,
+        "python": sys.executable,
+        "home": str(home),
+        "home_source": source,
+        "bundle": str(paths.bundle()) if paths.bundle() else None,
+        "daemon": None,
+    }
+
+    try:
+        answer = Client().ping()
+        payload["daemon"] = {"version": answer.get("version"), "pid": discovery.read().pid}
+    except (NotRunning, CallFailed):
+        pass
+
+    if args.json:
+        return _emit(args, payload, "")
+
+    lines = [
+        f"portable {VERSION}",
+        f"  python  {payload['python']}",
+        f"  home    {home}  ({source})",
+    ]
+
+    if payload["bundle"]:
+        lines.append(f"  bundle  {payload['bundle']}")
+
+    if payload["daemon"] is None:
+        lines.append("  daemon  not running")
+    else:
+        running = payload["daemon"]["version"]
+        # Named only when they differ, and then plainly: after an upgrade the
+        # new command talking to the old daemon explains every other oddity.
+        mismatch = "" if running == VERSION else "  <- different from this command; portable down, then up"
+        lines.append(f"  daemon  {running} (pid {payload['daemon']['pid']}){mismatch}")
+
+    return _emit(args, payload, "\n".join(lines))
 
 
 def _up(args) -> int:

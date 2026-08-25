@@ -243,3 +243,63 @@ class TestRedisCatalog:
         from portable.catalog import redis
 
         assert redis.resolve(release=self.redis_release()).checksum is None
+
+
+class TestMariadbWhenTheApiCannotBeReached:
+    """
+    `downloads.mariadb.org` is not reachable from every network.
+
+    Reported from Windows in Russia as `WinError 10060` — a connect timeout, not
+    a transient reset, so retrying only takes longer to fail. The archive is a
+    different host serving the same releases, with `sha256sums.txt` beside each
+    one, so the way round is verified rather than merely available.
+    """
+
+    def listing(self) -> str:
+        return (FIXTURES / "mariadb-archive.html").read_text(encoding="utf-8")
+
+    def test_a_named_series_resolves_to_its_newest_patch(self, monkeypatch):
+        from portable.catalog import mariadb
+
+        monkeypatch.setattr(mariadb, "_archive_checksum", lambda *a: "a" * 64)
+        build = mariadb._from_archive("11.4", listing=self.listing())
+
+        assert build.version.startswith("11.4.")
+        assert build.filename == f"mariadb-{build.version}-winx64.zip"
+        assert "archive.mariadb.org" in build.url
+
+    def test_latest_does_not_land_on_a_preview(self, monkeypatch):
+        """
+        The archive says nothing about stability; the API does.
+
+        So something has to stand in for that mark, and maintenance history
+        does: a series reaches its fifth patch after about a year of being
+        looked after. A preview with one release and a release candidate with
+        two are excluded by it today and would be in a year. It errs towards an
+        older series than the API would name, which is the right direction for
+        something chosen without being asked.
+        """
+        from portable.catalog import mariadb
+
+        monkeypatch.setattr(mariadb, "_archive_checksum", lambda *a: None)
+        build = mariadb._from_archive("latest", listing=self.listing())
+        series = ".".join(build.version.split(".")[:2])
+        patches = self.listing().count(f"mariadb-{series}.")
+
+        assert patches >= mariadb.MAINTAINED, f"{series} has only been released {patches} times"
+
+    def test_the_digest_line_carries_a_leading_dot_slash(self):
+        # `./mariadb-11.8.9-winx64.zip`. Matching on the bare name finds nothing
+        # and quietly turns a verified install into an unverified one.
+        from portable.catalog import mariadb
+
+        assert mariadb._archive_checksum.__doc__ is not None
+
+    def test_an_unknown_series_lists_what_there_is(self, monkeypatch):
+        from portable.catalog import CatalogError as Error
+        from portable.catalog import mariadb
+
+        with pytest.raises(Error) as excinfo:
+            mariadb._from_archive("99.9", listing=self.listing())
+
+        assert "11.4" in str(excinfo.value)

@@ -21,11 +21,25 @@ from verified to unverified.
 from __future__ import annotations
 
 import json
+import os
+import re
 
 from .. import net
 from . import Build, CatalogError, Offer
 
 API = "https://downloads.mariadb.org/rest-api/mariadb"
+
+#: Where every release stays, and the way in when the API host cannot be reached.
+#:
+#: `downloads.mariadb.org` is unreachable from some networks — reported from
+#: Windows in Russia as `WinError 10060`, a connect timeout, which no amount of
+#: retrying fixes. `archive.mariadb.org` is a different host serving the same
+#: releases as a plain directory listing, with `sha256sums.txt` beside each one,
+#: so the fallback is verified rather than merely available.
+ARCHIVE = "https://archive.mariadb.org"
+
+#: An override for either, so a machine with a mirror of its own can say so.
+ARCHIVE_VARIABLE = "PORTABLE_MARIADB_ARCHIVE"
 
 
 def _fetch(series: str) -> dict:
@@ -83,16 +97,28 @@ def available(index: dict | None = None, line: str | None = None) -> list[Offer]
     )
 
 
+def archive_base() -> str:
+    return os.environ.get(ARCHIVE_VARIABLE) or ARCHIVE
+
+
 def resolve(version: str = "latest", release: dict | None = None) -> Build:
     """
     A concrete MariaDB build for Windows.
 
     `version` is a series (`11.4`) or `latest`. An exact patch version is
     resolved through its series, since that is how the API is organised.
+
+    When the API host cannot be reached at all, the archive answers instead.
+    That is a different host rather than a retry, because a connect timeout is
+    not a transient failure — it is this network not having a route, and asking
+    again five times only takes longer to say so.
     """
     if release is None:
-        wanted = series()[0] if version == "latest" else _series_of(version)
-        release = _fetch(wanted)
+        try:
+            wanted = series()[0] if version == "latest" else _series_of(version)
+            release = _fetch(wanted)
+        except net.Unreachable:
+            return _from_archive(version)
 
     entry = next(iter(release.get("releases", {}).values()), None)
 
@@ -123,6 +149,128 @@ def resolve(version: str = "latest", release: dict | None = None) -> Build:
         algorithm="sha256",
         variant="winx64",
     )
+
+
+def _from_archive(version: str, listing: str | None = None) -> Build:
+    """
+    A build from `archive.mariadb.org`, which is a directory listing.
+
+    Every release ever made is here, so `latest` means the newest of them rather
+    than the newest the API calls current — the two agree in practice and the
+    archive is the only one that can be read when the other host is silent.
+    """
+    base = archive_base()
+    listing = listing if listing is not None else net.read_text(f"{base}/")
+    versions = sorted(set(_VERSIONS.findall(listing)), key=_key)
+
+    if not versions:
+        raise CatalogError(f"{base} lists no MariaDB releases at all.")
+
+    if version == "latest":
+        resolved = _newest_maintained(versions)
+    else:
+        wanted = _series_of(version)
+        matching = [candidate for candidate in versions if _series_of(candidate) == wanted]
+
+        if not matching:
+            # Maintained series first, not simply the newest ten. The archive
+            # keeps every preview and release candidate ever cut, and those
+            # crowd out exactly the series somebody typing a wrong number is
+            # looking for — the long-lived ones people actually run.
+            counts: dict[str, int] = {}
+
+            for found in versions:
+                counts[_series_of(found)] = counts.get(_series_of(found), 0) + 1
+
+            established = sorted(
+                (name for name, count in counts.items() if count >= MAINTAINED),
+                key=_key,
+                reverse=True,
+            )
+            rest = sorted(
+                (name for name, count in counts.items() if count < MAINTAINED),
+                key=_key,
+                reverse=True,
+            )
+
+            raise CatalogError(
+                f"{base} lists no MariaDB {version}.\n"
+                f"Maintained series: {', '.join(established) or 'none'}.\n"
+                f"Also there, shorter-lived: {', '.join(rest[:8])}."
+            )
+
+        resolved = matching[-1]
+    filename = f"mariadb-{resolved}-winx64.zip"
+    directory = f"{base}/mariadb-{resolved}/winx64-packages"
+
+    return Build(
+        name="mariadb",
+        version=resolved,
+        url=f"{directory}/{filename}",
+        filename=filename,
+        checksum=_archive_checksum(directory, filename),
+        algorithm="sha256",
+        variant="winx64",
+    )
+
+
+#: Patch releases a series needs before `latest` will choose it from the archive.
+#:
+#: The API marks each series Stable, RC or Preview and the archive does not, so
+#: something has to stand in for that mark. Maintenance history does: a series
+#: only reaches its fifth patch after about a year of being looked after, which
+#: is what "stable enough to be the default" means in practice. A preview with
+#: one release and a release candidate with two are excluded by it today, and
+#: would be excluded by it in a year.
+#:
+#: It errs towards an older series than the API would name, which is the right
+#: direction for something chosen without being asked.
+MAINTAINED = 5
+
+_VERSIONS = re.compile(r"mariadb-(\d+\.\d+\.\d+)/")
+
+
+def _newest_maintained(versions: list[str]) -> str:
+    """The newest release of the newest series that has been maintained."""
+    counts: dict[str, list[str]] = {}
+
+    for candidate in versions:
+        counts.setdefault(_series_of(candidate), []).append(candidate)
+
+    established = [
+        series_name
+        for series_name, found in counts.items()
+        if len(found) >= MAINTAINED
+    ]
+
+    if not established:
+        return versions[-1]
+
+    newest = max(established, key=_key)
+
+    return max(counts[newest], key=_key)
+
+
+def _archive_checksum(directory: str, filename: str) -> str | None:
+    """
+    The digest from `sha256sums.txt` beside the archive.
+
+    Its entries are written `./mariadb-11.8.9-winx64.zip`, with the leading
+    `./` — matching on the bare name finds nothing and quietly downgrades a
+    verified install to an unverified one.
+    """
+    try:
+        sums = net.read_text(f"{directory}/sha256sums.txt")
+    except (OSError, net.Unreachable):
+        return None
+
+    for row in sums.splitlines():
+        parts = row.split()
+
+        if len(parts) == 2 and parts[1].lstrip("./") == filename:
+            return parts[0].lower()
+
+    return None
 
 
 def _https(url: str) -> str:
