@@ -676,3 +676,126 @@ class TestUpgradingFromInsideTheFolder:
 
         assert current.stat().st_ino == before, "the directory was replaced rather than refilled"
         assert source
+
+
+class TestWaitingAndWorkingHaveSeparateClocks:
+    """
+    Reported from Windows, three times over, as `could not rename
+    C:\\laragon\\bin\\portable` — with no Windows error code in it.
+
+    That was the tell. The message with no error in it is only produced when
+    the rename was never attempted, and the rename was never attempted because
+    a single deadline covered both waiting for the old process and doing the
+    work. The wait ran to the full sixty seconds, and the work inherited what
+    was left of them: nothing.
+
+    Two separate causes were proposed for those three log lines before the log
+    was read properly. There was one, and it was this.
+    """
+
+    def helper(self, tmp_path, seconds: float, pid: int) -> subprocess.CompletedProcess:
+        current = tmp_path / "current"
+        (current / "python").mkdir(parents=True)
+        (current / "portable.cmd").write_text("old", encoding="utf-8")
+
+        replacement = tmp_path / "new"
+        (replacement / "python").mkdir(parents=True)
+        (replacement / "portable.cmd").write_text("new", encoding="utf-8")
+
+        return subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                selfupdate._HELPER,
+                str(pid),
+                str(current),
+                str(replacement),
+                str(tmp_path / "kept"),
+                "",
+                str(seconds),
+                "portable.cmd",
+                "python",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+
+    def test_a_wait_that_runs_out_still_leaves_time_to_work(self, tmp_path):
+        # The waited-for process is this one, which is not going anywhere — so
+        # the wait uses its whole budget, exactly as it did on the machine that
+        # reported this.
+        result = self.helper(tmp_path, seconds=2, pid=os.getpid())
+
+        assert (tmp_path / "current" / "portable.cmd").read_text() == "new", (
+            f"the exchange never happened\n{result.stdout}\n{result.stderr}"
+        )
+
+    def test_the_move_helper_always_tries_once(self, tmp_path):
+        # Even with a deadline already in the past, which is what turned a
+        # diagnosable failure into an invented one.
+        namespace: dict = {}
+        exec(selfupdate._HELPER.replace("\nmain()\n", "\n"), namespace)  # noqa: S102
+        move = namespace["move"]
+
+        with pytest.raises(OSError) as raised:
+            move(str(tmp_path / "nothing"), str(tmp_path / "somewhere"), 0.0)
+
+        assert raised.value.errno is not None, (
+            f"a failure the system never reported: {raised.value}"
+        )
+
+
+class TestSeeingThatAProcessHasGone:
+    """
+    Why the wait ran to its full deadline: on Windows a process object outlives
+    the process for as long as anybody holds a handle to it, and somebody
+    always does — the shell that started it. `OpenProcess` keeps succeeding for
+    something that exited minutes ago, so "a handle opens, therefore it is
+    running" is not true and the helper believed it.
+
+    Measured here rather than reasoned about, because being wrong about this
+    twice in one morning is enough.
+    """
+
+    def alive(self):
+        namespace: dict = {}
+        exec(selfupdate._HELPER.replace("\nmain()\n", "\n"), namespace)  # noqa: S102
+
+        return namespace["alive"]
+
+    def test_a_process_that_never_existed_is_not_alive(self):
+        # A pid nothing can own. Both answers to "is it there" are "stop
+        # waiting", and this is the one that has always worked.
+        assert self.alive()(0x7FFFFFF0) is False
+
+    @pytest.mark.skipif(os.name != "nt", reason="this is Windows' process-object lifetime")
+    def test_it_is_gone_even_while_a_handle_is_held_open(self):
+        import ctypes
+
+        process = subprocess.Popen([sys.executable, "-c", "pass"])
+
+        # Held on purpose, from outside: this is the shell in the real story.
+        held = ctypes.windll.kernel32.OpenProcess(0x00100000 | 0x1000, False, process.pid)
+        assert held, "could not hold a handle, so this measures nothing"
+
+        process.wait()
+
+        try:
+            reopened = ctypes.windll.kernel32.OpenProcess(0x1000, False, process.pid)
+
+            if reopened:
+                ctypes.windll.kernel32.CloseHandle(reopened)
+
+            assert reopened, (
+                "OpenProcess refused a handle to an exited process whose handle is held — "
+                "then the diagnosis for the upgrade that waited out its deadline is wrong, "
+                "and the real reason is still out there"
+            )
+            assert self.alive()(process.pid) is False, (
+                "an exited process is still reported as running, which is what made the "
+                "helper wait out its whole budget"
+            )
+        finally:
+            ctypes.windll.kernel32.CloseHandle(held)

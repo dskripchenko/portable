@@ -322,17 +322,27 @@ def alive(pid):
     if os.name == "nt":
         import ctypes
 
-        # PROCESS_QUERY_LIMITED_INFORMATION. A handle that opens means the
-        # process is there; one that does not means it is gone or was never
-        # ours to ask about, and both answers are "stop waiting".
-        handle = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+        # SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION.
+        #
+        # A handle that opens is NOT enough to say the process is running. On
+        # Windows the process object outlives the process itself for as long as
+        # anybody holds a handle to it — and somebody does: the shell that
+        # started it. So OpenProcess kept succeeding for a process that had
+        # already exited, this waited out its whole deadline, and the work that
+        # was supposed to follow got no time at all.
+        #
+        # The signalled state is the real answer. A process object is signalled
+        # exactly when the process has exited, handles or no handles.
+        handle = ctypes.windll.kernel32.OpenProcess(0x00100000 | 0x1000, False, pid)
 
         if not handle:
             return False
 
-        ctypes.windll.kernel32.CloseHandle(handle)
-
-        return True
+        try:
+            # WAIT_OBJECT_0 is 0 and means signalled: it is gone.
+            return ctypes.windll.kernel32.WaitForSingleObject(handle, 0) != 0
+        finally:
+            ctypes.windll.kernel32.CloseHandle(handle)
 
     try:
         os.kill(pid, 0)
@@ -343,19 +353,30 @@ def alive(pid):
 
 
 def move(source, destination, deadline):
-    """Keep trying: whatever blocks this is usually in the act of closing."""
+    """
+    Keep trying: whatever blocks this is usually in the act of closing.
+
+    Always attempts at least once, whatever the clock says. The loop used to be
+    `while time.monotonic() < deadline`, so an expired budget produced a
+    failure that had never been attempted — and reported it as "could not move
+    X" with no Windows error in it, because there had been no Windows call.
+    That message is what a real machine printed three times while the actual
+    problem was somewhere else entirely.
+    """
     last = None
 
-    while time.monotonic() < deadline:
+    while True:
         try:
             os.rename(source, destination)
 
             return
         except OSError as error:
             last = error
-            time.sleep(0.25)
 
-    raise last if last else OSError("could not move %s" % source)
+        if time.monotonic() >= deadline:
+            raise last
+
+        time.sleep(0.25)
 
 
 def undo(done):
@@ -370,16 +391,26 @@ def undo(done):
 def main():
     pid = int(sys.argv[1])
     current, replacement, keep, workspace = sys.argv[2:6]
-    deadline = time.monotonic() + float(sys.argv[6])
+    seconds = float(sys.argv[6])
     names = sys.argv[7:]
 
     print("waiting for %s" % pid, flush=True)
 
-    while alive(pid) and time.monotonic() < deadline:
+    patience = time.monotonic() + seconds
+
+    while alive(pid) and time.monotonic() < patience:
         time.sleep(0.2)
 
     # cmd.exe closes the batch file a moment after the process it launched exits.
     time.sleep(1.0)
+
+    # A fresh budget for the work itself. One deadline covering both meant that
+    # a wait which ran long left nothing for what it was waiting to do — and
+    # the whole exchange then failed without a single rename being attempted.
+    # Waiting and working are different things and get their own clocks.
+    deadline = time.monotonic() + seconds
+
+    print("moving in (%.0fs to do it)" % seconds, flush=True)
 
     if os.path.exists(keep):
         shutil.rmtree(keep, ignore_errors=True)

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.4.2 — 2026-08-26
+
+### Fixed — the upgrade, actually this time
+
+1.3.2 changed how the exchange works and did not fix it. A log from the machine
+where it fails says why, and says it about all three attempts at once:
+
+```
+OSError: could not rename C:\laragon\bin\portable
+could not set aside README.txt: could not move C:\...\README.txt
+```
+
+No Windows error code in either. That is the tell: those messages are only
+produced when the operation was **never attempted**, so nothing was ever
+refused — and the earlier reading of them, that Windows would not rename a
+directory somebody was standing in, was wrong.
+
+- **Waiting and working shared one deadline.** The helper waits for the
+  process that asked for the upgrade to exit, then does the work, both inside
+  the same sixty seconds. The wait used all of them, so the work got none, and
+  every rename "failed" without being tried. They have separate clocks now.
+- **A process that had exited was reported as still running.** On Windows a
+  process object outlives the process for as long as anybody holds a handle to
+  it, and the shell that started it does. `OpenProcess` succeeding therefore
+  means nothing; the helper now asks whether the process object is signalled,
+  which is true exactly when the process has gone. A test on Windows CI
+  measures this rather than assuming it, and fails loudly if the premise is
+  wrong.
+- **A failure now carries the system's own error.** The invented message is
+  what made three identical log lines look like a rename Windows had refused.
+
 ## 1.4.1 — 2026-08-26
 
 ### Fixed — which version's client, with several installed

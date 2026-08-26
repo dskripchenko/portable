@@ -4,4 +4,4 @@
 #: and compared between the two — an upgraded client talking to a daemon still
 #: running the previous build explains a great many other oddities, and only
 #: says so if both take the number from the same place.
-VERSION = "1.4.1"
+VERSION = "1.4.2"
