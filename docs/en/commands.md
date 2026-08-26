@@ -62,6 +62,7 @@ recall what you typed before; there are inline suggestions as you go.
 
 `F10` quits, `F5` refreshes, `F2` pauses the log. Function keys because the
 letters belong to the command line now. `dash php` follows only PHP below.
+Selecting a database in its table and pressing Enter opens a prompt at it.
 
 A few commands are declined from inside it, each with the reason: `upgrade`
 replaces the folder the screen is running from, `purge` asks a question the
@@ -165,7 +166,19 @@ one. Xdebug 3 does not build for PHP 7.2 and never will; xdebug 2.9.8 does.
 |---|---|
 | `portable service add <kind>` | Start `postgres`, `mariadb` or `redis`. |
 | `portable service list` | What is running, and how to reach it. |
+| `portable service cli [name]` | A prompt at one — `psql`, `mariadb`, `redis-cli`. |
 | `portable service remove <name>` | Stop it. **The data is kept.** |
+
+`service cli` runs the client that shipped in the same archive as the server,
+pointed at the right port over TCP. The three spell the same three facts —
+host, port, user — three different ways, and MariaDB's client additionally
+prefers a named pipe on Windows when the host looks local, which this server
+does not offer. The name can be left out when there is only one.
+
+In the dashboard, select a database in its table and press Enter: the screen
+steps aside, the client gets the real terminal, and the screen comes back when
+you leave it. `--json` prints the command instead of running it, which is what
+an editor plugin wants.
 
 Each binds the loopback only. `--port` and `--name` are there when you want a
 second instance or a non-conventional port.

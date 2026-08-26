@@ -622,3 +622,86 @@ class TestACommandOutlivingTheScreen:
 
         assert "call_from_thread( self.query_one" not in source
         assert "call_from_thread(self.query_one" not in source
+
+
+class TestOpeningADatabaseClient:
+    """
+    The tables were a display. A cursor sitting in one that does nothing when
+    you press Enter is a thing people press twice and then stop trusting.
+    """
+
+    async def test_enter_on_a_database_opens_its_client(self, monkeypatch):
+        application = dash.build()
+        app = application()
+        opened = []
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            monkeypatch.setattr(app, "open_client", opened.append)
+            table = app.query_one("#services")
+            table.clear()
+            table.add_row("cache", "redis", "6379")
+
+            table.action_select_cursor()
+            await pilot.pause()
+
+        assert opened == ["cache"], "selecting a database did nothing"
+
+    async def test_the_empty_row_is_not_a_database(self, monkeypatch):
+        # "none yet | type: service add" is a sentence, not something to connect
+        # to.
+        application = dash.build()
+        app = application()
+        opened = []
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            monkeypatch.setattr(app, "open_client", opened.append)
+            table = app.query_one("#services")
+            table.action_select_cursor()
+            await pilot.pause()
+
+        assert opened == []
+
+    async def test_selecting_a_process_does_not_open_anything(self, monkeypatch):
+        application = dash.build()
+        app = application()
+        opened = []
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            monkeypatch.setattr(app, "open_client", opened.append)
+            table = app.query_one("#processes")
+            table.clear()
+            table.add_row("php-8.4.24-1", "running", "0", "")
+
+            table.action_select_cursor()
+            await pilot.pause()
+
+        assert opened == []
+
+    async def test_typing_the_command_is_refused_with_the_way_that_works(self):
+        # An interactive client with its output captured is a prompt nobody can
+        # see and a session nobody can leave.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            refusal = app._refused("service cli cache")
+
+        assert "enter" in refusal.lower(), refusal
+
+    async def test_other_service_commands_are_not_refused(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            assert app._refused("service list") == ""
+            assert app._refused("service add redis") == ""

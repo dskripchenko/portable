@@ -384,7 +384,13 @@ def build() -> Any:
 
             services = self.query_one("#services", DataTable)
             services.add_columns("database", "kind", "port")
-            services.border_title = "databases"
+            services.border_title = "databases — enter opens a prompt at one"
+
+            # Rows rather than cells: the cursor picks out a database, not the
+            # port of a database, and it is the row that Enter acts on. With
+            # the default the highlight is one cell wide and Enter reports a
+            # cell, which is neither what it looks like nor what it means.
+            services.cursor_type = "row"
 
             log = self.query_one("#log", RichLog)
             log.border_title = f"log — {self._follow or 'everything'}"
@@ -443,6 +449,14 @@ def build() -> Any:
 
             if first in REFUSED:
                 return REFUSED[first]
+
+            # An interactive client with its output captured is a prompt
+            # nobody can see and a session nobody can leave. There is a way to
+            # do this from here, and it is the row above.
+            words = cli.split(line)
+
+            if first == "service" and len(words) > 1 and words[1] == "cli":
+                return "select the database in the table above and press enter"
 
             # `logs -f` never returns, and the pane below is already following.
             if first == "logs" and ("-f" in line or "--follow" in line):
@@ -706,6 +720,56 @@ def build() -> Any:
                 services.add_row(
                     entry.get("name", ""), entry.get("kind", ""), str(entry.get("port") or "")
                 )
+
+        def on_data_table_row_selected(self, event) -> None:
+            """
+            A row in the databases table, chosen with Enter or a click.
+
+            The tables are otherwise a display, and a display with a cursor in
+            it that does nothing when you press Enter is a thing people press
+            twice and then stop trusting.
+            """
+            if event.data_table.id != "services":
+                return
+
+            name = str(event.data_table.get_row(event.row_key)[0])
+
+            if name == "none yet":
+                return
+
+            self.open_client(name)
+
+        def open_client(self, name: str) -> None:
+            """
+            Step out of the way and hand the terminal to the client.
+
+            `suspend()` restores the terminal to what it was, runs the thing,
+            and puts the screen back — which is the only way an interactive
+            program can work from inside a full-screen application. Nothing is
+            emulated: it is the real client on the real terminal, and this
+            screen returns when it exits.
+            """
+            import subprocess
+
+            try:
+                found = Client().call("POST", "/v1/services/client", {"name": name})
+            except (NotRunning, CallFailed) as error:
+                self.note(f"  {error}")
+
+                return
+
+            try:
+                with self.suspend():
+                    subprocess.call(found["argv"])
+            except Exception as error:  # noqa: BLE001
+                # Headless, or a terminal that cannot be given back. Saying so
+                # beats a screen that appears to have ignored the keypress.
+                self.note(f"  could not open {found['argv'][0]}: {error}")
+
+                return
+
+            self.note(f"  {name}: closed the client")
+            self.action_refresh()
 
         def action_quit(self) -> None:
             """

@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, extensions, paths, pecl, pool, settings, trust
+from .. import acquire, extensions, paths, pecl, pool, services, settings, trust
 from .. import catalog as catalogs
 from .. import net as net_module
 from ..catalog import CatalogError
@@ -244,6 +244,7 @@ class ControlServer:
             ("GET", f"{API}/services"): self._services_list,
             ("POST", f"{API}/services/add"): self._service_add,
             ("POST", f"{API}/services/remove"): self._service_remove,
+            ("POST", f"{API}/services/client"): self._service_client,
         }
 
     def _ping(self, _payload: dict) -> dict:
@@ -909,6 +910,77 @@ class ControlServer:
                 }
                 for name, service in sorted(declared.items())
             ]
+        }
+
+    def _service_client(self, payload: dict) -> dict:
+        """
+        How to open a prompt at one of these, without running it here.
+
+        The command is resolved and returned rather than executed: a client is
+        an interactive program and it belongs to the terminal somebody is
+        sitting at, not to a daemon with no console. The CLI runs what this
+        hands back, the dashboard steps aside and runs the same thing, and a
+        plugin will do whatever a plugin does with a command line — all three
+        asking one question instead of each knowing where `psql` lives.
+        """
+        name = str(payload.get("name") or "")
+        declared = self.services_registry.all()
+
+        if not declared:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND,
+                "no-services",
+                "No database is declared. Add one with `portable service add postgres`.",
+            )
+
+        if not name:
+            if len(declared) > 1:
+                names = ", ".join(sorted(service.name for service in declared))
+
+                raise ApiError(
+                    HTTPStatus.BAD_REQUEST,
+                    "which-one",
+                    f"There is more than one: {names}. Name the one you mean.",
+                )
+
+            service = declared[0]
+        else:
+            found = self.services_registry.get(name)
+
+            if found is None:
+                names = ", ".join(sorted(entry.name for entry in declared))
+
+                raise ApiError(
+                    HTTPStatus.NOT_FOUND,
+                    "no-such-service",
+                    f"No database called {name}. Present: {names}.",
+                )
+
+            service = found
+
+        running = {entry["name"]: entry for entry in self.stack.service_report()}
+        port = running.get(service.name, {}).get("port") or service.port
+
+        if service.name not in running:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "not-running",
+                f"{service.name} is not running, so there is nothing to connect to. "
+                f"`portable up` starts everything that is declared.",
+            )
+
+        try:
+            runtime = self.runtimes.get(service.kind, service.version)
+            client = runtime.executable_named(services.EXECUTABLES[service.kind]["client"])
+        except NotInstalled as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-client", str(error)) from error
+
+        return {
+            "name": service.name,
+            "kind": service.kind,
+            "port": port,
+            "user": service.superuser,
+            "argv": services.client_command(service.kind, client, port, service.superuser),
         }
 
     def _service_add(self, payload: dict) -> dict:

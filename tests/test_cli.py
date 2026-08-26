@@ -497,3 +497,75 @@ class TestOptionsBeforeTheSubcommand:
         # others now follow came from.
         assert self.parse("--home C:/x status").home == "C:/x"
         assert self.parse("status --home C:/x").home == "C:/x"
+
+
+class _Answering:
+    """A daemon that answers one question, so the terminal handover is what is tested."""
+
+    def __init__(self, answer: dict) -> None:
+        self.answer = answer
+
+    def call(self, method, route, payload=None, timeout=None):
+        return self.answer
+
+
+class TestTheDatabaseClientCommand:
+    def test_json_prints_the_command_and_runs_nothing(self, monkeypatch, capsys):
+        # A program asking for this wants to run it somewhere of its own — a
+        # terminal pane in an editor, most likely.
+        ran = []
+        monkeypatch.setattr(cli.subprocess, "call", lambda argv: ran.append(argv) or 0)
+        monkeypatch.setattr(
+            cli,
+            "Client",
+            lambda *a, **k: _Answering({
+                "name": "cache",
+                "kind": "redis",
+                "port": 6379,
+                "user": "",
+                "argv": ["/x/redis-cli", "-h", "127.0.0.1", "-p", "6379"],
+            }),
+        )
+
+        assert cli.main(["service", "cli", "cache", "--json"]) == 0
+        assert ran == [], "it ran the client when only asked what the client is"
+        assert "redis-cli" in capsys.readouterr().out
+
+    def test_without_json_it_hands_over_the_terminal(self, monkeypatch):
+        ran = []
+        monkeypatch.setattr(cli.subprocess, "call", lambda argv: ran.append(argv) or 0)
+        monkeypatch.setattr(
+            cli,
+            "Client",
+            lambda *a, **k: _Answering({
+                "name": "cache",
+                "kind": "redis",
+                "port": 6379,
+                "user": "",
+                "argv": ["/x/redis-cli", "-h", "127.0.0.1", "-p", "6379"],
+            }),
+        )
+
+        cli.main(["service", "cli", "cache"])
+
+        assert ran == [["/x/redis-cli", "-h", "127.0.0.1", "-p", "6379"]]
+
+    def test_the_client_exit_code_is_this_one(self, monkeypatch):
+        # A script doing `portable service cli x < script.sql` cares.
+        monkeypatch.setattr(cli.subprocess, "call", lambda argv: 3)
+        monkeypatch.setattr(
+            cli,
+            "Client",
+            lambda *a, **k: _Answering({
+                "name": "cache",
+                "kind": "redis",
+                "port": 6379,
+                "user": "",
+                "argv": ["/x/redis-cli"],
+            }),
+        )
+
+        assert cli.main(["service", "cli", "cache"]) == 3
+
+    def test_the_name_is_optional(self):
+        assert cli._parser().parse_args(["service", "cli"]).name is None

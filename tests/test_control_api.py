@@ -694,3 +694,87 @@ class TestReadingAnAdoptedRuntimesVersion:
 
     def test_nothing_recognisable_says_so(self):
         assert self.parse("some program with no version at all") == "unknown"
+
+
+class TestAskingHowToOpenAClient:
+    """
+    The daemon resolves the command and does not run it.
+
+    A client is an interactive program and belongs to the terminal somebody is
+    sitting at, not to a process with no console. So three callers — the CLI,
+    the dashboard, and eventually a plugin — ask one question instead of each
+    knowing where `psql` lives and which flags it wants.
+    """
+
+    def ask(self, server, endpoint, name: str = "") -> tuple[int, dict]:
+        try:
+            return 200, Client(endpoint).call("POST", "/v1/services/client", {"name": name})
+        except CallFailed as error:
+            return getattr(error, "status", 0), {"error": str(error)}
+
+    def test_with_nothing_declared_it_says_so(self, server, endpoint, tmp_path, monkeypatch):
+        monkeypatch.setattr(server.services_registry, "path", tmp_path / "none.json")
+
+        status, answer = self.ask(server, endpoint)
+
+        assert status != 200
+        assert "service add" in answer["error"], answer
+
+    def test_a_name_nobody_has_lists_the_ones_that_exist(self, server, endpoint):
+        from portable.services import Service
+
+        server.services_registry.add(Service(name="postgres", kind="postgres", port=5432))
+
+        status, answer = self.ask(server, endpoint, "postgrez")
+
+        assert status != 200
+        assert "postgres" in answer["error"]
+
+    def test_one_that_is_not_running_is_not_a_connection_string(self, server, endpoint):
+        # It is declared, it is in `list`, and there is nothing behind the port.
+        # Handing back a command that will fail to connect answers the question
+        # asked and not the one meant.
+        from portable.services import Service
+
+        server.services_registry.add(Service(name="postgres", kind="postgres", port=5432))
+
+        status, answer = self.ask(server, endpoint, "postgres")
+
+        assert status != 200
+        assert "not running" in answer["error"]
+        assert "portable up" in answer["error"]
+
+    def test_two_of_them_and_no_name_asks_which(self, server, endpoint, monkeypatch):
+        from portable.services import Service
+
+        server.services_registry.add(Service(name="postgres", kind="postgres", port=5432))
+        server.services_registry.add(Service(name="cache", kind="redis", port=6379))
+
+        status, answer = self.ask(server, endpoint)
+
+        assert status != 200
+        assert "cache" in answer["error"] and "postgres" in answer["error"]
+
+    def test_a_running_one_comes_back_as_a_command(self, server, endpoint, monkeypatch, tmp_path):
+        from portable.runtimes import Installed
+        from portable.services import Service
+
+        client = tmp_path / "redis-cli"
+        client.write_text("", encoding="utf-8")
+        server.services_registry.add(Service(name="cache", kind="redis", port=6379))
+        monkeypatch.setattr(
+            server.stack, "service_report", lambda: [{"name": "cache", "port": 6379}]
+        )
+        monkeypatch.setattr(
+            server.runtimes,
+            "get",
+            lambda name, version=None: Installed(
+                name="redis", version="7.4.0", directory=tmp_path, managed=True
+            ),
+        )
+
+        status, answer = self.ask(server, endpoint, "cache")
+
+        assert status == 200, answer
+        assert answer["argv"][0] == str(client)
+        assert "6379" in answer["argv"]

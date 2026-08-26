@@ -246,6 +246,44 @@ EXECUTABLES = {
 }
 
 
+def client_command(kind: str, client: Path, port: int, user: str) -> list[str]:
+    """
+    How to reach a running instance with the client that shipped beside it.
+
+    Every one of these ships its own client in the same archive as the server,
+    and the table above has named them since the first database was added —
+    unused, because nothing ever asked for one. Somebody with a database
+    running wants a prompt at it, and the alternative is remembering three
+    different flag spellings for the same three facts.
+
+    Always over TCP to `127.0.0.1`. MariaDB's client prefers a named pipe or
+    shared memory on Windows when the host looks local, and those are off in
+    the server this starts — it is given `--skip-name-resolve` and a TCP port
+    and nothing else. Being explicit is the difference between a prompt and
+    "can't connect to local server through socket".
+    """
+    if kind == "postgres":
+        # psql defaults the database to the user name, and `initdb` creates a
+        # `postgres` database for exactly that reason.
+        return [str(client), "--host=127.0.0.1", f"--port={port}", f"--username={user}"]
+
+    if kind == "mariadb":
+        return [
+            str(client),
+            "--protocol=tcp",
+            "--host=127.0.0.1",
+            f"--port={port}",
+            f"--user={user}",
+        ]
+
+    if kind == "redis":
+        # No user: redis has no accounts until somebody configures them, and
+        # this one is not configured with any.
+        return [str(client), "-h", "127.0.0.1", "-p", str(port)]
+
+    raise InvalidService(f"Nothing is known about a client for {kind!r}.")
+
+
 class Registry:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or (paths.root() / "services.json")

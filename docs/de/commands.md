@@ -63,7 +63,9 @@ Rekonstruierendes. Die Pfeiltasten holen Getipptes zurück; beim Tippen gibt es
 Vorschläge.
 
 `F10` beendet, `F5` aktualisiert, `F2` pausiert. Funktionstasten, weil die
-Buchstaben jetzt der Befehlszeile gehören. `dash php` folgt unten nur PHP.
+Buchstaben jetzt der Befehlszeile gehören. `dash php` folgt unten nur PHP. Eine
+Datenbank in ihrer Tabelle auswählen und Enter drücken öffnet eine
+Eingabeaufforderung dazu.
 
 Ein paar Befehle werden von dort abgelehnt, jeder mit Begründung: `upgrade`
 ersetzt den Ordner, aus dem die Ansicht läuft, `purge` stellt eine Frage, die
@@ -172,7 +174,20 @@ schon.
 |---|---|
 | `portable service add <art>` | `postgres`, `mariadb` oder `redis` starten. |
 | `portable service list` | Was läuft und wie man es erreicht. |
+| `portable service cli [name]` | Eine Eingabeaufforderung dazu — `psql`, `mariadb`, `redis-cli`. |
 | `portable service remove <name>` | Anhalten. **Die Daten bleiben.** |
+
+`service cli` startet den Client aus demselben Archiv wie den Server, gerichtet
+auf den richtigen Port über TCP. Alle drei schreiben dieselben drei Angaben —
+Host, Port, Benutzer — auf drei verschiedene Weisen, und der MariaDB-Client
+bevorzugt unter Windows zusätzlich eine benannte Pipe, wenn der Host lokal
+aussieht — die dieser Server nicht anbietet. Der Name kann entfallen, wenn es
+nur eine gibt.
+
+In der Ansicht wählen Sie eine Datenbank in ihrer Tabelle und drücken Enter:
+der Bildschirm tritt beiseite, der Client bekommt das echte Terminal, und der
+Bildschirm kommt zurück, wenn Sie ihn verlassen. `--json` druckt den Befehl,
+statt ihn auszuführen — was ein Editor-Plugin möchte.
 
 Jede lauscht nur auf der Loopback-Adresse. `--port` und `--name` sind da, wenn
 Sie eine zweite Instanz oder einen unüblichen Port wollen.

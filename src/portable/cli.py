@@ -20,6 +20,7 @@ import json
 import os
 import shlex
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -334,6 +335,13 @@ def _parser() -> argparse.ArgumentParser:
 
     service_remove = add_service("remove", "Stop a database. Its data is kept.", _service_remove)
     service_remove.add_argument("name")
+
+    service_cli = add_service(
+        "cli", "Open a prompt at one — psql, mariadb, redis-cli.", _service_cli
+    )
+    service_cli.add_argument(
+        "name", nargs="?", help="Which one. Only needed when there is more than one."
+    )
 
     add_service("list", "Databases and how to reach them.", _service_list)
 
@@ -1666,6 +1674,37 @@ def _service_remove(args) -> int:
         result,
         f"Stopped {result['removed']}. Its data is still at {result['data_kept']}.",
     )
+
+
+def _service_cli(args) -> int:
+    """
+    Hand the terminal to the database's own client.
+
+    The client that shipped with the server, pointed at the right port, over
+    TCP — three facts spelled differently by each of the three, which is the
+    whole reason this is worth a command. Run here rather than in the daemon:
+    an interactive program belongs to the terminal somebody is sitting at.
+    """
+    # Not wrapped: `main` turns both a stopped daemon and a refusal into the
+    # same shape as every other command, with the reason the server gave rather
+    # than one invented here.
+    result = Client().call("POST", "/v1/services/client", {"name": args.name or ""})
+
+    if args.json:
+        # The command, not a session. A program asking for this wants to run it
+        # somewhere of its own — a terminal pane in an editor, most likely.
+        return _emit(args, result, " ".join(result["argv"]))
+
+    print(
+        f"{result['name']} — {result['kind']} on port {result['port']}. "
+        f"Leave it as that client is left: \\q, exit, or Ctrl-D.",
+        file=sys.stderr,
+    )
+
+    try:
+        return subprocess.call(result["argv"])
+    except OSError as error:
+        return _fail(args, "no-client", f"{result['argv'][0]} would not start: {error}")
 
 
 def _service_list(args) -> int:

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.4.0 — 2026-08-26
+
+### Added — a prompt at a running database
+
+`portable service cli [name]` opens the client that shipped in the same archive
+as the server: `psql`, `mariadb`, `redis-cli`. In the dashboard, select a
+database in its table and press Enter for the same thing.
+
+The three spell the same three facts — host, port, user — three different ways,
+and MariaDB's client additionally prefers a named pipe on Windows when the host
+looks local, which the server started here does not offer. That is the whole
+reason this is worth a command rather than a line in the documentation. The
+table naming each kind's client has been in the code since the first database
+was added, and nothing had ever asked it for one.
+
+- **The daemon resolves the command and does not run it.** A client is
+  interactive and belongs to the terminal somebody is sitting at, not to a
+  process with no console. So the CLI runs what it is handed, the dashboard
+  steps aside and runs the same thing, and a plugin can ask the same question —
+  `--json` prints the command instead of running it.
+- **The dashboard steps out of the way properly**: the terminal is given back,
+  the client gets it, and the screen returns when the client exits.
+- **Typing `service cli` into the dashboard's command line is declined** with
+  the way that works. Its output is captured, so it would be a prompt nobody
+  can see and a session nobody can leave.
+- The databases table selects **rows** now rather than cells, which is what its
+  cursor always looked like it was doing.
+
 ## 1.3.3 — 2026-08-26
 
 ### Fixed — the rest of the dashboard's threads

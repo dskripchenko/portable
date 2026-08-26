@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from portable import services
 from portable.catalog import mariadb, postgres
 from portable.services import (
     DEFAULT_PORTS,
@@ -408,3 +409,51 @@ class TestMariadbWhenItsHostWillNotServeTheArchive:
         ]
 
         assert with_fallback == ["mariadb"]
+
+
+class TestOpeningAPromptAtOne:
+    """
+    Every one of these ships its own client beside its server, and the table in
+    `services.py` has named them since the first database was added — unused,
+    because nothing asked. Somebody with a database running wants a prompt at
+    it.
+
+    The three spell the same three facts — host, port, user — three different
+    ways, which is the whole reason this is worth a command rather than a line
+    in the documentation.
+    """
+
+    def test_postgres(self):
+        argv = services.client_command("postgres", Path("/x/psql"), 5432, "postgres")
+
+        assert argv[0] == "/x/psql"
+        assert "--port=5432" in argv
+        assert "--username=postgres" in argv
+
+    def test_mariadb_is_told_to_use_tcp(self):
+        # Its client prefers a named pipe or shared memory on Windows when the
+        # host looks local, and the server this starts offers neither. Without
+        # it the answer is "can't connect through socket" at a database that is
+        # plainly running.
+        argv = services.client_command("mariadb", Path("/x/mariadb"), 3306, "root")
+
+        assert "--protocol=tcp" in argv
+        assert "--port=3306" in argv
+        assert "--user=root" in argv
+
+    def test_redis_is_given_no_user(self):
+        # It has no accounts until somebody configures them, and this one is
+        # not configured with any.
+        argv = services.client_command("redis", Path("/x/redis-cli"), 6379, "")
+
+        assert argv == ["/x/redis-cli", "-h", "127.0.0.1", "-p", "6379"]
+
+    def test_everything_goes_over_the_loopback(self):
+        for kind, user in (("postgres", "postgres"), ("mariadb", "root"), ("redis", "")):
+            argv = services.client_command(kind, Path("/x/c"), 1234, user)
+
+            assert any("127.0.0.1" in part for part in argv), kind
+
+    def test_an_unknown_kind_is_refused_rather_than_guessed(self):
+        with pytest.raises(services.InvalidService):
+            services.client_command("sqlite", Path("/x/sqlite3"), 0, "")
