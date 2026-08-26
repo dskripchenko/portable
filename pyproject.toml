@@ -1,6 +1,6 @@
 [project]
 name = "portable"
-version = "1.4.0"
+version = "1.4.1"
 description = "A development environment for Windows that installs beside the system, not into it"
 requires-python = ">=3.11"
 license = "MIT"

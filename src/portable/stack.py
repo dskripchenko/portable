@@ -81,6 +81,10 @@ class Stack:
     """
 
     services: dict[str, tuple[Service, int]] = field(default_factory=dict)
+
+    #: What each running service was actually started from, by name: the
+    #: resolved version and the client binary that came with it.
+    service_runtimes: dict[str, dict] = field(default_factory=dict)
     """Running databases, keyed by name, with the port each ended up on."""
 
     port: int | None = None
@@ -201,6 +205,18 @@ class Stack:
 
             self.supervisor.start(service.name)
             self.services[service.name] = (service, port)
+
+            # The client that belongs to *this* server, kept because it was
+            # already resolved here. Resolving it again later follows the same
+            # rule and can still land elsewhere: a service declared without a
+            # version follows the newest installed, and installing a newer one
+            # while the old is running moves the answer without moving the
+            # server. With three PostgreSQL versions on the machine that is not
+            # a hypothetical.
+            self.service_runtimes[service.name] = {
+                "version": runtime.version,
+                "client": str(binaries["client"]),
+            }
             started.append(service.name)
 
         return started
@@ -255,6 +271,7 @@ class Stack:
             self.supervisor.stop(name)
             self.supervisor.forget(name)
             self.services.pop(name)
+            self.service_runtimes.pop(name, None)
 
     def _runtime_for(self, service: Service) -> Installed:
         try:
@@ -283,6 +300,8 @@ class Stack:
                 "port": port,
                 "user": service.superuser,
                 "data": str(service.data),
+                "version": self.service_runtimes.get(service.name, {}).get("version"),
+                "client": self.service_runtimes.get(service.name, {}).get("client"),
             }
             for service, port in self.services.values()
         ]

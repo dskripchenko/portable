@@ -198,3 +198,38 @@ class TestPortProbe:
         assert "." in Stack.PROBE_HOST
         assert not NAME.match(Stack.PROBE_HOST), "a site could be named this"
         assert NAME.match(label), "the first label alone is a legal site name — that is the point"
+
+
+class TestWhatAServiceIsActuallyRunning:
+    """
+    A service declared without a version follows the newest installed. That is
+    a preference, not a fact — and with three versions of the same database on
+    the machine, the fact is the one worth reporting.
+    """
+
+    def test_the_report_names_the_version_and_its_client(self, tmp_path):
+        from portable.services import Service
+
+        instance = Stack(supervisor=Supervisor(), runtimes=Runtimes())
+        instance.services["postgres"] = (Service(name="postgres", kind="postgres"), 5432)
+        instance.service_runtimes["postgres"] = {
+            "version": "16.9",
+            "client": str(tmp_path / "psql"),
+        }
+
+        reported = instance.service_report()[0]
+
+        assert reported["version"] == "16.9"
+        assert reported["client"] == str(tmp_path / "psql")
+
+    def test_one_that_is_not_running_reports_neither(self, tmp_path):
+        # Rather than the declaration dressed up as an observation.
+        from portable.services import Service
+
+        instance = Stack(supervisor=Supervisor(), runtimes=Runtimes())
+        instance.services["cache"] = (Service(name="cache", kind="redis"), 6379)
+
+        reported = instance.service_report()[0]
+
+        assert reported["version"] is None
+        assert reported["client"] is None

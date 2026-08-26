@@ -177,8 +177,21 @@ schon.
 | `portable service cli [name]` | Eine Eingabeaufforderung dazu — `psql`, `mariadb`, `redis-cli`. |
 | `portable service remove <name>` | Anhalten. **Die Daten bleiben.** |
 
+Mehrere Versionen derselben Datenbank laufen nebeneinander: jede ist ein Dienst
+mit eigenem Namen, eigener Version und eigenem Port, und `service cli <name>`
+wählt über den Namen, nicht über die Version. `service list` zeigt, auf welcher
+Version jeder tatsächlich läuft — nicht immer die angeforderte, denn ein ohne
+Version angemeldeter Dienst folgt der neuesten installierten.
+
+```powershell
+portable service add postgres --name pg16 --version 16 --port 5432
+portable service add postgres --name pg17 --version 17 --port 5433
+portable service cli pg17
+```
+
 `service cli` startet den Client aus demselben Archiv wie den Server, gerichtet
-auf den richtigen Port über TCP. Alle drei schreiben dieselben drei Angaben —
+auf den richtigen Port über TCP — und zwar den Client der laufenden Version,
+nicht den der neuesten auf der Maschine. Alle drei schreiben dieselben drei Angaben —
 Host, Port, Benutzer — auf drei verschiedene Weisen, und der MariaDB-Client
 bevorzugt unter Windows zusätzlich eine benannte Pipe, wenn der Host lokal
 aussieht — die dieser Server nicht anbietet. Der Name kann entfallen, wenn es

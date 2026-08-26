@@ -1721,7 +1721,13 @@ def _service_list(args) -> int:
     for service in result["services"]:
         state = f"127.0.0.1:{service['port']}" if service["running"] else "stopped"
 
-        print(f"  {service['name']:<12} {service['kind']:<10} {state:<20} user {service['user']}")
+        # The version it is actually on, not the one it asked for: a service
+        # declared without one follows the newest installed, and with three of
+        # them on the machine that is the whole question.
+        version = service.get("running_version") or service.get("version") or ""
+        kind = f"{service['kind']} {version}".strip()
+
+        print(f"  {service['name']:<12} {kind:<16} {state:<20} user {service['user']}")
 
     return 0
 

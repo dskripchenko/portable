@@ -144,7 +144,18 @@ PHP 7.2 构建，将来也不会；xdebug 2.9.8 可以。
 | `portable service cli [名称]` | 打开它的命令行 —— `psql`、`mariadb`、`redis-cli`。 |
 | `portable service remove <名称>` | 停掉它。**数据保留。** |
 
-`service cli` 启动与服务端同一个压缩包里带来的客户端，通过 TCP 指向正确的端口。
+同一种数据库的多个版本可以并存：每个都是一个服务，有自己的名称、版本和端口，而
+`service cli <名称>` 按名称挑选，不按版本。`service list` 会显示每个服务实际跑在
+哪个版本上 —— 那未必是它要求的版本：声明时没写版本的服务，跟随已安装的最新版。
+
+```powershell
+portable service add postgres --name pg16 --version 16 --port 5432
+portable service add postgres --name pg17 --version 17 --port 5433
+portable service cli pg17
+```
+
+`service cli` 启动与服务端同一个压缩包里带来的客户端，通过 TCP 指向正确的端口 ——
+而且是正在运行的那个版本的客户端，不是机器上最新的那个。
 这三者把同样的三件事 —— 主机、端口、用户 —— 写成三种不同的样子；而且在 Windows
 上，当主机看起来是本地时，MariaDB 的客户端还偏好命名管道，而这里的服务端并不提供
 它。只有一个数据库时，名称可以省略。

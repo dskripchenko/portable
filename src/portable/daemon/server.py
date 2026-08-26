@@ -902,7 +902,12 @@ class ControlServer:
                 {
                     "name": name,
                     "kind": service.kind,
+                    # What it was declared as — `None` means "the newest" —
+                    # and what that turned out to be. With three versions of
+                    # the same database installed, the first is a preference
+                    # and only the second is a fact.
                     "version": service.version,
+                    "running_version": running.get(name, {}).get("version"),
                     "running": name in running,
                     "port": running.get(name, {}).get("port", service.port),
                     "user": service.superuser,
@@ -969,11 +974,22 @@ class ControlServer:
                 f"`portable up` starts everything that is declared.",
             )
 
-        try:
-            runtime = self.runtimes.get(service.kind, service.version)
-            client = runtime.executable_named(services.EXECUTABLES[service.kind]["client"])
-        except NotInstalled as error:
-            raise ApiError(HTTPStatus.NOT_FOUND, "no-client", str(error)) from error
+        # The client the running server was started beside, when the stack
+        # still has it. Resolving it again by version follows the same rule and
+        # can still answer differently: a service declared without a version
+        # follows the newest installed, and installing a newer one while the
+        # old is running moves that answer without moving the server. Then
+        # `psql` is from one version and the server is another.
+        started_with = running.get(service.name, {}).get("client")
+
+        if started_with:
+            client = Path(started_with)
+        else:
+            try:
+                runtime = self.runtimes.get(service.kind, service.version)
+                client = runtime.executable_named(services.EXECUTABLES[service.kind]["client"])
+            except NotInstalled as error:
+                raise ApiError(HTTPStatus.NOT_FOUND, "no-client", str(error)) from error
 
         return {
             "name": service.name,

@@ -169,8 +169,21 @@ one. Xdebug 3 does not build for PHP 7.2 and never will; xdebug 2.9.8 does.
 | `portable service cli [name]` | A prompt at one — `psql`, `mariadb`, `redis-cli`. |
 | `portable service remove <name>` | Stop it. **The data is kept.** |
 
+Several versions of the same database run side by side: each is a service with
+its own name, version and port, and `service cli <name>` picks by name rather
+than by version. `service list` shows the version each one is actually on —
+which is not always the one it asked for, since a service declared without a
+version follows the newest installed.
+
+```powershell
+portable service add postgres --name pg16 --version 16 --port 5432
+portable service add postgres --name pg17 --version 17 --port 5433
+portable service cli pg17
+```
+
 `service cli` runs the client that shipped in the same archive as the server,
-pointed at the right port over TCP. The three spell the same three facts —
+pointed at the right port over TCP — and the client of the version that is
+running, not whichever is newest on the machine. The three spell the same three facts —
 host, port, user — three different ways, and MariaDB's client additionally
 prefers a named pipe on Windows when the host looks local, which this server
 does not offer. The name can be left out when there is only one.

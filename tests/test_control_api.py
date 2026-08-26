@@ -778,3 +778,54 @@ class TestAskingHowToOpenAClient:
         assert status == 200, answer
         assert answer["argv"][0] == str(client)
         assert "6379" in answer["argv"]
+
+    def test_the_client_is_the_one_the_server_was_started_beside(
+        self, server, endpoint, monkeypatch, tmp_path
+    ):
+        """
+        With three versions installed, "the newest" is not an answer.
+
+        A service declared without a version follows the newest installed, and
+        installing a newer one while the old one is running moves that answer
+        without moving the server. Resolving the client again would then hand
+        back a `psql` from a version that is not the one listening.
+        """
+        from portable.runtimes import Installed
+        from portable.services import Service
+
+        older = tmp_path / "postgres-16" / "bin"
+        older.mkdir(parents=True)
+        (older / "psql").write_text("", encoding="utf-8")
+
+        newer = tmp_path / "postgres-18" / "bin"
+        newer.mkdir(parents=True)
+        (newer / "psql").write_text("", encoding="utf-8")
+
+        server.services_registry.add(Service(name="postgres", kind="postgres", port=5432))
+        monkeypatch.setattr(
+            server.stack,
+            "service_report",
+            lambda: [
+                {
+                    "name": "postgres",
+                    "port": 5432,
+                    "version": "16.9",
+                    "client": str(older / "psql"),
+                }
+            ],
+        )
+        # What re-resolving would find: the newest on the machine.
+        monkeypatch.setattr(
+            server.runtimes,
+            "get",
+            lambda name, version=None: Installed(
+                name="postgres", version="18.1", directory=newer.parent, managed=True
+            ),
+        )
+
+        status, answer = self.ask(server, endpoint, "postgres")
+
+        assert status == 200, answer
+        assert answer["argv"][0] == str(older / "psql"), (
+            "it handed back the client of a version that is not the one running"
+        )

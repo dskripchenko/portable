@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.4.1 — 2026-08-26
+
+### Fixed — which version's client, with several installed
+
+`service cli` resolved the client the same way the server had been resolved —
+by the declared version, or the newest installed when none was declared. Same
+rule, and it can still answer differently: installing a newer version while the
+old one is running moves "the newest" without moving the server. With three
+PostgreSQL versions on the machine that is not a hypothetical.
+
+The client that each running service was started beside is kept and used, so
+`psql` always belongs to the server that is listening.
+
+### Added — `service list` names the version
+
+It showed name, kind, port and user, and with several versions of the same
+database the missing column was the one that mattered. It now shows the version
+each service is actually on, which for one declared without a version is a fact
+rather than the preference it was declared with.
+
 ## 1.4.0 — 2026-08-26
 
 ### Added — a prompt at a running database
