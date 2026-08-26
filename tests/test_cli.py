@@ -449,3 +449,51 @@ class TestSplittingATypedLine:
 
         with pytest.raises(ValueError):
             cli.split('site add demo "c:\\unclosed')
+
+
+class TestOptionsBeforeTheSubcommand:
+    """
+    `portable ext --php 8.3 install xdebug` parsed without complaint and
+    installed into PHP 8.5 — reported from Windows.
+
+    argparse copies a subcommand's defaults over the namespace after the group
+    has already parsed, so a value given before the subcommand is replaced by
+    the subcommand's own `None`. Silently: nothing rejects the flag, nothing
+    warns, and the command reports success against the wrong PHP. `--home` had
+    the fix from the start; the others did not.
+    """
+
+    def parse(self, line: str):
+        return cli._parser().parse_args(line.split())
+
+    def test_php_is_kept_wherever_it_is_typed(self):
+        for line in (
+            "ext --php 8.3 install xdebug",
+            "ext install --php 8.3 xdebug",
+            "ext --php 8.3 enable xdebug",
+            "ext enable --php 8.3 xdebug",
+            "ext --php 8.3 list",
+            "ext list --php 8.3",
+        ):
+            assert self.parse(line).php == "8.3", line
+
+    def test_json_is_kept_wherever_it_is_typed(self):
+        for line in (
+            "ext --json list",
+            "ext list --json",
+            "home --json clear",
+            "home clear --json",
+            "path --json remove",
+            "path remove --json",
+        ):
+            assert self.parse(line).json is True, line
+
+    def test_the_default_is_still_the_default(self):
+        assert self.parse("ext list").php is None
+        assert self.parse("ext list").json is False
+
+    def test_home_survives_it_too(self):
+        # The one that always worked, kept honest — it is where the pattern the
+        # others now follow came from.
+        assert self.parse("--home C:/x status").home == "C:/x"
+        assert self.parse("status --home C:/x").home == "C:/x"

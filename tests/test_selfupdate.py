@@ -422,7 +422,7 @@ class TestStartingTheSwap:
         monkeypatch.setattr(
             selfupdate,
             "swap",
-            lambda *a: (_ for _ in ()).throw(PermissionError(5, "Access is denied")),
+            lambda *a, **k: (_ for _ in ()).throw(PermissionError(5, "Access is denied")),
         )
 
         assert cli.main(["upgrade"]) == 1
@@ -527,6 +527,25 @@ class TestWhenTheDataLivesInsideTheBundle:
         assert not (keep / "data").exists()
         assert (keep / "portable.cmd").read_text() == "old"
 
+    def test_the_data_directory_is_not_moved_at_all(self, tmp_path):
+        """
+        It used to be carried out and back, which is a lot of moving parts
+        around every site and database somebody has. Now the folder stays and
+        only its bundle files change, so there is nothing to carry.
+        """
+        current = self.installation(tmp_path / "current", "old")
+        replacement = self.installation(tmp_path / "new", "new", beside=False)
+        keep = tmp_path / "kept"
+
+        before = (current / "data" / "sites.json").stat().st_ino
+
+        self.start(current, replacement, keep)
+
+        assert self.wait_for(lambda: (current / "portable.cmd").read_text() == "new")
+        assert (current / "data" / "sites.json").stat().st_ino == before, (
+            "the data was moved, when it did not need to be touched"
+        )
+
     def test_the_helpers_log_is_not_inside_what_it_renames(self, tmp_path, monkeypatch):
         """
         It was, and it held the lock that stopped the rename.
@@ -548,3 +567,112 @@ class TestWhenTheDataLivesInsideTheBundle:
         log = started["log"]
 
         assert current not in log.parents, f"the log is inside the bundle: {log}"
+
+
+class TestUpgradingFromInsideTheFolder:
+    """
+    The reason this never finished on Windows, reported twice as "it downloads
+    and stays on the old version".
+
+    Windows will not rename a directory that is any process's current
+    directory. By the time an upgrade runs it is usually two: the shell it was
+    typed into — the documentation says `portable.cmd upgrade`, which means
+    standing in the folder — and the helper, which inherited that directory
+    because nothing said otherwise. So the rename could not succeed, the
+    deadline ran out, the working copy went back, and nothing had changed.
+
+    Moving the contents instead means the directory is never renamed, and
+    nothing about whose current directory it is matters.
+
+    On POSIX this passes either way — nothing there objects to renaming a
+    directory somebody is standing in. Windows is the witness, and CI runs one.
+    """
+
+    def bundle(self, root: Path, marker: str) -> Path:
+        (root / "python").mkdir(parents=True)
+        (root / "portable.cmd").write_text(marker, encoding="utf-8")
+
+        return root
+
+    def test_it_completes_while_a_shell_stands_in_the_bundle(self, tmp_path):
+        current = self.bundle(tmp_path / "current", "old")
+        replacement = self.bundle(tmp_path / "new", "new")
+        keep = tmp_path / "kept"
+        source = str(Path(__file__).resolve().parent.parent / "src")
+
+        # cwd=current is the whole point: this process holds the directory the
+        # way an ordinary terminal does, and then goes away.
+        subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; sys.path.insert(0, sys.argv[1]); "
+                    "from pathlib import Path; "
+                    "from portable import selfupdate; "
+                    "selfupdate.RENAME_SECONDS = 20; "
+                    "selfupdate.swap(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]))"
+                ),
+                source,
+                str(current),
+                str(replacement),
+                str(keep),
+            ],
+            check=True,
+            timeout=60,
+            cwd=str(current),
+            env={**os.environ, "PORTABLE_HOME": str(tmp_path / "home")},
+        )
+
+        deadline = time.monotonic() + 25
+
+        while time.monotonic() < deadline:
+            try:
+                if (current / "portable.cmd").read_text() == "new":
+                    break
+            except OSError:
+                pass
+
+            time.sleep(0.2)
+
+        log = tmp_path / "portable-upgrade.log"
+        said = log.read_text(encoding="utf-8", errors="replace") if log.exists() else "(no log)"
+
+        assert (current / "portable.cmd").read_text() == "new", said
+        assert (keep / "portable.cmd").read_text() == "old"
+
+    def test_the_bundle_directory_itself_is_never_renamed(self, tmp_path):
+        # The directory keeps its identity, which is what makes every handle on
+        # it — a shell, an editor, a file browser — stop mattering.
+        current = self.bundle(tmp_path / "current", "old")
+        replacement = self.bundle(tmp_path / "new", "new")
+        before = current.stat().st_ino
+
+        subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; sys.path.insert(0, sys.argv[1]); "
+                    "from pathlib import Path; "
+                    "from portable import selfupdate; "
+                    "selfupdate.RENAME_SECONDS = 20; "
+                    "selfupdate.swap(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]))"
+                ),
+                source := str(Path(__file__).resolve().parent.parent / "src"),
+                str(current),
+                str(replacement),
+                str(tmp_path / "kept"),
+            ],
+            check=True,
+            timeout=60,
+            env={**os.environ, "PORTABLE_HOME": str(tmp_path / "home")},
+        )
+
+        deadline = time.monotonic() + 25
+
+        while time.monotonic() < deadline and (current / "portable.cmd").read_text() != "new":
+            time.sleep(0.2)
+
+        assert current.stat().st_ino == before, "the directory was replaced rather than refilled"
+        assert source

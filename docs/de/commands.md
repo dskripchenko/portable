@@ -23,13 +23,19 @@ dem Zustand, in dem die Frage gewöhnlich aufkommt.
 
 `upgrade` lädt die neueste Ausgabe, prüft sie gegen die daneben veröffentlichte
 Prüfsumme und startet sie einmal, bevor irgendetwas Vorhandenes angefasst wird.
-Erst dann wird die alte Installation beiseitegeschoben und die neue an ihre
-Stelle gesetzt — von der Shell des Systems, aus einem Skript außerhalb beider,
-denn Windows benennt kein Verzeichnis um, in dem ein Programm läuft.
+Erst dann werden die alten Dateien beiseitegeschoben und die neuen an ihre
+Stelle gesetzt.
+
+Der Ordner selbst wird nie umbenannt, und das mit Absicht: Windows weigert sich,
+ein Verzeichnis umzubenennen, das für irgendeinen Prozess das aktuelle ist — und
+beim Aktualisieren ist es das gewöhnlich, denn die Shell, in die Sie den Befehl
+getippt haben, steht darin. Nur der Inhalt zieht um. Was im Ordner nicht zum
+Bündel gehört, bleibt genau dort, auch das Datenverzeichnis, wenn
+`home set --beside` es dorthin gelegt hat.
 
 Die vorherige Version bleibt neben der neuen liegen, bis Sie sie löschen, und
-scheitert der Tausch, kommt die alte zurück. Ein Werkzeug, das bloß veraltet
-ist, ist weit besser als eines, das nicht da ist.
+scheitert der Tausch, kommt alles zurück. Ein Werkzeug, das bloß veraltet ist,
+ist weit besser als eines, das nicht da ist.
 
 `logs php -f` folgt allen Arbeitern aller PHP-Versionen zugleich, denn ein Name
 trifft sowohl ein ganzes Protokoll als auch dessen Anfang — so denkt man über

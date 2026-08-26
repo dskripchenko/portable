@@ -169,7 +169,14 @@ def _parser() -> argparse.ArgumentParser:
 
     def add_path(name: str, help_text: str, run) -> argparse.ArgumentParser:
         sub = path_commands.add_parser(name, help=help_text, parents=[common])
-        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.add_argument(
+            "--json",
+            action="store_true",
+            # SUPPRESS, for the reason `--home` above carries: a subcommand's own
+            # default overwrites a value given before the command name, silently.
+            default=argparse.SUPPRESS,
+            help="Machine-readable output.",
+        )
         sub.set_defaults(run=run)
 
         return sub
@@ -339,8 +346,21 @@ def _parser() -> argparse.ArgumentParser:
 
     def add_ext(name: str, help_text: str, run) -> argparse.ArgumentParser:
         sub = ext_commands.add_parser(name, help=help_text, parents=[common])
-        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
-        sub.add_argument("--php", help="Which installed PHP. Defaults to the newest.")
+        sub.add_argument(
+            "--json",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help="Machine-readable output.",
+        )
+        # SUPPRESS for the reason `--home` carries above, and this one had a
+        # cost: `ext --php 8.3 install xdebug` parsed without complaint, lost
+        # the 8.3 to this parser's own default, and installed into the newest
+        # PHP on the machine. Reported from Windows, where it landed in 8.5.
+        sub.add_argument(
+            "--php",
+            default=argparse.SUPPRESS,
+            help="Which installed PHP. Defaults to the newest.",
+        )
         sub.set_defaults(run=run)
 
         return sub
@@ -375,7 +395,14 @@ def _parser() -> argparse.ArgumentParser:
 
     def add_home(name: str, help_text: str, run) -> argparse.ArgumentParser:
         sub = home_commands.add_parser(name, help=help_text, parents=[common])
-        sub.add_argument("--json", action="store_true", help="Machine-readable output.")
+        sub.add_argument(
+            "--json",
+            action="store_true",
+            # SUPPRESS, for the reason `--home` above carries: a subcommand's own
+            # default overwrites a value given before the command name, silently.
+            default=argparse.SUPPRESS,
+            help="Machine-readable output.",
+        )
         sub.set_defaults(run=run)
 
         return sub
@@ -778,6 +805,8 @@ def _upgrade(args) -> int:
     except selfupdate.UpgradeFailed as error:
         return _fail(args, "upgrade-failed", str(error))
 
+    _report_last_attempt(bundle)
+
     if not selfupdate.newer(release.version, VERSION):
         return _emit(
             args,
@@ -818,7 +847,7 @@ def _upgrade(args) -> int:
     keep = selfupdate.previous(bundle, VERSION)
 
     try:
-        pid = selfupdate.swap(bundle, unpacked, keep)
+        pid = selfupdate.swap(bundle, unpacked, keep, workspace=workspace)
     except OSError as error:
         # The daemon is already stopped by this point, so a traceback here
         # leaves somebody with no supervisor, no upgrade and no sentence about
@@ -853,6 +882,40 @@ def _upgrade(args) -> int:
         f"finishes as it closes.\n"
         f"The previous version is kept at {keep} until you delete it.\n"
         f"Run `portable version` in a new window to confirm, then `portable up`.",
+    )
+
+
+def _report_last_attempt(bundle: Path) -> None:
+    """
+    Say so if the previous attempt failed.
+
+    The exchange happens after this process exits, so nothing here can report
+    on it — and the one place it is written down is a log file beside the
+    bundle that nobody has a reason to open. That is how an upgrade that failed
+    the same way every time could look like an upgrade that did nothing at all.
+    """
+    log = bundle.parent / "portable-upgrade.log"
+
+    try:
+        said = log.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return
+
+    if "swapped:" in said.rsplit("waiting for", 1)[-1]:
+        return
+
+    trouble = [
+        line for line in said.splitlines() if "could not" in line or "swap failed" in line
+    ]
+
+    if not trouble:
+        return
+
+    print(
+        "The last attempt did not finish:\n"
+        + "\n".join(f"  {line}" for line in trouble[-5:])
+        + f"\n({log})\n",
+        file=sys.stderr,
     )
 
 

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.2 — 2026-08-26
+
+### Fixed — the upgrade that downloaded and changed nothing
+
+Reported twice, and the second time as "so it never really worked".
+
+The exchange renamed the bundle directory, and **Windows will not rename a
+directory that is any process's current directory**. By the time an upgrade
+runs it is usually two of them: the shell it was typed into — the documentation
+says `portable.cmd upgrade`, which means standing in the folder — and the
+helper itself, which inherited that directory because nothing told it
+otherwise. The rename could not succeed, the deadline ran out, the working copy
+went back, and the whole thing looked like a download that did nothing.
+
+- **The folder is no longer renamed.** Its contents are: the old bundle files
+  move out to the copy kept beside it, the new ones move in. Renaming files
+  inside a directory is not restricted the way renaming the directory is, and a
+  running executable can be renamed even though it cannot be deleted.
+- **The data directory is no longer carried across.** With
+  `home set --beside` it lives in that folder, and the folder is now exactly
+  where it stays — so every site and database that used to be moved out and
+  back, with a failure path of its own, is simply not touched.
+- **The helper no longer stands in the directory it is working on**, which was
+  half of the lock it was waiting on.
+- **A failed exchange is reported.** It happens after the command exits, so the
+  only record was a log beside the bundle that nobody had a reason to open.
+  `upgrade` now reads it and says what went wrong last time.
+
+### Fixed — `ext --php 8.3 install xdebug` installed into 8.5
+
+An option given before a subcommand was replaced by that subcommand's own
+default — argparse copies its defaults over the namespace after the group has
+already parsed. Nothing rejected the flag and nothing warned; the command
+reported success against the newest PHP on the machine.
+
+`--home` had carried the fix for this from the start. `--php` and `--json` now
+do too, on `ext`, `home` and `path`.
+
 ## 1.3.1 — 2026-08-25
 
 ### Fixed — a command finishing at the wrong moment

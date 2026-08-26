@@ -23,12 +23,17 @@ machine where the question tends to come up.
 
 `upgrade` downloads the newest release, verifies it against the digest published
 beside it, and runs it once before touching anything that already exists. Only
-then is the old installation moved aside and the new one put in its place — by
-the system's own shell, from a script outside both, because Windows will not
-rename a directory containing a running program.
+then are the old files moved aside and the new ones put in their place.
+
+The folder itself is never renamed, and that is deliberate: Windows refuses to
+rename a directory that is any process's current directory, and when you are
+upgrading it usually is one — the shell you typed the command into is standing
+in it. Only the contents move. Anything in the folder that is not part of the
+bundle stays exactly where it is, including the data directory when
+`home set --beside` put it there.
 
 The previous version is kept beside the new one until you delete it, and if the
-exchange fails the old one is put back. A tool that is merely out of date is a
+exchange fails everything is put back. A tool that is merely out of date is a
 great deal better than one that is not there.
 
 `logs php -f` follows every worker of every PHP version at once, because a name

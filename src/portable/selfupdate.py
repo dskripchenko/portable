@@ -226,38 +226,57 @@ def works(bundle_root: Path) -> str:
     return reported
 
 
-def swap(current: Path, replacement: Path, keep: Path) -> int:
+def swap(
+    current: Path, replacement: Path, keep: Path, workspace: Path | None = None
+) -> int:
     """
-    Start the process that exchanges the directories, and return its pid.
+    Start the process that exchanges the two installations, and return its pid.
 
-    Run by the interpreter **already executing** — this one — with the code
-    passed as an argument rather than written to a file.
+    It moves the **contents** of the bundle directory rather than the directory
+    itself, and that is the whole design rather than an implementation detail.
 
-    That last part is the whole of it. A script on disk is a thing application
-    control policies exist to stop, and on a managed machine they do: reported
-    from Windows as "portable-swap.py was blocked in accordance with application
-    control policies". The same lesson the installer already carries — a `.ps1`
-    on disk will not run under the default execution policy while a string
-    passed to `iex` will — and it applies here for the same reason. Nothing is
-    written, so there is no file for a rule to match.
+    Windows will not rename a directory that is any process's current
+    directory, and by the time an upgrade runs it is usually two: the shell it
+    was typed into — the documentation itself says `portable.cmd upgrade`,
+    which means standing in the folder — and the helper, which inherited that
+    directory because nothing told it otherwise. So the rename could not
+    succeed, the deadline ran out, the working copy was put back, and the whole
+    thing looked like a download that changed nothing. Reported exactly that
+    way, twice.
 
-    The interpreter is the running one rather than the new bundle's, which was
-    the obvious choice and the wrong one: a freshly extracted `python.exe` can
-    be held by whatever is scanning it, and `CreateProcess` then fails with
-    access denied. The one already running cannot be, because it is already
-    running — and renaming the directory it runs from is permitted, since the
-    loader maps images with `FILE_SHARE_DELETE`. A test records that.
+    Renaming files and folders *inside* a directory is not restricted like
+    that, and a running executable can be renamed even though it cannot be
+    deleted — which is how any updater replaces a program while it runs.
 
-    It waits for the calling process to exit first, because until then that
-    process is running from `current`, and on Windows `cmd.exe` still holds
-    `portable.cmd` open.
+    It also means the data directory needs no carrying: with
+    `home set --beside` it sits in the bundle folder, and the folder is now
+    exactly where it stays. What used to be a move — every site and every
+    database, with a failure path of its own — is now nothing happening to it.
+
+    Run by the interpreter **already executing**, with the code passed as an
+    argument rather than written to a file. A script on disk is a thing
+    application control policies exist to stop, and on a managed machine they
+    do: reported from Windows as "portable-swap.py was blocked in accordance
+    with application control policies". Nothing is written, so there is no file
+    for a rule to match. The running interpreter rather than the new bundle's,
+    because a freshly extracted `python.exe` can still be held by whatever is
+    scanning it, and `CreateProcess` then fails with access denied.
     """
-    # Anything in the folder that is not part of a bundle. With
-    # `home set --beside` that is the data directory and the pointer naming it,
-    # and losing them is losing every site and database.
-    carry = sorted(
-        entry.name for entry in current.iterdir() if entry.name not in BUNDLE_FILES
-    )
+    # Everything the new version will place, plus everything the old one put
+    # there. The first would collide, the second would be left behind mixed in
+    # with the new. Anything else in the folder is not ours and is not touched:
+    # the data directory, the pointer naming it, whatever somebody kept beside
+    # the tool.
+    arriving = {entry.name for entry in replacement.iterdir()} if replacement.is_dir() else set()
+    names = sorted({*BUNDLE_FILES, *arriving})
+
+    # The download is cleaned up afterwards, and only when it is somewhere that
+    # cannot possibly take the installation with it. Deriving this from the
+    # replacement's parent — which is what it did for an hour — deletes the
+    # directory the bundle lives in the moment an archive unpacks one level
+    # flatter than expected.
+    if workspace is not None and _contains(workspace, current):
+        workspace = None
 
     return spawn.start_detached(
         [
@@ -268,14 +287,17 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
             str(current),
             str(replacement),
             str(keep),
+            str(workspace or ""),
             str(RENAME_SECONDS),
-            *carry,
+            *names,
         ],
-        # Beside the bundle, never inside it. Windows will not rename a
-        # directory holding an open file, and with the data directory inside the
-        # bundle — which `--beside` puts there — the helper's own log was in the
-        # directory it was trying to rename. It waited out its deadline against
-        # a lock it was holding itself.
+        # Outside the bundle, so that the helper is not itself holding the thing
+        # it is working on — which it was, and which is half of why this never
+        # completed on Windows.
+        cwd=current.parent,
+        # Beside the bundle, never inside it: with `--beside` the data directory
+        # is in the bundle folder, and a log written into a folder being taken
+        # apart is one more open handle in the wrong place.
         log=current.parent / "portable-upgrade.log",
     )
 
@@ -288,7 +310,7 @@ def swap(current: Path, replacement: Path, keep: Path) -> int:
 #:
 #: With `-c`, `sys.argv[0]` is `"-c"` and everything after it follows, which is
 #: why the arguments below start at 1 exactly as they would for a script.
-_HELPER = '''"""Exchange two directories once the process using the first has gone."""
+_HELPER = '''"""Exchange two installations once the process using the first has gone."""
 
 import os
 import shutil
@@ -320,7 +342,7 @@ def alive(pid):
     return True
 
 
-def rename(source, destination, deadline):
+def move(source, destination, deadline):
     """Keep trying: whatever blocks this is usually in the act of closing."""
     last = None
 
@@ -333,16 +355,25 @@ def rename(source, destination, deadline):
             last = error
             time.sleep(0.25)
 
-    raise last if last else OSError(f"could not rename {source}")
+    raise last if last else OSError("could not move %s" % source)
+
+
+def undo(done):
+    """Put back what was moved, newest move first."""
+    for source, destination in reversed(done):
+        try:
+            os.rename(destination, source)
+        except OSError as error:
+            print("could not put %s back: %s" % (source, error), flush=True)
 
 
 def main():
     pid = int(sys.argv[1])
-    current, replacement, keep = sys.argv[2], sys.argv[3], sys.argv[4]
-    deadline = time.monotonic() + float(sys.argv[5])
-    carry = sys.argv[6:]
+    current, replacement, keep, workspace = sys.argv[2:6]
+    deadline = time.monotonic() + float(sys.argv[6])
+    names = sys.argv[7:]
 
-    print(f"waiting for {pid}", flush=True)
+    print("waiting for %s" % pid, flush=True)
 
     while alive(pid) and time.monotonic() < deadline:
         time.sleep(0.2)
@@ -353,40 +384,64 @@ def main():
     if os.path.exists(keep):
         shutil.rmtree(keep, ignore_errors=True)
 
-    rename(current, keep, deadline)
+    os.makedirs(keep, exist_ok=True)
 
-    try:
-        rename(replacement, current, deadline)
-    except OSError as error:
-        # Put the working installation back. A tool that is merely out of date
-        # is a great deal better than one that is not there.
-        os.rename(keep, current)
+    # Out: the old version, into the folder kept beside this one.
+    taken = []
 
-        print(f"swap failed and was undone: {error}", flush=True)
+    for name in names:
+        source = os.path.join(current, name)
 
-        raise SystemExit(1)
-
-    # Whatever was in the folder besides the bundle: the data directory when it
-    # lives there, and the pointer that says so. Moved rather than copied, which
-    # on one volume is a rename and costs nothing however large the databases.
-    for name in carry:
-        source = os.path.join(keep, name)
-        destination = os.path.join(current, name)
-
-        if not os.path.exists(source) or os.path.exists(destination):
+        if not os.path.exists(source):
             continue
 
         try:
-            os.rename(source, destination)
-            print(f"carried across: {name}", flush=True)
+            move(source, os.path.join(keep, name), deadline)
+            taken.append((source, os.path.join(keep, name)))
         except OSError as error:
-            print(f"could not carry {name} across: {error}", flush=True)
+            print("could not set aside %s: %s" % (name, error), flush=True)
+            undo(taken)
+            shutil.rmtree(keep, ignore_errors=True)
 
-    print(f"swapped: {current} replaced, previous kept at {keep}", flush=True)
+            raise SystemExit(1)
+
+    # In: the new one, into the folder nobody had to rename.
+    placed = []
+
+    for name in sorted(os.listdir(replacement)):
+        source = os.path.join(replacement, name)
+
+        try:
+            move(source, os.path.join(current, name), deadline)
+            placed.append((source, os.path.join(current, name)))
+        except OSError as error:
+            # A tool that is merely out of date is a great deal better than one
+            # that is not there.
+            print("swap failed and was undone: %s" % error, flush=True)
+            undo(placed)
+            undo(taken)
+            shutil.rmtree(keep, ignore_errors=True)
+
+            raise SystemExit(1)
+
+    if workspace:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+    print("swapped: %s replaced, previous kept at %s" % (current, keep), flush=True)
 
 
 main()
 '''
+
+
+def _contains(directory: Path, other: Path) -> bool:
+    """Whether `other` is `directory` or sits inside it."""
+    try:
+        other.resolve().relative_to(directory.resolve())
+    except (ValueError, OSError):
+        return False
+
+    return True
 
 
 def can_upgrade() -> Path:
