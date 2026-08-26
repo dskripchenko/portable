@@ -424,9 +424,12 @@ class TestOpeningAPromptAtOne:
     """
 
     def test_postgres(self):
-        argv = services.client_command("postgres", Path("/x/psql"), 5432, "postgres")
+        client = Path("/x/psql")
+        argv = services.client_command("postgres", client, 5432, "postgres")
 
-        assert argv[0] == "/x/psql"
+        # `str(Path(...))`, not the string it was written as: on Windows that is
+        # `\x\psql`, and comparing against the POSIX spelling tests the test.
+        assert argv[0] == str(client)
         assert "--port=5432" in argv
         assert "--username=postgres" in argv
 
@@ -437,6 +440,7 @@ class TestOpeningAPromptAtOne:
         # plainly running.
         argv = services.client_command("mariadb", Path("/x/mariadb"), 3306, "root")
 
+
         assert "--protocol=tcp" in argv
         assert "--port=3306" in argv
         assert "--user=root" in argv
@@ -444,9 +448,10 @@ class TestOpeningAPromptAtOne:
     def test_redis_is_given_no_user(self):
         # It has no accounts until somebody configures them, and this one is
         # not configured with any.
-        argv = services.client_command("redis", Path("/x/redis-cli"), 6379, "")
+        client = Path("/x/redis-cli")
+        argv = services.client_command("redis", client, 6379, "")
 
-        assert argv == ["/x/redis-cli", "-h", "127.0.0.1", "-p", "6379"]
+        assert argv == [str(client), "-h", "127.0.0.1", "-p", "6379"]
 
     def test_everything_goes_over_the_loopback(self):
         for kind, user in (("postgres", "postgres"), ("mariadb", "root"), ("redis", "")):
