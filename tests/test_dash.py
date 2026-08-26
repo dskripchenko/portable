@@ -705,3 +705,166 @@ class TestOpeningADatabaseClient:
 
             assert app._refused("service list") == ""
             assert app._refused("service add redis") == ""
+
+
+class TestTheFaceInTheCorner:
+    """
+    It answers the same question the summary does — is anything wrong — and
+    answers it from further away: a shape changing is visible across a room, a
+    line of text is not.
+    """
+
+    def test_every_face_fits_the_frame(self):
+        from portable import mascot
+
+        for state in mascot.FACES:
+            rows = mascot.face(state)
+
+            assert len(rows) == mascot.HEIGHT, state
+            assert {len(row) for row in rows} == {mascot.WIDTH}, (
+                f"{state} bends the box: {rows}"
+            )
+
+    def test_nothing_is_beyond_ascii(self):
+        # The busy indicator is `|/-\` for this reason: a terminal without the
+        # font shows squares, and a mascot of squares makes the screen look
+        # broken at the moment it is meant to reassure.
+        from portable import mascot
+
+        for state in mascot.FACES:
+            for row in mascot.face(state):
+                assert row.isascii(), f"{state} is not ASCII: {row!r}"
+
+        assert mascot.SPIN.isascii()
+
+    def test_the_mouth_spins_while_something_runs(self):
+        from portable import mascot
+
+        mouths = {mascot.face("working", frame)[2] for frame in range(len(mascot.SPIN))}
+
+        assert len(mouths) == len(mascot.SPIN), "the working face is a still picture"
+
+    def test_an_unknown_state_is_a_face_and_not_an_exception(self):
+        # Decoration on a screen whose job is reporting other things. One that
+        # can take the dashboard down with it would be a poor trade.
+        from portable import mascot
+
+        assert mascot.face("elated") == mascot.face("ready")
+
+    def test_what_each_state_answers(self):
+        from portable import mascot
+
+        assert mascot.state_for(running=False, failing=False, busy=True) == "stopped"
+        assert mascot.state_for(running=True, failing=True, busy=True) == "error"
+        assert mascot.state_for(running=True, failing=False, busy=True) == "working"
+        assert mascot.state_for(running=True, failing=False, busy=False) == "ready"
+
+    async def test_it_shows_the_state_the_screen_is_in(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=False, home="C:/p"))
+            assert "zZ" in str(app.query_one("#mascot").content)
+
+            app.show(
+                dash.Snapshot(
+                    running=True,
+                    port=80,
+                    home="C:/p",
+                    processes=[{"name": "caddy", "state": "stopped", "restarts": 9}],
+                )
+            )
+            assert "x x" in str(app.query_one("#mascot").content), "a dead process is not a face"
+
+    async def test_it_gives_the_rows_back_on_a_short_terminal(self):
+        # Rows are the scarce thing here. A picture that costs a table row is a
+        # bad trade, so below twenty-four rows it goes.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 20)) as pilot:
+            await pilot.pause()
+
+            assert app.query_one("#mascot").display is False
+            assert app.query_one("#detail").display is False
+
+    async def test_the_masthead_says_four_things(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            lines = dash.Snapshot(running=True, port=80, home="C:/p/data").masthead
+
+            assert len(lines) == mascot_height(), "the block and the face are different heights"
+            assert all(lines), "an empty line in the one block that is all facts"
+
+
+def mascot_height() -> int:
+    from portable import mascot
+
+    return mascot.HEIGHT
+
+
+class TestTheLogoAndTheFaceAreOneFigure:
+    """
+    The mark is not a picture of the mascot, it is the mascot — drawn with
+    lines because the ears are diagonals and a diagonal transcribed into a grid
+    of blocks stops being one.
+
+    Nothing here can compare geometry to characters. What it can do is keep the
+    two from drifting apart quietly: if the frame in `mascot.py` changes, these
+    fail and say to look at the drawing too.
+    """
+
+    def files(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+
+        return root / "docs" / "mark.svg", root / "docs" / "logo.svg"
+
+    def test_both_are_there_and_parse(self):
+        from xml.dom.minidom import parse
+
+        for path in self.files():
+            assert path.exists(), f"{path} is referenced by every README"
+            parse(str(path))
+
+    def test_they_carry_the_name_for_a_reader_who_cannot_see_them(self):
+        for path in self.files():
+            text = path.read_text(encoding="utf-8")
+
+            assert 'aria-label="portable"' in text
+            assert "<title>portable</title>" in text
+
+    def test_nothing_is_fetched_from_anywhere(self):
+        # The same rule the rest of the tool follows. A logo that phones home
+        # from a README is a tracking pixel with a face on it.
+        for path in self.files():
+            text = path.read_text(encoding="utf-8")
+
+            # The namespace is the one URL allowed: it names the format, and
+            # nothing is fetched from it.
+            without_namespace = text.replace("http://www.w3.org/2000/svg", "")
+
+            assert "://" not in without_namespace, "the drawing reaches somewhere"
+            assert "<image" not in text and "@import" not in text
+
+    def test_the_drawing_is_pointed_at_the_characters(self):
+        # So that changing the frame leads somebody to the other half of it.
+        mark, _ = self.files()
+
+        assert "mascot.py" in mark.read_text(encoding="utf-8")
+
+    def test_the_frame_it_was_drawn_from_is_the_one_still_in_use(self):
+        from portable import mascot
+
+        assert mascot.TOP == "|\\---/|", (
+            "the frame changed; docs/mark.svg draws the old one and needs redrawing"
+        )
+        assert mascot.BOTTOM == "'-----'"

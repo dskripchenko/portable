@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 84" width="76" height="84" role="img" aria-label="portable">
+  <title>portable</title>
+  <!--
+    The same figure the dashboard draws in seven characters by four rows: a box
+    with its ears folded down, two eyes, and a prompt for a mouth. See
+    src/portable/mascot.py for the character version, which cannot be quoted
+    here because a pair of hyphens is not allowed inside an XML comment and the
+    ears are made of them.
+
+    Drawn with real lines rather than transcribed into a grid of blocks: the
+    ears are diagonals, and a diagonal made of blocks stops being one.
+
+    On the same grid, so the two are one figure rather than two similar ones —
+    but on cells ten wide and eighteen tall, not square ones. A terminal cell is
+    about twice as tall as it is wide, which is why seven by four looks like a
+    face on screen; drawn on square cells the same seven by four came out as a
+    wide flat envelope. Column centres land on 8, 18, 28 and so on, row centres
+    on 15, 33, 51, 69 — with the face nudged four units below its row centres,
+    because the ears carry weight at the top and the figure read top-heavy sitting
+    exactly on the grid. The eyes take columns three and five of row two, the
+    prompt columns four and five of row three, exactly where the characters
+    put them.
+
+    One colour, mid-toned on purpose, so it carries on a white README and on a
+    dark one without a second file to keep in step.
+  -->
+  <g fill="none" stroke="#3d9970" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <rect x="3" y="6" width="70" height="72" />
+    <!-- the ears, folded down over the corners -->
+    <path d="M3 6 L13 19" />
+    <path d="M73 6 L63 19" />
+  </g>
+  <g fill="#3d9970">
+    <circle cx="28" cy="37" r="5" />
+    <circle cx="48" cy="37" r="5" />
+  </g>
+  <!-- the prompt: a chevron in column four, the cursor beside it in column five -->
+  <g fill="none" stroke="#3d9970" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M34 48 L41 55 L34 62" />
+    <path d="M43 62 L53 62" />
+  </g>
+</svg>

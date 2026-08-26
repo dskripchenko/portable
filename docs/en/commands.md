@@ -64,6 +64,25 @@ recall what you typed before; there are inline suggestions as you go.
 letters belong to the command line now. `dash php` follows only PHP below.
 Selecting a database in its table and pressing Enter opens a prompt at it.
 
+The top-right corner carries a face, and it answers the same question the block
+beside it does — is anything wrong — from further away: a shape changing is
+visible across a room, a line of text is not.
+
+```
+|\---/|      |\---/|      |\---/|      |\---/|
+| o o |      | o o |      | x x |      | - - |
+|  >_ |      |  >- |      |  >! |      |  zZ |
+'-----'      '-----'      '-----'      '-----'
+ ready       working       error       stopped
+```
+
+It is the same figure as the logo, and it is ASCII on purpose — a terminal
+without the font for box-drawing shows squares, and a mascot made of squares
+makes the screen look broken at the moment it is meant to reassure. Below
+twenty-four rows it goes away along with the three lines beside it: rows are
+the scarce thing here, and a picture that costs a table row is a bad trade.
+
+
 A few commands are declined from inside it, each with the reason: `upgrade`
 replaces the folder the screen is running from, `purge` asks a question the
 screen cannot put to you, and `logs -f` is what the pane already does.

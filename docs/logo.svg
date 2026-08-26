@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 84" width="288" height="84" role="img" aria-label="portable">
+  <title>portable</title>
+  <!--
+    The mark from mark.svg, and the name beside it.
+
+    The letters are drawn as blocks rather than set in a typeface. Nothing
+    here may depend on a font being present: an SVG that names one renders
+    with whatever the reader happens to have, and a wordmark whose spacing
+    changes from machine to machine is not a wordmark. Blocks also put the
+    name in the same world as the figure, which is a terminal.
+
+    Generated once from the glyph table kept with this file's history; each
+    run of adjacent cells is one rectangle, which halves the file for the
+    same picture.
+  -->
+  <g fill="none" stroke="#3d9970" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <rect x="3" y="6" width="70" height="72" />
+    <!-- the ears, folded down over the corners -->
+    <path d="M3 6 L13 19" />
+    <path d="M73 6 L63 19" />
+  </g>
+  <g fill="#3d9970">
+    <circle cx="28" cy="37" r="5" />
+    <circle cx="48" cy="37" r="5" />
+  </g>
+  <!-- the prompt: a chevron in column four, the cursor beside it in column five -->
+  <g fill="none" stroke="#3d9970" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M34 48 L41 55 L34 62" />
+    <path d="M43 62 L53 62" />
+  </g>
+  <g fill="#3d9970">
+    <rect x="92" y="34" width="16" height="4" />
+    <rect x="92" y="38" width="4" height="4" />
+    <rect x="108" y="38" width="4" height="4" />
+    <rect x="92" y="42" width="4" height="4" />
+    <rect x="108" y="42" width="4" height="4" />
+    <rect x="92" y="46" width="16" height="4" />
+    <rect x="92" y="50" width="4" height="4" />
+    <rect x="92" y="54" width="4" height="4" />
+    <rect x="120" y="34" width="12" height="4" />
+    <rect x="116" y="38" width="4" height="4" />
+    <rect x="132" y="38" width="4" height="4" />
+    <rect x="116" y="42" width="4" height="4" />
+    <rect x="132" y="42" width="4" height="4" />
+    <rect x="116" y="46" width="4" height="4" />
+    <rect x="132" y="46" width="4" height="4" />
+    <rect x="120" y="50" width="12" height="4" />
+    <rect x="140" y="34" width="4" height="4" />
+    <rect x="148" y="34" width="8" height="4" />
+    <rect x="140" y="38" width="8" height="4" />
+    <rect x="140" y="42" width="4" height="4" />
+    <rect x="140" y="46" width="4" height="4" />
+    <rect x="140" y="50" width="4" height="4" />
+    <rect x="168" y="26" width="4" height="4" />
+    <rect x="168" y="30" width="4" height="4" />
+    <rect x="164" y="34" width="16" height="4" />
+    <rect x="168" y="38" width="4" height="4" />
+    <rect x="168" y="42" width="4" height="4" />
+    <rect x="168" y="46" width="4" height="4" />
+    <rect x="172" y="50" width="8" height="4" />
+    <rect x="192" y="34" width="12" height="4" />
+    <rect x="204" y="38" width="4" height="4" />
+    <rect x="192" y="42" width="16" height="4" />
+    <rect x="188" y="46" width="4" height="4" />
+    <rect x="204" y="46" width="4" height="4" />
+    <rect x="192" y="50" width="16" height="4" />
+    <rect x="212" y="26" width="4" height="4" />
+    <rect x="212" y="30" width="4" height="4" />
+    <rect x="212" y="34" width="16" height="4" />
+    <rect x="212" y="38" width="4" height="4" />
+    <rect x="228" y="38" width="4" height="4" />
+    <rect x="212" y="42" width="4" height="4" />
+    <rect x="228" y="42" width="4" height="4" />
+    <rect x="212" y="46" width="4" height="4" />
+    <rect x="228" y="46" width="4" height="4" />
+    <rect x="212" y="50" width="16" height="4" />
+    <rect x="236" y="26" width="8" height="4" />
+    <rect x="240" y="30" width="4" height="4" />
+    <rect x="240" y="34" width="4" height="4" />
+    <rect x="240" y="38" width="4" height="4" />
+    <rect x="240" y="42" width="4" height="4" />
+    <rect x="240" y="46" width="4" height="4" />
+    <rect x="240" y="50" width="12" height="4" />
+    <rect x="264" y="34" width="12" height="4" />
+    <rect x="260" y="38" width="4" height="4" />
+    <rect x="276" y="38" width="4" height="4" />
+    <rect x="260" y="42" width="20" height="4" />
+    <rect x="260" y="46" width="4" height="4" />
+    <rect x="264" y="50" width="12" height="4" />
+  </g>
+</svg>

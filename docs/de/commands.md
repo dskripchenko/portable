@@ -67,6 +67,26 @@ Buchstaben jetzt der Befehlszeile gehören. `dash php` folgt unten nur PHP. Eine
 Datenbank in ihrer Tabelle auswählen und Enter drücken öffnet eine
 Eingabeaufforderung dazu.
 
+Oben rechts sitzt ein Gesicht, und es beantwortet dieselbe Frage wie der Block
+daneben — ist etwas nicht in Ordnung —, nur aus der Entfernung: eine sich
+ändernde Form sieht man quer durch den Raum, eine Textzeile nicht.
+
+```
+|\---/|      |\---/|      |\---/|      |\---/|
+| o o |      | o o |      | x x |      | - - |
+|  >_ |      |  >- |      |  >! |      |  zZ |
+'-----'      '-----'      '-----'      '-----'
+ bereit       arbeitet     Fehler      gestoppt
+```
+
+Dieselbe Figur wie im Logo, und mit Absicht aus ASCII: ein Terminal ohne die
+Schrift für Rahmenzeichen zeigt Kästchen, und ein Maskottchen aus Kästchen lässt
+den Bildschirm genau dann kaputt aussehen, wenn er beruhigen soll. Unter
+vierundzwanzig Zeilen verschwindet es samt den drei Zeilen daneben: Zeilen sind
+hier das Knappe, und ein Bild zum Preis einer Tabellenzeile ist ein schlechter
+Tausch.
+
+
 Ein paar Befehle werden von dort abgelehnt, jeder mit Begründung: `upgrade`
 ersetzt den Ordner, aus dem die Ansicht läuft, `purge` stellt eine Frage, die
 diese Ansicht nicht stellen kann, und `logs -f` ist das, was der untere Bereich

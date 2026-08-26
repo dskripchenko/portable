@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.5.0 — 2026-08-26
+
+### Added — a logo, and the same figure in the dashboard
+
+A box with its ears folded down, two eyes and a prompt for a mouth: a terminal
+window that is also a face, which says what this is and that it is not
+frightening in one mark.
+
+- **`docs/logo.svg` and `docs/mark.svg`**, at the top of every README. Drawn by
+  hand in one mid-toned colour that carries on a light page and a dark one, so
+  there is no second file to keep in step. The name beside it is drawn as
+  blocks rather than set in a typeface: an SVG that names a font renders with
+  whatever the reader happens to have, and a wordmark whose spacing changes
+  between machines is not a wordmark.
+- **The face lives in the dashboard's top-right corner** and answers the same
+  question the block beside it does — is anything wrong — from further away.
+  Stopped, working, error, ready; the mouth spins the same four characters the
+  busy bar does, because two spinners at two speeds read as two things
+  happening.
+- **ASCII only**, for the reason the busy indicator already is: a terminal
+  without the font for box-drawing shows squares, and a mascot of squares makes
+  the screen look broken at the moment it is meant to reassure.
+
+### Changed — the top of the dashboard is a block, not a line
+
+The face is four rows tall and three of them would have been empty, so the
+summary is now four lines that each say something: the version, where it is
+served, what is there, and where it all lives. Below twenty-four rows it
+collapses back to the one line it was, and the face goes with it — rows are the
+scarce thing on that screen.
+
 ## 1.4.2 — 2026-08-26
 
 ### Fixed — the upgrade, actually this time

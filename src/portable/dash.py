@@ -33,7 +33,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from . import VERSION, logs, paths
+from . import VERSION, logs, mascot, paths
 from .daemon.client import CallFailed, Client, NotRunning
 
 #: How often the tables are refreshed.
@@ -102,6 +102,46 @@ class Snapshot:
     sites: list[dict] = field(default_factory=list)
     services: list[dict] = field(default_factory=list)
     error: str = ""
+
+    @property
+    def masthead(self) -> list[str]:
+        """
+        The top block: the same facts, one per line.
+
+        Four lines because the face beside it is four rows tall, and three of
+        them would otherwise be empty — a picture costing three rows of a screen
+        where rows are the scarce thing. Split across lines the facts also read
+        better than they did crammed into one: the version, where it is served,
+        what is there, and where it all lives.
+        """
+        if not self.running:
+            # The third line is what to do about it. An empty row here is the
+            # only place in this block that says nothing, and it says it at the
+            # moment somebody most needs telling.
+            return [
+                f"portable {VERSION}",
+                "daemon not running",
+                "portable up   starts it",
+                self.home,
+            ]
+
+        where = f"http :{self.port}" if self.port else "nothing served"
+
+        if self.https_port:
+            where += f"   https :{self.https_port}"
+
+        return [
+                f"portable {VERSION}",
+                where,
+                (
+                    f"{len(self.sites)} site{'s' if len(self.sites) != 1 else ''}, "
+                    f"{len(self.services)} database"
+                    f"{'s' if len(self.services) != 1 else ''}, "
+                    f"{len(self.processes)} process"
+                    f"{'es' if len(self.processes) != 1 else ''}"
+                ),
+                self.home,
+        ]
 
     @property
     def summary(self) -> str:
@@ -269,13 +309,38 @@ def build() -> Any:
         CSS = """
         Screen { layout: vertical; background: $surface; }
 
+        /* Four rows tall, and every one of them says something. A block of
+           solid colour that size shouts down the tables below it, so the
+           accent stays on the first line — the one that answers "is it up" —
+           and the rest sits on the ordinary background. */
+        #masthead { height: 4; }
+        #titles { width: 1fr; height: 4; }
+
         #summary {
             height: 1;
             padding: 0 1;
-            background: $primary;
-            color: $text;
+            color: $primary;
             text-style: bold;
         }
+
+        #detail {
+            height: 3;
+            padding: 0 1;
+            color: $text-muted;
+        }
+
+        #mascot {
+            width: 10;
+            height: 4;
+            padding: 0 2 0 1;
+            color: $primary;
+        }
+
+        /* Rows are the scarce thing on this screen. On a short terminal the
+           masthead gives back three of them and the face goes, because a
+           picture that costs a table row is a bad trade. */
+        #masthead.-tight { height: 1; }
+        #titles.-tight { height: 1; }
 
         #tables { height: 45%; }
 
@@ -343,6 +408,7 @@ def build() -> Any:
             self._history: list[str] = []
             self._recalled = 0
             self._busy: str | None = None
+            self._mood = "stopped"
             self._since = 0.0
             self._frame = 0
             self._leaving = False
@@ -352,7 +418,20 @@ def build() -> Any:
             # and the line below already says the name along with everything
             # else worth knowing. Two of the three lines at the top used to say
             # "portable" and nothing more.
-            yield Static("starting…", id="summary")
+            # The summary and the face side by side. The face answers the same
+            # question the summary does — is anything wrong — and answers it
+            # from further away: you see a shape change across the room before
+            # you read a line of text.
+            with Horizontal(id="masthead"):
+                with Vertical(id="titles"):
+                    # Two widgets rather than one styled string: the accent
+                    # belongs to the stylesheet, and a rich style string cannot
+                    # name a theme colour — it fails at the moment it is drawn,
+                    # which for a background worker means nothing drawn at all.
+                    yield Static("starting…", id="summary")
+                    yield Static("", id="detail")
+
+                yield Static(mascot.rendered("stopped"), id="mascot")
 
             with Horizontal(id="tables"):
                 yield DataTable(id="processes")
@@ -384,7 +463,7 @@ def build() -> Any:
 
             services = self.query_one("#services", DataTable)
             services.add_columns("database", "kind", "port")
-            services.border_title = "databases — enter opens a prompt at one"
+            services.border_title = "databases — enter opens a prompt"
 
             # Rows rather than cells: the cursor picks out a database, not the
             # port of a database, and it is the row that Enter acts on. With
@@ -577,10 +656,61 @@ def build() -> Any:
             if indicator is None:
                 return
 
+            self.wear("working")
             indicator.update(
                 f"{FRAMES[self._frame]}  {self._busy}   {elapsed:.0f}s   "
                 f"(F10 twice to leave it running)"
             )
+
+        def _anything_wrong(self, snapshot: Snapshot) -> bool:
+            """
+            Whether the face should stop looking pleased.
+
+            The same three things the tables mark in red: a process that is not
+            running, a supervisor that cannot say what it is doing, and nothing
+            being served because the router would not start. Restart counts are
+            deliberately not here — the tables colour those amber, and amber is
+            "look at this", not "something is broken".
+            """
+            if snapshot.error:
+                return True
+
+            if snapshot.router_error and not snapshot.port:
+                return True
+
+            return any(entry.get("state") != "running" for entry in snapshot.processes)
+
+        def wear(self, mood: str) -> None:
+            """Put a face on, if there is anywhere to put it."""
+            corner = self._find("#mascot", Static)
+
+            if corner is not None:
+                corner.update(mascot.rendered(mood, self._frame))
+
+        def on_resize(self, event) -> None:
+            self._fit(event.size.height, event.size.width)
+
+        def _fit(self, height: int, width: int) -> None:
+            """
+            Give the three rows back when the terminal cannot spare them.
+
+            Below twenty-four rows the masthead collapses to the single line it
+            used to be, and the face goes with it. It is decoration on a screen
+            whose job is to report what is running, and decoration loses.
+            """
+            tight = height < 24 or width < 60
+
+            for selector, kind in (("#masthead", Horizontal), ("#titles", Vertical)):
+                found = self._find(selector, kind)
+
+                if found is not None:
+                    found.set_class(tight, "-tight")
+
+            for selector in ("#detail", "#mascot"):
+                found = self._find(selector, Static)
+
+                if found is not None:
+                    found.display = not tight
 
         def action_earlier(self) -> None:
             self._recall(-1)
@@ -656,7 +786,19 @@ def build() -> Any:
                 return
 
             running = f"  —  running: {self._busy}" if self._busy else ""
-            summary.update(snapshot.summary + running)
+            head, *rest = snapshot.masthead
+            summary.update(head + running)
+
+            detail = self._find("#detail", Static)
+
+            if detail is not None:
+                detail.update("\n".join(rest))
+            self._mood = mascot.state_for(
+                running=snapshot.running,
+                failing=self._anything_wrong(snapshot),
+                busy=bool(self._busy),
+            )
+            self.wear(self._mood)
 
             if snapshot.router_error and not snapshot.port:
                 # The reason nothing is being served, in the place somebody is
