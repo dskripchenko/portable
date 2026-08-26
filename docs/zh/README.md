@@ -1,5 +1,11 @@
 # portable
 
+[![tests](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/tests.yml?branch=main&label=tests)](https://github.com/dskripchenko/portable/actions/workflows/tests.yml)
+[![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
+[![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
+[![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
+
 面向 Windows 的本地开发环境 —— PHP、Caddy、PostgreSQL、MariaDB、Redis、Node ——
 它安装在系统**旁边**，而不是装进系统里。
 
@@ -23,8 +29,10 @@
 
 ## 现状
 
-已发布，并在真实 Windows 上验证过：通过进程池提供 PHP 服务、以普通用户身份绑定
-80 端口、在控制台关闭后继续存活，以及用 `upgrade` 替换自身。
+在真实 Windows 上日常使用：通过进程池提供 PHP 服务、以普通用户身份绑定 80 端口、
+在控制台关闭后继续存活、全屏面板，以及用 `upgrade` 替换自身 —— 最后这一项要到
+1.3.2 才真正成立：它的测试通过了好几个月，却从未在真机上跑完过一次。经过见
+[项目 README 末尾的说明](../../README.md)。
 
 有一项限制是测量出来的，而不是承诺出来的。如果终端把它启动的东西放进一个**不允许
 脱离的作业对象**，那么关闭时会把监督进程一起带走 —— 面对这样的作业对象，进程层面

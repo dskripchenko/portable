@@ -1,5 +1,11 @@
 # portable
 
+[![tests](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/tests.yml?branch=main&label=tests)](https://github.com/dskripchenko/portable/actions/workflows/tests.yml)
+[![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
+[![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
+[![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
+
 Локальная среда разработки для Windows — PHP, Caddy, PostgreSQL, MariaDB, Redis,
 Node — которая ставится рядом с системой, а не в неё.
 
@@ -26,9 +32,11 @@ Node — которая ставится рядом с системой, а не
 
 ## Состояние
 
-Выпущен и проверен на настоящей Windows: обслуживание PHP через пул, привязка к
-порту 80 обычным пользователем, выживание при закрытии консоли и замена себя
-командой `upgrade`.
+В ежедневной работе на настоящей Windows: обслуживание PHP через пул, привязка к
+порту 80 обычным пользователем, выживание при закрытии консоли, полноэкранная
+панель и замена себя командой `upgrade` — последнее только с 1.3.2: тесты она
+проходила месяцами, ни разу не доработав до конца на живой машине. Что там было
+— в [примечании в конце README проекта](../../README.md).
 
 Одно ограничение измерено, а не обещано. Терминал, помещающий запущенное в
 **job-объект, запрещающий выход**, унесёт супервизор с собой при закрытии — на

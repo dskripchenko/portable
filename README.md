@@ -1,12 +1,24 @@
 # portable
 
+[![tests](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/tests.yml?branch=main&label=tests)](https://github.com/dskripchenko/portable/actions/workflows/tests.yml)
+[![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
+[![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
+[![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
+
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **1.0.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
-> run; sites are served at `*.localhost`, over HTTP and HTTPS. Verified on real
-> Windows — see the note at the end for what that covers and the one limitation
-> it found.
+> Status: **1.4.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
+> run; sites are served at `*.localhost`, over HTTP and HTTPS; several versions
+> of each run side by side. There is a full-screen dashboard, it replaces itself
+> with `upgrade`, and `service cli` opens a prompt at a running database. In
+> daily use on real Windows — see the note at the end for what that has and has
+> not covered.
+
+The two version badges say different things: **tag** is what was cut, **release**
+is what CI built and published. They agree unless a release failed, which is
+worth seeing from here rather than finding out at a download.
 
 Documentation: [English](docs/en/) · [Русский](docs/ru/) · [Deutsch](docs/de/) ·
 [中文](docs/zh/)
@@ -205,8 +217,16 @@ the pool; **port 80 bound by an ordinary user, with no administrator rights** �
 the premise the whole design rests on; runtimes downloading and unpacking over a
 network that resets TLS connections mid-handshake; installing under a PowerShell
 locked into Constrained Language Mode; detaching from the console and the
-process group; **replacing itself with `upgrade`**, which exchanges two
-directories while running from inside one of them; and `logs` and `shell`.
+process group; the dashboard; and `logs` and `shell`.
+
+**`upgrade` was on that list and should not have been.** It passed its tests,
+including on `windows-latest`, and on a real machine it downloaded, verified,
+and left the old version in place every time. It renamed the bundle directory,
+and Windows will not rename a directory that is any process's current directory
+— which it is, twice over, when you run the upgrade from the folder the
+documentation tells you to stand in. Nothing in the test suite stood anywhere.
+Fixed in 1.3.2 by moving the contents instead, with a test that holds the
+directory the way a terminal does.
 
 **One limitation, measured rather than promised.** A process can leave a job
 object only if that job permits it, and some launchers create one that does not.

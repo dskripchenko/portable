@@ -1,5 +1,11 @@
 # portable
 
+[![tests](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/tests.yml?branch=main&label=tests)](https://github.com/dskripchenko/portable/actions/workflows/tests.yml)
+[![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
+[![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
+[![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
+
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Redis, Node — that installs beside the system rather than into it.
 
@@ -26,9 +32,11 @@ this class of tool usually cannot be installed at all.
 
 ## Status
 
-Released and verified on real Windows: serving PHP through the pool, binding
-port 80 as an ordinary user, surviving the console being closed, and replacing
-itself with `upgrade`.
+In daily use on real Windows: serving PHP through the pool, binding port 80 as
+an ordinary user, surviving the console being closed, the dashboard, and
+replacing itself with `upgrade` — that last one only since 1.3.2, having passed
+its tests for months while never once finishing on a real machine. See the
+[note at the end of the project README](../../README.md) for what that was.
 
 One limitation is measured rather than promised. A terminal that puts what it
 starts into a **job object forbidding breakaway** takes the supervisor with it

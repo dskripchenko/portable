@@ -1,5 +1,11 @@
 # portable
 
+[![tests](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/tests.yml?branch=main&label=tests)](https://github.com/dskripchenko/portable/actions/workflows/tests.yml)
+[![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
+[![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
+[![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
+
 Eine lokale Entwicklungsumgebung für Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Redis, Node — die sich **neben** das System setzt statt hinein.
 
@@ -25,9 +31,12 @@ Werkzeuge dieser Art sich sonst gar nicht installieren lassen.
 
 ## Stand
 
-Veröffentlicht und auf echtem Windows geprüft: PHP durch den Pool ausliefern,
-Port 80 als gewöhnlicher Benutzer belegen, das Schließen der Konsole überleben,
-und sich mit `upgrade` selbst ersetzen.
+Im täglichen Einsatz auf echtem Windows: PHP durch den Pool ausliefern, Port 80
+als gewöhnlicher Benutzer belegen, das Schließen der Konsole überleben, die
+Vollbildansicht, und sich mit `upgrade` selbst ersetzen — Letzteres erst seit
+1.3.2: Es bestand monatelang seine Tests, ohne auf einer echten Maschine je
+fertig zu werden. Was da los war, steht in der
+[Notiz am Ende der Projekt-README](../../README.md).
 
 Eine Einschränkung ist gemessen statt versprochen. Ein Terminal, das Gestartetes
 in ein **Job-Objekt ohne Breakaway-Erlaubnis** steckt, nimmt den Supervisor beim
