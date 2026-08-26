@@ -591,6 +591,26 @@ class TestACommandOutlivingTheScreen:
 
         app.note("  (31s)")
 
+    async def test_a_refresh_landing_after_f10_is_not_a_crash(self):
+        # The status worker runs on a thread and finishes when it finishes. One
+        # in flight when the screen goes arrives with nowhere to put itself,
+        # which one of four CI machines caught as NoMatches on #summary.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            snapshot = dash.look()
+
+        app.show(snapshot)
+
+    async def test_nothing_looks_up_a_widget_from_a_thread(self):
+        # Including the writer that forwards a command's output, which did.
+        source = " ".join(inspect.getsource(dash).split())
+
+        assert "call_from_thread( self._app.query_one" not in source
+        assert "call_from_thread(self._app.query_one" not in source
+
     async def test_the_log_is_not_queried_from_the_worker_thread(self):
         # The DOM belongs to the message loop. Reaching into it from the thread
         # running a command is what turned a missing widget into a dead thread

@@ -199,7 +199,9 @@ class _Streaming:
         return False
 
     def _say(self, line: str) -> None:
-        self._app.call_from_thread(self._app.query_one("#log").write, f"  {line}")
+        # Through a method called on the message loop, not a lookup done here:
+        # the DOM belongs to that loop, and this runs in the thread.
+        self._app.call_from_thread(self._app.note, f"  {line}")
 
 
 def _suggestions() -> list[str]:
@@ -623,16 +625,29 @@ def build() -> Any:
             written = Text(label, style="dim")
             written.append(line, style=self.SEVERITY[logs.severity(line)])
 
-            self.query_one("#log", RichLog).write(written)
+            pane = self._find("#log", RichLog)
+
+            if pane is not None:
+                pane.write(written)
 
         def show(self, snapshot: Snapshot) -> None:
+            # Reached from a worker thread that outlives the screen: a refresh
+            # in flight when F10 is pressed arrives after there is anywhere to
+            # put it. One of four CI machines caught this as `NoMatches` on
+            # `#summary`, which is a crash landing in a place with no crash to
+            # report — the worker dies and the screen is already gone.
+            summary = self._find("#summary", Static)
+
+            if summary is None:
+                return
+
             running = f"  —  running: {self._busy}" if self._busy else ""
-            self.query_one("#summary", Static).update(snapshot.summary + running)
+            summary.update(snapshot.summary + running)
 
             if snapshot.router_error and not snapshot.port:
                 # The reason nothing is being served, in the place somebody is
                 # already looking. It is otherwise only in `status`.
-                self.query_one("#summary", Static).update(
+                summary.update(
                     f"{snapshot.summary}\n{snapshot.router_error.splitlines()[0]}"
                 )
 

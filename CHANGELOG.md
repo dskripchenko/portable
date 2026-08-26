@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.3 — 2026-08-26
+
+### Fixed — the rest of the dashboard's threads
+
+1.3.1 fixed two places where a background thread touched the screen after it
+had gone. There were more, and CI found the next one the same way: the status
+refresh runs on a thread, and one in flight when F10 is pressed arrives with
+nowhere to put itself.
+
+- **A refresh landing after the screen has gone is no longer a crash.**
+- **The writer forwarding a command's output looked its widget up in the
+  thread**, which is the same defect as the one already fixed beside it and was
+  missed because it lives in another class.
+
+A test now asserts that nothing anywhere in the module looks up a widget from a
+thread, rather than fixing them one report at a time.
+
 ## 1.3.2 — 2026-08-26
 
 ### Fixed — the upgrade that downloaded and changed nothing
