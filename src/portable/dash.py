@@ -242,6 +242,10 @@ class _Streaming:
         # Through a method called on the message loop, not a lookup done here:
         # the DOM belongs to that loop, and this runs in the thread.
         self._app.call_from_thread(self._app.note, f"  {line}")
+        # And the fact that anything was said at all: silence for long enough
+        # is how a command waiting on somebody else's host is told from one
+        # doing work, and the spinner alone cannot tell them apart.
+        self._app.call_from_thread(self._app.said_something)
 
 
 def _suggestions() -> list[str]:
@@ -409,6 +413,21 @@ def build() -> Any:
             self._recalled = 0
             self._busy: str | None = None
             self._mood = "stopped"
+            #: When the running command last printed anything. Silence is how
+            #: waiting on somebody else's host is told from working.
+            self._spoke = 0.0
+            #: When a command last finished cleanly, and whether the last one
+            #: failed. A failure outlasts a `done`: it stays until something
+            #: goes right, because a face that cheers up on a timer reports the
+            #: passage of time rather than the state of anything.
+            self._finished: float | None = None
+            self._failed = False
+            #: The supervisor going away by itself is news; going away because
+            #: somebody typed `down` is not.
+            self._daemon_up = False
+            self._wrong = False
+            self._vanished: float | None = None
+            self._idle_since = time.monotonic()
             self._since = 0.0
             self._frame = 0
             self._leaving = False
@@ -562,13 +581,19 @@ def build() -> Any:
             self.call_from_thread(self.busy, line)
             stream = _Streaming(self)
 
+            failed = True
+
             try:
                 with ctx.redirect_stdout(stream), ctx.redirect_stderr(stream):
-                    cli.main(cli.split(line))
-            except SystemExit:
+                    # The exit code, which used to be thrown away. Every command
+                    # returns one, and a non-zero is the only reliable sign that
+                    # what somebody typed did not work — the tables cannot show
+                    # it, because a refused `install` changes nothing in them.
+                    failed = bool(cli.main(cli.split(line)))
+            except SystemExit as stopping:
                 # argparse raises this for a bad command. In a screen it would
                 # be the last thing that ever happened.
-                pass
+                failed = bool(stopping.code)
             except Exception as error:  # noqa: BLE001
                 stream.write(f"{type(error).__name__}: {error}\n")
             finally:
@@ -580,6 +605,7 @@ def build() -> Any:
             if took > 1.0:
                 self.call_from_thread(self.note, f"  ({took:.0f}s)")
 
+            self.call_from_thread(self.settled, failed)
             self.call_from_thread(self.busy, None)
 
             # A command that changed something should be visible in the tables
@@ -620,6 +646,7 @@ def build() -> Any:
             """
             self._busy = line
             self._since = time.monotonic() if line else 0.0
+            self._spoke = time.monotonic()
             self._frame = 0
 
             indicator = self._find("#busy", Static)
@@ -645,18 +672,23 @@ def build() -> Any:
             whole question during a thirty-second connect timeout, when nothing
             is printed at all.
             """
+            self._frame = (self._frame + 1) % len(FRAMES)
+
+            # The face moves on every tick, not only while a command runs: the
+            # blink, the three seconds a finished command lingers, and the turn
+            # from working to waiting all happen with nothing else going on.
+            self._mood = self.mood()
+            self.wear(self._mood)
+
             if not self._busy:
                 return
 
-            self._frame = (self._frame + 1) % len(FRAMES)
             elapsed = time.monotonic() - self._since
-
             indicator = self._find("#busy", Static)
 
             if indicator is None:
                 return
 
-            self.wear("working")
             indicator.update(
                 f"{FRAMES[self._frame]}  {self._busy}   {elapsed:.0f}s   "
                 f"(F10 twice to leave it running)"
@@ -679,6 +711,36 @@ def build() -> Any:
                 return True
 
             return any(entry.get("state") != "running" for entry in snapshot.processes)
+
+        def settled(self, failed: bool) -> None:
+            """A command has finished, one way or the other."""
+            self._failed = failed
+            self._finished = None if failed else time.monotonic()
+
+        def said_something(self) -> None:
+            """A running command produced a line. Called from the writer."""
+            self._spoke = time.monotonic()
+
+        def mood(self) -> str:
+            """
+            The face this instant deserves, from measurements rather than flags.
+
+            Gathered here and decided in `mascot.state_for`, so the ordering
+            between "it failed", "it finished" and "it is waiting" is written
+            down once in a readable place instead of spread across the handlers
+            that happen to notice each of them.
+            """
+            now = time.monotonic()
+
+            return mascot.state_for(
+                running=self._daemon_up,
+                failing=self._wrong or self._failed,
+                busy=bool(self._busy),
+                silent_for=now - self._spoke if self._busy else 0.0,
+                finished_ago=None if self._finished is None else now - self._finished,
+                vanished_ago=None if self._vanished is None else now - self._vanished,
+                idle_for=now - self._idle_since,
+            )
 
         def wear(self, mood: str) -> None:
             """Put a face on, if there is anywhere to put it."""
@@ -793,12 +855,14 @@ def build() -> Any:
 
             if detail is not None:
                 detail.update("\n".join(rest))
-            self._mood = mascot.state_for(
-                running=snapshot.running,
-                failing=self._anything_wrong(snapshot),
-                busy=bool(self._busy),
-            )
-            self.wear(self._mood)
+            if self._daemon_up and not snapshot.running and self._busy is None:
+                # It was there a second ago and nobody asked it to go. Worth a
+                # face of its own for a moment, before it settles into the
+                # ordinary "not running".
+                self._vanished = time.monotonic()
+
+            self._daemon_up = snapshot.running
+            self._wrong = self._anything_wrong(snapshot)
 
             if snapshot.router_error and not snapshot.port:
                 # The reason nothing is being served, in the place somebody is

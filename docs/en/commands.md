@@ -70,11 +70,36 @@ visible across a room, a line of text is not.
 
 ```
 |\---/|      |\---/|      |\---/|      |\---/|
-| o o |      | o o |      | x x |      | - - |
-|  >_ |      |  >- |      |  >! |      |  zZ |
+| o o |      | o o |      | ^ ^ |      | x x |
+|  >_ |      |  .. |      | \_/ |      |  >! |
 '-----'      '-----'      '-----'      '-----'
- ready       working       error       stopped
+ working      waiting       done        error
+
+|\---/|      |\---/|      |\---/|      |\---/|
+| o o |      | - - |      | O O |      | - - |
+|  >_ |      |  >_ |      |  >o |      |  zZ |
+'-----'      '-----'      '-----'      '-----'
+ ready        blink      it vanished    stopped
 ```
+
+It reports states rather than activities. Which command is running is already
+on the bar below, by name and with the seconds counted; a face repeating that
+would say the same thing less precisely, and one that changed on every action
+would stop meaning "look at this".
+
+- **waiting** — a command has said nothing for five seconds. Most of an install
+  is spent waiting on somebody else's host, and the spinner turns the same
+  either way: this is the difference between a slow download and a thirty
+  second connect timeout that looks like a hang.
+- **done** and **error** — what the command you typed came back with. A failure
+  stays until something goes right, rather than fading on a timer, because a
+  face that cheers up by itself reports the passage of time and not the state
+  of anything.
+- **it vanished** — the supervisor was there a second ago and nobody asked it to
+  leave. That is news; being down when you opened the screen is not.
+- **blink** — every twenty-five seconds, for a moment. The same argument the
+  busy indicator makes: a still picture cannot tell attention from a wedged
+  process.
 
 It is the same figure as the logo, and it is ASCII on purpose — a terminal
 without the font for box-drawing shows squares, and a mascot made of squares

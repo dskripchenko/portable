@@ -14,6 +14,7 @@ from __future__ import annotations
 import builtins
 import inspect
 import sys
+import time
 
 import pytest
 
@@ -755,9 +756,99 @@ class TestTheFaceInTheCorner:
         from portable import mascot
 
         assert mascot.state_for(running=False, failing=False, busy=True) == "stopped"
-        assert mascot.state_for(running=True, failing=True, busy=True) == "error"
         assert mascot.state_for(running=True, failing=False, busy=True) == "working"
         assert mascot.state_for(running=True, failing=False, busy=False) == "ready"
+
+    def test_a_command_in_flight_outranks_a_failure_that_is_already_known(self):
+        # While something runs, whether it is alive is the live question; the
+        # failure is not going anywhere and comes back the moment it ends.
+        from portable import mascot
+
+        assert mascot.state_for(running=True, failing=True, busy=True) == "working"
+        assert mascot.state_for(running=True, failing=True, busy=False) == "error"
+
+    def test_silence_is_waiting_and_not_working(self):
+        # Most of an install is spent waiting on somebody else's host, and the
+        # spinner turns the same either way — which is the moment a thirty
+        # second connect timeout looks like a hang.
+        from portable import mascot
+
+        assert mascot.state_for(running=True, failing=False, busy=True, silent_for=1) == "working"
+        assert (
+            mascot.state_for(running=True, failing=False, busy=True, silent_for=mascot.SILENCE)
+            == "waiting"
+        )
+
+    def test_a_finished_command_is_shown_and_then_let_go(self):
+        from portable import mascot
+
+        settled = {"running": True, "failing": False, "busy": False}
+
+        assert mascot.state_for(**settled, finished_ago=0.5) == "done"
+        assert mascot.state_for(**settled, finished_ago=mascot.LINGER + 1) != "done"
+
+    def test_a_failure_does_not_cheer_up_on_a_timer(self):
+        # A face that returns to pleased by itself reports the passage of time
+        # rather than the state of anything.
+        from portable import mascot
+
+        assert mascot.state_for(running=True, failing=True, busy=False, idle_for=600) == "error"
+
+    def test_a_supervisor_that_left_by_itself_is_news(self):
+        from portable import mascot
+
+        assert (
+            mascot.state_for(running=False, failing=False, busy=False, vanished_ago=0.5)
+            == "surprised"
+        )
+        assert (
+            mascot.state_for(
+                running=False, failing=False, busy=False, vanished_ago=mascot.LINGER + 1
+            )
+            == "stopped"
+        )
+
+    def test_it_blinks_now_and_then_rather_than_staring(self):
+        from portable import mascot
+
+        settled = {"running": True, "failing": False, "busy": False}
+        blinks = [
+            tick / 10
+            for tick in range(int(mascot.BLINK_EVERY * 10), int(mascot.BLINK_EVERY * 40))
+            if mascot.state_for(**settled, idle_for=tick / 10) == "blink"
+        ]
+
+        assert blinks, "the idle face never blinks"
+        assert len(blinks) < mascot.BLINK_EVERY * 3, "it blinks more than it looks"
+
+    def test_every_face_the_decider_can_return_is_drawn(self):
+        # The half of the set that nothing reached is what this exists to stop
+        # happening again.
+        from portable import mascot
+
+        reachable = {
+            mascot.state_for(
+                running=running,
+                failing=failing,
+                busy=busy,
+                silent_for=silence,
+                finished_ago=finished,
+                vanished_ago=vanished,
+                idle_for=idle,
+            )
+            for running in (True, False)
+            for failing in (True, False)
+            for busy in (True, False)
+            for silence in (0, 60)
+            for finished in (None, 0.1, 60)
+            for vanished in (None, 0.1, 60)
+            for idle in (0.0, mascot.BLINK_EVERY + 0.1)
+        }
+
+        assert reachable <= set(mascot.FACES)
+        assert reachable == set(mascot.FACES) - {"wink"}, (
+            f"drawn and never shown: {set(mascot.FACES) - reachable - {'wink'}}"
+        )
 
     async def test_it_shows_the_state_the_screen_is_in(self):
         application = dash.build()
@@ -767,6 +858,7 @@ class TestTheFaceInTheCorner:
             await pilot.pause()
 
             app.show(dash.Snapshot(running=False, home="C:/p"))
+            app.tick()
             assert "zZ" in str(app.query_one("#mascot").content)
 
             app.show(
@@ -777,6 +869,7 @@ class TestTheFaceInTheCorner:
                     processes=[{"name": "caddy", "state": "stopped", "restarts": 9}],
                 )
             )
+            app.tick()
             assert "x x" in str(app.query_one("#mascot").content), "a dead process is not a face"
 
     async def test_it_gives_the_rows_back_on_a_short_terminal(self):
@@ -868,3 +961,98 @@ class TestTheLogoAndTheFaceAreOneFigure:
             "the frame changed; docs/mark.svg draws the old one and needs redrawing"
         )
         assert mascot.BOTTOM == "'-----'"
+
+
+class TestWhatTheCommandLineTellsTheFace:
+    """
+    Typing something that fails used to leave the corner pleased.
+
+    The tables cannot show it — a refused `install` changes nothing in them —
+    and the log scrolls. The exit code every command already returns was being
+    thrown away.
+    """
+
+    async def test_a_command_that_fails_turns_the_face(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.settled(failed=True)
+            app.tick()
+
+            assert "x x" in str(app.query_one("#mascot").content)
+
+    async def test_a_command_that_works_is_pleased_and_then_settles(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.settled(failed=False)
+            app.tick()
+
+            assert "^ ^" in str(app.query_one("#mascot").content)
+
+            # Long enough ago that it is history rather than news.
+            app._finished = time.monotonic() - 60
+            app.tick()
+
+            assert "^ ^" not in str(app.query_one("#mascot").content)
+
+    async def test_a_supervisor_that_goes_away_by_itself_is_noticed(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.show(dash.Snapshot(running=False, home="C:/p"))
+            app.tick()
+
+            assert "O O" in str(app.query_one("#mascot").content), (
+                "the daemon vanished and the corner did not react"
+            )
+
+    async def test_one_that_was_never_up_is_merely_asleep(self):
+        # Opening the dashboard with nothing running is not news.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=False, home="C:/p"))
+            app.tick()
+
+            assert "zZ" in str(app.query_one("#mascot").content)
+
+    async def test_silence_while_a_command_runs_becomes_waiting(self):
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.busy("install mariadb")
+            app.tick()
+
+            assert "  >" in str(app.query_one("#mascot").content)
+
+            # Nothing has been printed for a while: it is waiting on a host,
+            # not working.
+            app._spoke = time.monotonic() - 60
+            app.tick()
+
+            assert ".." in str(app.query_one("#mascot").content)
+
+            app.said_something()
+            app.tick()
+
+            assert ".." not in str(app.query_one("#mascot").content)

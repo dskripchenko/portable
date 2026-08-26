@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.6.0 — 2026-08-26
+
+### Fixed — a command that failed left the corner pleased
+
+The face reported what the status refresh could see: dead processes, a router
+that would not start, a daemon that stopped answering. Nothing told it what the
+command **you just typed** came back with, and the exit code every command
+returns was being thrown away. `install php 9.9` printed a refusal into a log
+that scrolls, and the corner went on smiling.
+
+### Added — the rest of the states, and none of the activities
+
+Four of the eight drawn faces were reachable. All of them are now, and each
+answers something the text beside it does not:
+
+- **waiting** — a command has said nothing for five seconds. Most of an install
+  is spent waiting on somebody else's host and the spinner turns the same
+  either way, so this is the difference between a slow download and a thirty
+  second connect timeout that looks like a hang.
+- **done** — the command worked. Shown for three seconds, then let go.
+- **error** — it did not, or something is down. Stays until something goes
+  right rather than fading on a timer: a face that cheers up by itself reports
+  the passage of time and not the state of anything.
+- **it vanished** — the supervisor was there a second ago and nobody asked it to
+  leave. Being down when you opened the screen is not the same news.
+- **blink** — every twenty-five seconds. The argument the busy indicator already
+  makes: a still picture cannot tell attention from a wedged process.
+
+There are deliberately **no faces for particular activities** — no installing
+face, no adding-a-site face. The bar below already names the command and counts
+its seconds; a face repeating that says it less precisely, and one that changed
+on every action would stop meaning "look at this".
+
+The ordering between these lives in one function with the durations beside it,
+rather than spread across the handlers that each notice one of them. A test
+sweeps every combination and fails if any drawn face has become unreachable —
+which is how four of them got that way.
+
 ## 1.5.0 — 2026-08-26
 
 ### Added — a logo, and the same figure in the dashboard

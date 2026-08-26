@@ -73,11 +73,36 @@ daneben — ist etwas nicht in Ordnung —, nur aus der Entfernung: eine sich
 
 ```
 |\---/|      |\---/|      |\---/|      |\---/|
-| o o |      | o o |      | x x |      | - - |
-|  >_ |      |  >- |      |  >! |      |  zZ |
+| o o |      | o o |      | ^ ^ |      | x x |
+|  >_ |      |  .. |      | \_/ |      |  >! |
 '-----'      '-----'      '-----'      '-----'
- bereit       arbeitet     Fehler      gestoppt
+ arbeitet      wartet      geschafft    Fehler
+
+|\---/|      |\---/|      |\---/|      |\---/|
+| o o |      | - - |      | O O |      | - - |
+|  >_ |      |  >_ |      |  >o |      |  zZ |
+'-----'      '-----'      '-----'      '-----'
+  bereit      blinzelt    ist weg      gestoppt
 ```
+
+Es meldet Zustände, keine Tätigkeiten. Welcher Befehl läuft, steht schon auf der
+Leiste darunter, mit Namen und gezählten Sekunden; ein Gesicht, das dasselbe
+wiederholt, sagt es ungenauer, und eines, das sich bei jeder Handlung ändert,
+hieße bald nicht mehr „hierher sehen“.
+
+- **wartet** — der Befehl hat fünf Sekunden nichts gesagt. Der größte Teil einer
+  Installation vergeht mit Warten auf fremde Hosts, und der Zeiger dreht sich
+  dabei gleich: das ist der Unterschied zwischen langsamem Laden und einer
+  Zeitüberschreitung, die wie ein Hänger aussieht.
+- **geschafft** und **Fehler** — womit der getippte Befehl zurückkam. Ein Fehler
+  bleibt, bis etwas gelingt, statt nach einer Weile zu verblassen: ein Gesicht,
+  das von selbst aufheitert, meldet den Lauf der Zeit und nicht den Zustand von
+  irgendetwas.
+- **ist weg** — der Supervisor war eben noch da, und niemand hat ihn gebeten zu
+  gehen. Das ist eine Nachricht; dass er beim Öffnen nicht lief, ist keine.
+- **blinzelt** — alle fünfundzwanzig Sekunden, kurz. Dasselbe Argument wie beim
+  Arbeitszeiger: ein Standbild unterscheidet Aufmerksamkeit nicht von einem
+  hängenden Prozess.
 
 Dieselbe Figur wie im Logo, und mit Absicht aus ASCII: ein Terminal ohne die
 Schrift für Rahmenzeichen zeigt Kästchen, und ein Maskottchen aus Kästchen lässt
