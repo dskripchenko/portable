@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.1 — 2026-08-27
+
+### Fixed — the corner was astonished by what it had just been told to do
+
+Type `down` in the dashboard and the face went wide-eyed. The command ends, the
+busy flag clears, and only then does the next refresh notice the supervisor has
+gone — so the guard asking "is a command running" was always false by the time
+it mattered. A disappearance within five seconds of a command ending is now
+taken as the one that was asked for; a supervisor that dies on its own still
+gets the face that exists for it.
+
+Found by watching the blink rather than by reading the code, which is also how
+the blink turned out to be untested at the level that matters: the rule had a
+test, the loop that has to draw it every twenty-five seconds without being
+asked did not. It does now — the clock is sped up and the screen is watched.
+
 ## 1.7.0 — 2026-08-27
 
 ### Added — a proxy this tool is told about, rather than one it inherits

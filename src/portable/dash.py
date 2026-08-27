@@ -67,6 +67,15 @@ TICK = 0.2
 #: look broken at exactly the moment it is meant to reassure.
 FRAMES = "|/-\\"
 
+#: How long after a command the supervisor's disappearance still counts as
+#: having been asked for.
+#:
+#: `down` typed here ends, the busy flag clears, and only then does the next
+#: refresh notice the daemon has gone — so without this the face acts shocked
+#: at something it was just told to do. Generous, because the refresh that
+#: notices is a second away and the shutdown it follows is not instant.
+ASKED_FOR = 5.0
+
 #: Lines kept in the log pane.
 #:
 #: Enough to scroll back through a start-up, not enough to hold a session's
@@ -430,6 +439,9 @@ def build() -> Any:
             #: somebody typed `down` is not.
             self._daemon_up = False
             self._wrong = False
+            #: When a command last ended, whatever it was. A supervisor that
+            #: goes away just after one went away because it was asked to.
+            self._ran_at: float | None = None
             self._vanished: float | None = None
             self._idle_since = time.monotonic()
             self._since = 0.0
@@ -719,6 +731,7 @@ def build() -> Any:
         def settled(self, failed: bool) -> None:
             """A command has finished, one way or the other."""
             self._failed = failed
+            self._ran_at = time.monotonic()
             self._finished = None if failed else time.monotonic()
 
         def said_something(self) -> None:
@@ -859,7 +872,9 @@ def build() -> Any:
 
             if detail is not None:
                 detail.update("\n".join(rest))
-            if self._daemon_up and not snapshot.running and self._busy is None:
+            asked = self._ran_at is not None and time.monotonic() - self._ran_at < ASKED_FOR
+
+            if self._daemon_up and not snapshot.running and self._busy is None and not asked:
                 # It was there a second ago and nobody asked it to go. Worth a
                 # face of its own for a moment, before it settles into the
                 # ordinary "not running".

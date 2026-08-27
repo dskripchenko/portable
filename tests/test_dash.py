@@ -1056,3 +1056,88 @@ class TestWhatTheCommandLineTellsTheFace:
             app.tick()
 
             assert ".." not in str(app.query_one("#mascot").content)
+
+
+class TestBlinkingAndBeingSurprisedForRealReasons:
+    """
+    The blink was tested by calling the decider. That proves the rule and not
+    the loop — and the loop is the part that has to draw it every twenty-five
+    seconds without being asked.
+    """
+
+    async def test_the_screen_blinks_by_itself(self, monkeypatch):
+        import asyncio
+
+        from portable import mascot
+
+        # The clock, sped up. Not the state pushed by hand: the point is that
+        # nothing pushes it.
+        monkeypatch.setattr(mascot, "BLINK_EVERY", 1.0)
+        monkeypatch.setattr(mascot, "BLINK_FOR", 0.3)
+        monkeypatch.setattr(
+            dash,
+            "look",
+            lambda: dash.Snapshot(
+                running=True,
+                port=80,
+                home="C:/p",
+                processes=[{"name": "caddy", "state": "running", "restarts": 0, "pid": 1}],
+            ),
+        )
+
+        application = dash.build()
+        app = application()
+        seen = set()
+
+        async with app.run_test(size=(90, 32)) as pilot:
+            await pilot.pause()
+            started = time.monotonic()
+
+            while time.monotonic() - started < 2.5:
+                await asyncio.sleep(0.05)
+                seen.add(str(app.query_one("#mascot").content).splitlines()[1])
+
+        assert "| - - |" in seen, f"it never blinked: {seen}"
+        assert "| o o |" in seen, "it blinked and stayed shut"
+
+    async def test_down_typed_here_is_not_a_surprise(self):
+        """
+        Reported by looking: the face acted shocked at what it had just been
+        told to do.
+
+        `down` ends, the busy flag clears, and only then does the next refresh
+        notice the daemon has gone — so the guard that asked "is a command
+        running" was always false by the time it mattered.
+        """
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.busy("down")
+            app.settled(failed=False)
+            app.busy(None)
+            app.show(dash.Snapshot(running=False, home="C:/p"))
+            app.tick()
+
+            assert "zZ" in str(app.query_one("#mascot").content), (
+                "it was asked to stop and the corner is astonished"
+            )
+
+    async def test_one_that_dies_long_after_a_command_still_is(self):
+        # The face exists for exactly this: nobody asked, and it went.
+        application = dash.build()
+        app = application()
+
+        async with app.run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+
+            app.show(dash.Snapshot(running=True, port=80, home="C:/p"))
+            app.settled(failed=False)
+            app._ran_at = time.monotonic() - dash.ASKED_FOR - 1
+            app.show(dash.Snapshot(running=False, home="C:/p"))
+            app.tick()
+
+            assert "O O" in str(app.query_one("#mascot").content)
