@@ -111,6 +111,17 @@ class Stack:
 
     tls_candidates: tuple[int, ...] = (443, 8443)
 
+    tls_error: str | None = None
+    """
+    Why there is no HTTPS, when there is none.
+
+    Losing the convenience quietly was the whole problem: `status` simply had no
+    https line, and nothing anywhere said which ports had been tried or that
+    they had been tried at all. A missing feature and a feature that failed look
+    identical from the outside, and only one of them is worth doing something
+    about.
+    """
+
     def reconcile(self, sites: list[Site], services: list[Service] | None = None) -> dict:
         """
         Bring the processes into line with what is declared. Returns what changed.
@@ -477,6 +488,7 @@ class Stack:
             (candidate for candidate in self.tls_candidates if ports.is_free(candidate)),
             None,
         )
+        self.tls_error = None if self.tls_port else self._no_tls_because()
 
         # Attempted and observed, rather than predicted: `http.sys` reserves
         # ports on Windows without listening on them, so nothing short of trying
@@ -524,6 +536,29 @@ class Stack:
             "    excludedportrange protocol=tcp` lists them.\n\n"
             "`netstat -ano | findstr \":80 \"` names the process holding it.\n\n"
             f"{paths.tail(paths.logs() / 'caddy.log')}"
+        )
+
+    def _no_tls_because(self) -> str:
+        """
+        Which ports were tried, and who has them.
+
+        Named rather than counted: on a machine that also runs Laragon or IIS
+        the holder is usually the answer, and `netstat` is the wrong thing to
+        make somebody reach for when the tool can look.
+        """
+        held = []
+
+        for candidate in self.tls_candidates:
+            owner = ports.holder(candidate)
+            held.append(f"  {candidate} — {owner}" if owner else f"  {candidate} — taken")
+
+        tried = " and ".join(str(candidate) for candidate in self.tls_candidates)
+
+        return (
+            f"No HTTPS: {tried} are both in use, so no listener was started.\n"
+            + "\n".join(held)
+            + "\nHTTP is unaffected. Free one of those and `portable up` again, "
+            "or leave it — https is a convenience here, not the product."
         )
 
     def _write_config(self, sites: list[caddy.Site], port: int) -> Path:

@@ -168,6 +168,25 @@ Ein gewählter Port ist der **einzige**, der versucht wird. Nach einer Bitte um
 nicht gewählt haben und von der Ihnen niemand erzählt hat — und man wählt einen
 Port gerade deshalb, weil die Voreinstellungen nicht taugten.
 
+`trust` legt die Wurzel der lokalen Instanz in **Ihren** Zertifikatspeicher —
+den einzigen ohne Administratorrechte erreichbaren — und schreibt
+`conf/ca-bundle.pem`: die eigenen vertrauten Wurzeln dieser Maschine samt jener
+Wurzel. Jedes installierte PHP wird darauf ausgerichtet.
+
+PHP, curl und Node lesen ihre eigenen Listen statt des Systemspeichers. So
+öffnet eine Seite in Chrome grün, während
+`file_get_contents('https://api.localhost')` aus dem Code derselben Seite am
+Zertifikat scheitert. `portable run` und `portable env` reichen dieselbe Datei
+an curl und Node weiter.
+
+Die Wurzeln der Maschine stehen mit Absicht darin: ein Bündel mit nur der
+lokalen Instanz ließe PHP `api.localhost` vertrauen und jedes öffentliche
+Zertifikat ablehnen. Lassen sie sich nicht einsammeln, wird nichts geschrieben,
+und `trust` sagt es.
+
+Sind 443 und 8443 beide belegt, wird gar kein HTTPS-Listener gestartet — HTTP
+bleibt unberührt. `status` sagt das und nennt, wer sie hält.
+
 ## Mehrere Versionen gleichzeitig
 
 Jede installierte PHP-Version kann gleichzeitig ausliefern. Jede bekommt einen

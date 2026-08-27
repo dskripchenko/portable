@@ -264,6 +264,10 @@ class ControlServer:
             "home": str(paths.root()),
             "port": self.stack.port,
             "https_port": self.stack.tls_port,
+            # Why there is none, when there is none. A missing feature and a
+            # feature that failed look identical from the outside, and only one
+            # of them is worth doing anything about.
+            "https_error": self.stack.tls_error,
             "sites": len(self.sites.all()),
             "services": len(self.services_registry.all()),
             "processes": self.supervisor.status(),
@@ -324,6 +328,7 @@ class ControlServer:
             "certificate": str(trust.root_certificate()),
             "ready": trust.is_ready(),
             "https": self.stack.tls_port,
+            "https_error": self.stack.tls_error,
         }
 
     def _trust_add(self, _payload: dict) -> dict:
@@ -332,7 +337,46 @@ class ControlServer:
         except trust.TrustFailed as error:
             raise ApiError(HTTPStatus.CONFLICT, "trust-failed", str(error)) from error
 
-        return {"trusted": True, "certificate": str(trust.root_certificate()), "ran": ran}
+        # The browsers are done. PHP, curl and Node read their own lists, so
+        # the same root goes into a file they can be pointed at — together with
+        # the machine's own roots, or not at all.
+        written = trust.write_bundle()
+        taught = self._teach_php(written) if written else []
+
+        return {
+            "trusted": True,
+            "certificate": str(trust.root_certificate()),
+            "ran": ran,
+            "bundle": str(written) if written else None,
+            "php": taught,
+        }
+
+    def _teach_php(self, where: Path) -> list[str]:
+        """
+        Point every installed PHP at the bundle, once.
+
+        The generated `php.ini` is written when a PHP is installed and never
+        again — somebody edits it, and regenerating would quietly discard that.
+        So this edits rather than rewrites, and leaves an ini that already names
+        a bundle alone: that one was somebody's decision.
+        """
+        taught = []
+
+        for entry in self.runtimes.of("php"):
+            ini = pool.ini_for(entry, paths.root() / "conf")
+
+            if pool.point_at_bundle(ini, where):
+                taught.append(entry.version)
+
+        # `php.ini` is read once, when a worker starts, so a running pool would
+        # go on not trusting the certificate until something else restarted it.
+        for version in taught:
+            self.stack.reload_php(version)
+
+        if taught:
+            self._reconcile()
+
+        return taught
 
     def _trust_forget(self, _payload: dict) -> dict:
         try:
@@ -890,7 +934,32 @@ class ControlServer:
                 # So a script can tell it is running inside one of these, and
                 # find the rest of the installation without being told.
                 "PORTABLE_HOME": str(paths.root()),
+                **self._trust_vars(),
             },
+        }
+
+    def _trust_vars(self) -> dict:
+        """
+        Where the roots are, for the things that do not read the system store.
+
+        Node, curl and anything built on OpenSSL each look at their own
+        variable, and all three are safe to point here because the file holds
+        this machine's own roots as well as the local authority — replacing the
+        default set with a superset of it rather than with one certificate.
+
+        `NODE_EXTRA_CA_CERTS` adds rather than replaces, which is why Node gets
+        it and not `SSL_CERT_FILE`: adding is the smaller change, and Node
+        already trusts what it should.
+        """
+        where = trust.bundle()
+
+        if not where.is_file():
+            return {}
+
+        return {
+            "SSL_CERT_FILE": str(where),
+            "CURL_CA_BUNDLE": str(where),
+            "NODE_EXTRA_CA_CERTS": str(where),
         }
 
     def _services_list(self, _payload: dict) -> dict:

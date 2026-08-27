@@ -13,7 +13,10 @@ listing but will refuse a bind.
 
 from __future__ import annotations
 
+import os
+import re
 import socket
+import subprocess
 
 #: Where pool members are placed. High enough to sit above anything with a
 #: registered claim, and outside Windows' default dynamic client range
@@ -98,3 +101,88 @@ def ephemeral() -> int:
         probe.bind(("127.0.0.1", 0))
 
         return probe.getsockname()[1]
+
+
+def holder(port: int) -> str | None:
+    """
+    What is listening on a port, named, or `None` when it cannot be told.
+
+    "Something else has it" is the least useful true sentence a tool can say
+    about a port. The answer is nearly always a program somebody recognises —
+    another local stack, IIS, a container — and the machine can look it up in
+    the time it takes to write `netstat` in a message and ask a person to.
+
+    Everything here is best-effort by design. It appears inside failure
+    messages, and a message that fails to be produced is worse than one missing
+    a detail, so every path out of here that is not an answer is `None`.
+    """
+    try:
+        pid = _listener_pid(port)
+
+        if pid is None:
+            return None
+
+        name = _process_name(pid)
+
+        return f"{name} (pid {pid})" if name else f"pid {pid}"
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _listener_pid(port: int) -> int | None:
+    if os.name == "nt":
+        # `-a` for listening sockets, `-n` numeric so no name lookup delays
+        # this, `-o` for the owning pid. Parsed rather than asked of an API
+        # because the alternative on Windows is a considerable amount of ctypes
+        # for a line in an error message.
+        listing = _ran(["netstat", "-ano", "-p", "tcp"])
+
+        if not listing:
+            return None
+
+        for line in listing.splitlines():
+            parts = line.split()
+
+            if len(parts) >= 5 and parts[3].upper() == "LISTENING" and _is_port(parts[1], port):
+                return int(parts[4])
+
+        return None
+
+    listing = _ran(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-Fp"])
+
+    if not listing:
+        return None
+
+    found = re.search(r"^p(\d+)", listing, re.MULTILINE)
+
+    return int(found.group(1)) if found else None
+
+
+def _process_name(pid: int) -> str | None:
+    if os.name == "nt":
+        listing = _ran(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"])
+
+        if not listing or "No tasks" in listing:
+            return None
+
+        return listing.strip().split(",")[0].strip('"') or None
+
+    listing = _ran(["ps", "-p", str(pid), "-o", "comm="])
+
+    return listing.strip().rsplit("/", 1)[-1] if listing else None
+
+
+def _is_port(address: str, port: int) -> bool:
+    """Whether a `netstat` local address is this port — `0.0.0.0:443`, `[::]:443`."""
+    return address.rsplit(":", 1)[-1] == str(port)
+
+
+def _ran(command: list[str]) -> str | None:
+    try:
+        result = subprocess.run(
+            command, capture_output=True, text=True, timeout=10, check=False
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+    return result.stdout if result.returncode == 0 else None

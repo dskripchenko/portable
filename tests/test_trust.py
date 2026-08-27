@@ -119,3 +119,90 @@ class TestWhenItGoesWrong:
             trust._run(["certutil"], trust.root_certificate())
 
         assert "Access is denied." in str(excinfo.value)
+
+
+class TestTheBundleForEverythingThatIsNotABrowser:
+    """
+    Browsers read the system store, so `trust` is enough for them. PHP, curl
+    and Node do not — which is how a site opens green in Chrome while
+    `file_get_contents('https://api.localhost')` from that same site's code
+    fails on the certificate.
+    """
+
+    def with_a_root(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        certificate = trust.root_certificate()
+        certificate.parent.mkdir(parents=True, exist_ok=True)
+        certificate.write_text(
+            "-----BEGIN CERTIFICATE-----\nlocalauthority\n-----END CERTIFICATE-----\n",
+            encoding="utf-8",
+        )
+
+        return certificate
+
+    def test_it_holds_the_local_root_and_the_machine_s_own(self, tmp_path, monkeypatch):
+        self.with_a_root(tmp_path, monkeypatch)
+        monkeypatch.setattr(
+            trust,
+            "_system_roots",
+            lambda: "-----BEGIN CERTIFICATE-----\npublicone\n-----END CERTIFICATE-----\n",
+        )
+
+        written = trust.write_bundle()
+
+        assert written is not None
+        text = written.read_text(encoding="utf-8")
+        assert "localauthority" in text, "the whole point is missing"
+        assert "publicone" in text, "PHP would now distrust the rest of the internet"
+
+    def test_nothing_is_written_when_the_machine_s_roots_cannot_be_read(
+        self, tmp_path, monkeypatch
+    ):
+        """
+        The dangerous case, and the reason this is not simply the local root.
+
+        A bundle holding only the local authority makes PHP trust
+        `api.localhost` and reject every public certificate — a worse problem
+        than the one being fixed, and one that surfaces far from here.
+        """
+        self.with_a_root(tmp_path, monkeypatch)
+        monkeypatch.setattr(trust, "_system_roots", lambda: None)
+
+        assert trust.write_bundle() is None
+        assert not trust.bundle().exists()
+
+    def test_nothing_is_written_before_there_is_a_local_root(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        monkeypatch.setattr(trust, "_system_roots", lambda: "roots")
+
+        assert trust.write_bundle() is None
+
+    def test_the_machine_s_roots_are_real_ones(self):
+        # Whatever route this platform offers — the Windows store, OpenSSL's
+        # file, or its directory — the answer has to be certificates.
+        roots = trust._system_roots()
+
+        if roots is None:
+            pytest.skip("this machine exposes no root store to read")
+
+        assert roots.count("BEGIN CERTIFICATE") > 10, "that is not a root store"
+
+    def test_an_untrusted_certificate_in_the_store_is_not_copied(self, monkeypatch):
+        # A certificate sitting in the store marked untrusted is there to be
+        # distrusted, and copying it into a bundle would undo that.
+        import ssl
+
+        monkeypatch.setattr(
+            ssl,
+            "enum_certificates",
+            lambda store: [
+                (b"good", "x509_asn", True),
+                (b"revoked", "x509_asn", False),
+            ],
+            raising=False,
+        )
+        monkeypatch.setattr(ssl, "DER_cert_to_PEM_cert", lambda der: der.decode() + "\n")
+
+        roots = trust._system_roots()
+
+        assert "good" in roots and "revoked" not in roots

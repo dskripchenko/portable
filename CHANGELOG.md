@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.8.0 — 2026-08-27
+
+Both gaps in HTTPS that the last conversation turned up.
+
+### Fixed — HTTPS that never started said nothing about it
+
+443 and 8443 both taken meant no TLS listener, which is the right trade — HTTP
+is the product and HTTPS is a convenience — but `status` simply had no https
+line. A missing feature and a feature that failed look identical from the
+outside, and only one of them is worth doing anything about.
+
+The reason is now kept and reported by `status` and by `trust`, and it **names
+what is holding the ports**: "something else has it" is the least useful true
+sentence a tool can say about a port, and looking the holder up costs less than
+writing `netstat` into a message and asking somebody to run it.
+
+### Added — a set of roots for PHP, curl and Node
+
+Browsers read the system store, so `trust` was enough for them. PHP, curl and
+Node read their own lists — which is how a site opens green in Chrome while
+`file_get_contents('https://api.localhost')` from that same site's code fails
+on the certificate.
+
+`trust` now also writes `conf/ca-bundle.pem`: **this machine's own trusted
+roots together with the local authority**. Every installed PHP is pointed at it
+through `curl.cainfo` and `openssl.cafile`, and `portable run` and
+`portable env` pass it to curl and Node.
+
+The machine's own roots are in there deliberately, and their absence is a
+refusal rather than a smaller bundle: one holding only the local authority
+would make PHP trust `api.localhost` and reject every public certificate — a
+worse problem than the one being fixed, surfacing far from here. If they cannot
+be collected, nothing is written and `trust` says why.
+
+An ini that already names a bundle is left alone; that one was somebody's
+decision, including the decision to point elsewhere.
+
 ## 1.7.1 — 2026-08-27
 
 ### Fixed — the corner was astonished by what it had just been told to do

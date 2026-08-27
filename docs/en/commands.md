@@ -156,6 +156,24 @@ manages would be a surprising thing for this to do.
 | `portable port 8888` | The port sites are served on. `auto` returns to trying 80, then 8080. |
 | `portable trust` | Trust the local certificate authority, so `https://` stops warning. `--forget` undoes it. |
 
+`trust` puts the local authority's root into **your** certificate store, which
+is the only one reachable without administrator rights, and writes
+`conf/ca-bundle.pem` — this machine's own trusted roots together with that root
+— and points every installed PHP at it.
+
+PHP, curl and Node read their own lists rather than the system store, which is
+how a site opens green in Chrome while `file_get_contents('https://api.localhost')`
+from that same site's code fails on the certificate. `portable run` and
+`portable env` pass the same file to curl and Node.
+
+The machine's own roots are in there deliberately: a bundle holding only the
+local authority would make PHP trust `api.localhost` and reject every public
+certificate. If those roots cannot be collected, nothing is written and `trust`
+says so rather than leaving PHP trusting nobody.
+
+If 443 and 8443 are both taken, no HTTPS listener is started at all — HTTP is
+unaffected. `status` says so, and names what is holding them.
+
 A chosen port is the **only** one tried. Falling back to 8080 after you asked
 for 8888 would put the site at an address you did not pick and were not told
 about — and the reason to choose one is that the defaults were not usable.

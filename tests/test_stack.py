@@ -233,3 +233,83 @@ class TestWhatAServiceIsActuallyRunning:
 
         assert reported["version"] is None
         assert reported["client"] is None
+
+
+class TestWhenThereIsNoHttps:
+    """
+    Losing HTTPS quietly was the whole problem. `status` simply had no https
+    line, and nothing said which ports had been tried or that they had been.
+
+    A missing feature and a feature that failed look identical from the
+    outside, and only one of them is worth doing something about.
+    """
+
+    def stack_with_both_taken(self, monkeypatch):
+        from portable import ports as port_module
+        from portable import stack as stack_module
+
+        instance = stack_module.Stack(supervisor=Supervisor(), runtimes=Runtimes())
+        monkeypatch.setattr(port_module, "is_free", lambda port, host="127.0.0.1": False)
+        monkeypatch.setattr(port_module, "holder", lambda port: f"something.exe (pid {port})")
+
+        return instance
+
+    def test_the_reason_names_both_ports_and_who_has_them(self, monkeypatch):
+        instance = self.stack_with_both_taken(monkeypatch)
+
+        reason = instance._no_tls_because()
+
+        assert "443" in reason and "8443" in reason
+        assert "something.exe" in reason, "it should name the holder, not say `netstat`"
+        assert "HTTP is unaffected" in reason, "it should say what still works"
+
+    def test_a_port_whose_holder_cannot_be_told_still_reports(self, monkeypatch):
+        from portable import ports as port_module
+
+        instance = self.stack_with_both_taken(monkeypatch)
+        monkeypatch.setattr(port_module, "holder", lambda port: None)
+
+        reason = instance._no_tls_because()
+
+        assert "443" in reason, "a missing detail must not cost the whole message"
+
+
+class TestNamingWhoHasAPort:
+    """
+    "Something else has it" is the least useful true sentence a tool can say
+    about a port, and looking it up costs less than writing `netstat` into a
+    message and asking a person to run it.
+    """
+
+    def test_it_names_this_process(self):
+        import socket
+
+        from portable import ports as port_module
+
+        listening = socket.socket()
+        listening.bind(("127.0.0.1", 0))
+        listening.listen(1)
+
+        try:
+            answer = port_module.holder(listening.getsockname()[1])
+        finally:
+            listening.close()
+
+        assert answer and "pid" in answer, f"it could not name this very process: {answer}"
+
+    def test_a_free_port_has_no_holder(self):
+        from portable import ports as port_module
+
+        # Port 1 needs privileges nothing here has, so nothing of ours is on it.
+        assert port_module.holder(1) is None
+
+    def test_it_never_raises(self, monkeypatch):
+        # It appears inside failure messages. A message that fails to be
+        # produced is worse than one missing a detail.
+        from portable import ports as port_module
+
+        monkeypatch.setattr(
+            port_module, "_listener_pid", lambda port: (_ for _ in ()).throw(OSError("no"))
+        )
+
+        assert port_module.holder(443) is None

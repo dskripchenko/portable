@@ -450,3 +450,45 @@ class TestTheWholeDocumentLoads:
         document = caddy.config(self.sites(), listen=80, storage=tmp_path / "caddy")
 
         assert document["storage"]["root"] == str(tmp_path / "caddy")
+
+
+class TestPointingPhpAtTheRoots:
+    """
+    PHP on Windows ships with no opinion about certificate authorities at all,
+    so `file_get_contents('https://...')` fails on any certificate until it is
+    told where to look. Told once, it can be told about the local authority in
+    the same breath — which is what lets a site call itself.
+    """
+
+    def test_an_existing_ini_gains_the_two_directives(self, tmp_path):
+        ini = tmp_path / "php-8.4.24.ini"
+        ini.write_text("display_errors = On\n", encoding="utf-8")
+        bundle = tmp_path / "ca-bundle.pem"
+
+        assert pool.point_at_bundle(ini, bundle) is True
+
+        text = ini.read_text(encoding="utf-8")
+        assert "display_errors = On" in text, "it rewrote rather than added"
+        assert f'curl.cainfo = "{bundle}"' in text
+        assert f'openssl.cafile = "{bundle}"' in text
+
+    def test_one_that_already_names_a_bundle_is_left_alone(self, tmp_path):
+        # Somebody's decision, including the decision to point somewhere else.
+        ini = tmp_path / "php.ini"
+        ini.write_text('openssl.cafile = "D:\\\\mine.pem"\n', encoding="utf-8")
+
+        assert pool.point_at_bundle(ini, tmp_path / "ours.pem") is False
+        assert "mine.pem" in ini.read_text(encoding="utf-8")
+
+    def test_a_missing_ini_is_not_an_error(self, tmp_path):
+        assert pool.point_at_bundle(tmp_path / "absent.ini", tmp_path / "b.pem") is False
+
+    def test_a_generated_ini_says_nothing_when_there_is_no_bundle(self, tmp_path, monkeypatch):
+        # Pointing at a file that does not exist is worse than saying nothing:
+        # PHP then trusts nobody, and the failure moves from "no check" to
+        # "every certificate rejected".
+        from portable import trust
+
+        monkeypatch.setattr(trust, "bundle", lambda: tmp_path / "nowhere.pem")
+
+        assert pool._trust_lines() == []

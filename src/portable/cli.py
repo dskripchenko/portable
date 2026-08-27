@@ -1146,6 +1146,12 @@ def _down(args) -> int:
 def _status(args) -> int:
     status = Client().status()
 
+    if not args.json and status.get("https_error") and status.get("port"):
+        # Only when the plain side is up: with nothing served at all, the reason
+        # for that is the news and this would be a second paragraph about a
+        # convenience nobody has got to yet.
+        print(f"{status['https_error']}\n", file=sys.stderr)
+
     if not args.json and status.get("router_error") and not status.get("port"):
         # Printed before the rest. Everything below it will look normal — the
         # sites are listed, the workers are running — and none of it is being
@@ -1373,6 +1379,11 @@ def _trust(args) -> int:
 
     state = Client().call("GET", "/v1/trust")
 
+    if state.get("https_error"):
+        # Trusting a root that nothing is serving with is a strange thing to
+        # have succeeded at, and the reason is two lines away.
+        print(f"{state['https_error']}\n", file=sys.stderr)
+
     if not state["ready"]:
         return _fail(
             args,
@@ -1384,14 +1395,34 @@ def _trust(args) -> int:
 
     result = Client().call("POST", "/v1/trust", {}, timeout=180)
 
-    return _emit(
-        args,
-        result,
+    said = [
         "Trusted. https:// now works in Chrome, Edge and anything else that reads "
-        "the system store.\n"
+        "the system store.",
         "Firefox keeps its own and will still warn — it is the one browser this "
         "cannot reach without changing a setting in your profile.",
-    )
+    ]
+
+    if result.get("bundle"):
+        taught = ", ".join(result.get("php") or [])
+        said.append(
+            f"\nPHP, curl and Node read their own lists rather than the system's, "
+            f"so the same root is in {result['bundle']} alongside this machine's "
+            f"own roots."
+        )
+        said.append(
+            f"PHP {taught} now points at it; `portable run` and `portable env` "
+            f"pass it to curl and Node."
+            if taught
+            else "`portable run` and `portable env` pass it to curl and Node."
+        )
+    else:
+        said.append(
+            "\nPHP, curl and Node were left alone: this machine's own trusted "
+            "roots could not be collected, and a bundle holding only the local "
+            "authority would make them distrust the rest of the internet."
+        )
+
+    return _emit(args, result, "\n".join(said))
 
 
 def _port(args) -> int:

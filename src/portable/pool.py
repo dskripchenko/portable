@@ -136,6 +136,66 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
 
 
+def point_at_bundle(ini: Path, where: Path) -> bool:
+    """
+    Add the two trust directives to an existing ini. Returns whether it changed.
+
+    Appended rather than rewritten. The file is generated once and then belongs
+    to whoever edits it, and an ini that already names a bundle is somebody's
+    decision — including the decision to point somewhere else.
+    """
+    try:
+        text = ini.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+    if "openssl.cafile" in text or "curl.cainfo" in text:
+        return False
+
+    ini.write_text(
+        text.rstrip("\n")
+        + "\n\n"
+        + "\n".join(
+            [
+                "; Added by `portable trust`: this machine's roots plus the local",
+                "; authority, so PHP can reach both the internet and the sites",
+                "; served here. Delete these two lines to go back to the defaults.",
+                f'curl.cainfo = "{where}"',
+                f'openssl.cafile = "{where}"',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    return True
+
+
+def _trust_lines() -> list[str]:
+    """
+    The two directives that point PHP at a set of roots, when there is one.
+
+    Nothing when there is not: pointing at a file that does not exist is worse
+    than saying nothing, because PHP then trusts nobody and the failure moves
+    from "no certificate check" to "every certificate rejected".
+    """
+    from . import trust
+
+    where = trust.bundle()
+
+    if not where.is_file():
+        return []
+
+    return [
+        "; This machine's trusted roots plus the local authority, so PHP can",
+        "; reach both the internet and the sites served here. `portable trust`",
+        "; writes it; delete these two lines to go back to PHP's own defaults.",
+        f'curl.cainfo = "{where}"',
+        f'openssl.cafile = "{where}"',
+        "",
+    ]
+
+
 def ini_for(runtime: Installed, into: Path) -> Path:
     """
     Write a `php.ini` for this version and return its path.
@@ -185,6 +245,11 @@ def ini_for(runtime: Installed, into: Path) -> Path:
         "memory_limit = 512M",
         "max_execution_time = 300",
         "",
+        # Where to find trusted roots. PHP on Windows ships with no opinion at
+        # all, so `file_get_contents('https://...')` fails on any certificate
+        # until told — and once told, it can be told about the local authority
+        # in the same breath, which is what makes a site able to call itself.
+        *_trust_lines(),
         "; Extensions common enough that their absence reads as a broken install.",
         *(
             load(name)
