@@ -263,10 +263,35 @@ heraus, der bei einer Person durchläuft.
 | `portable env` | Die Einstellungen ausgeben, die eine Shell bräuchte, statt etwas zu ändern. |
 | `portable home` | Wo alles liegt und was das entschieden hat. |
 | `portable home set <pfad>` | Woanders ablegen. `--beside` legt es neben den Starter. |
+| `portable proxy` | Worüber alles Ausgehende läuft und wer das entschied. |
+| `portable proxy set <url>` | Downloads, Kataloge und Aktualisierungsprüfungen darüber. |
+| `portable proxy clear` | Wieder der Umgebung folgen. |
 | `portable home clear` | Zurück zur Voreinstellung. |
 | `portable path` | Ob dies im PATH steht. |
 | `portable purge` | Alles entfernen, was außerhalb des eigenen Ordners abgelegt wurde. |
 | `portable path add` | Eintragen — für **Sie**, ohne Administrator. `remove` nimmt es zurück. |
+
+`proxy` ist für die Maschine, die einen braucht und ihn nie exportiert bekommen
+hat. `HTTPS_PROXY` wird wie bisher beachtet; ein hier gesetzter hat Vorrang,
+denn zwei Quellen für eine Antwort heißt, dass die halbe Zeit die falsche gilt
+und nichts sagt welche.
+
+```powershell
+portable proxy set http://proxy.corp:3128
+portable proxy set http://bob:secret@proxy.corp:3128    # falls er ein Passwort will
+```
+
+Es gilt für alles Geholte: Laufzeiten, PHP-Erweiterungen, die Kataloge der
+Anbieter, GitHubs API und die Aktualisierungsprüfung. Das Schema ist `http://`
+auch bei einem Proxy, der `https` holt — diese Adresse sagt, wie dieser Proxy
+erreicht wird, nicht wie er das Ziel erreicht. SOCKS wird abgelehnt statt
+angenommen und später zu scheitern: mit Proxys spricht hier Pythons
+Standardbibliothek, und die kann nur HTTP-Proxys.
+
+Ein Passwort wird gespeichert wie angegeben und nie gedruckt: `proxy` und
+`version` zeigen `bob:***@`, damit es nicht in einem eingefügten Fehlerbericht
+landet.
+
 
 `path add` schreibt nach `HKEY_CURRENT_USER` — in Ihre eigene Umgebung, wofür
 keine Administratorrechte nötig sind. Der PATH der Maschine liegt woanders und

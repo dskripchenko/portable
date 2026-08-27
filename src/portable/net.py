@@ -214,6 +214,23 @@ def _waiting(url: str, attempt: int, attempts: int, pause: float) -> None:
     )
 
 
+def _chosen_proxy() -> str | None:
+    """
+    The proxy from settings, if the settings can be read at all.
+
+    Imported here rather than at the top: `settings` reaches for `paths`, which
+    resolves the data directory, and this module is imported by things that run
+    before there is one. A proxy nobody set is the same answer as a settings
+    file that cannot be found.
+    """
+    try:
+        from . import settings
+
+        return settings.proxy()
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _open_once(url: str, timeout: int, offset: int = 0):
     headers = _headers(url)
 
@@ -222,10 +239,24 @@ def _open_once(url: str, timeout: int, offset: int = 0):
 
     request = urllib.request.Request(url, headers=headers)
 
-    opener = urllib.request.build_opener(
+    handlers = [
         _DropAuthOnRedirect,
         urllib.request.HTTPSHandler(context=context()),
-    )
+    ]
+
+    # A chosen proxy replaces the environment's rather than joining it. Two
+    # sources for one answer means the wrong one is in force half the time and
+    # nothing says which — and somebody who ran `portable proxy set` has been
+    # explicit in a way an inherited variable never is.
+    #
+    # With nothing chosen, `build_opener` installs its own `ProxyHandler`, which
+    # reads `HTTPS_PROXY` and friends. That is left exactly as it was.
+    chosen = _chosen_proxy()
+
+    if chosen:
+        handlers.append(urllib.request.ProxyHandler({"http": chosen, "https": chosen}))
+
+    opener = urllib.request.build_opener(*handlers)
 
     try:
         return opener.open(request, timeout=timeout)
@@ -288,7 +319,7 @@ def _gave_up(url: str, failures: list[str]) -> str:
         "usually something between this machine and the host rather than either "
         "end of it — traffic inspection, or a filtering proxy. The same command "
         "often succeeds on another attempt or another network. If there is a "
-        "proxy, `HTTPS_PROXY` is honoured."
+        "proxy, `portable proxy set` or `HTTPS_PROXY` is honoured."
         if reset
         else ""
     )

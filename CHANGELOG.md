@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.0 — 2026-08-27
+
+### Added — a proxy this tool is told about, rather than one it inherits
+
+`portable proxy set http://proxy.corp:3128` sends everything outbound through
+it: runtimes, PHP extensions, the publishers' catalogues, GitHub's API and the
+update check. `portable proxy` says what is in force and who decided it;
+`portable proxy clear` goes back to following the environment.
+
+For the machine that needs a proxy and has never had one exported — which is
+most corporate laptops. `HTTPS_PROXY` is honoured exactly as before, and a
+proxy set here overrides it: two sources for one answer means the wrong one is
+in force half the time and nothing says which.
+
+- **Wrong addresses are refused while it can still be explained.** A proxy that
+  is wrong is otherwise discovered at the next download, five attempts and two
+  and a half minutes of connect timeouts later, as an error naming the host
+  being fetched rather than the proxy in front of it. A bare `host:3128`, a
+  missing port, an out-of-range port and a SOCKS address each get their own
+  sentence — SOCKS because this speaks to proxies through Python's standard
+  library, which handles HTTP proxies only.
+- **A password is stored as given and never printed.** `proxy` and `version`
+  show `bob:***@`, so a pasted bug report does not carry it.
+- **`version` names the proxy in force**, which is the field somebody would
+  otherwise have to be told where to look for.
+
+Tested against a real proxy — a socket that answers the way one does — rather
+than by asserting the handler was installed, which would only prove the code
+was written the way it was written.
+
+### Changed — the face sits one row lower
+
+Level with the first line it makes sense beside, rather than level with the
+name. The masthead is five rows for four lines of text, and the fifth row is
+the price.
+
 ## 1.6.0 — 2026-08-26
 
 ### Fixed — a command that failed left the corner pleased

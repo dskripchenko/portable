@@ -253,10 +253,34 @@ person.
 | `portable env` | Print the settings a shell would need, instead of changing anything. |
 | `portable home` | Where everything is kept, and what decided that. |
 | `portable home set <path>` | Keep it somewhere else. `--beside` keeps it next to the launcher. |
+| `portable proxy` | What everything outbound goes through, and who decided. |
+| `portable proxy set <url>` | Send downloads, catalogues and update checks through it. |
+| `portable proxy clear` | Follow the environment again. |
 | `portable home clear` | Back to the default. |
 | `portable path` | Whether this is on your PATH. |
 | `portable purge` | Remove everything this has put outside its own folder. |
 | `portable path add` | Put it there, for **you** — no administrator. `remove` undoes it. |
+
+`proxy` is for the machine that needs one and has never had it exported.
+`HTTPS_PROXY` is honoured as it always was; setting one here overrides it,
+because two sources for one answer means the wrong one is in force half the
+time and nothing says which.
+
+```powershell
+portable proxy set http://proxy.corp:3128
+portable proxy set http://bob:secret@proxy.corp:3128    # if it wants a password
+```
+
+It covers everything this fetches: runtimes, PHP extensions, the publishers'
+catalogues, GitHub's API and the update check. The scheme is `http://` even for
+a proxy that fetches `https` — that address is how this reaches the proxy, not
+how it reaches what is behind it. SOCKS is refused rather than accepted and
+failed later: this speaks to proxies through Python's standard library, which
+handles HTTP proxies only.
+
+A password is stored as given and never printed: `proxy` and `version` show
+`bob:***@`, so a pasted bug report does not carry it.
+
 
 `path add` writes to `HKEY_CURRENT_USER` — your own environment, which needs no
 administrator. The machine's PATH lives elsewhere and is never touched; there is

@@ -75,8 +75,12 @@ that had already given up after five, so a host that could not be reached was
 asked twenty-five times, each waiting out its own timeout.
 
 If it still fails, the message lists every attempt. Five identical resets and
-five different errors mean different things. `HTTPS_PROXY` is honoured if you
-have one.
+five different errors mean different things.
+
+If this machine reaches the internet only through a proxy, tell it so:
+`portable proxy set http://proxy.corp:3128`. `HTTPS_PROXY` is honoured as it
+always was, and a proxy set here overrides it. `portable version` shows which
+one is in force, without the password.
 
 **`WinError 10060` against `downloads.mariadb.org`** is a connect timeout rather
 than a reset — that host is simply unreachable from some networks, and retrying

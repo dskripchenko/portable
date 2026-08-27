@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import VERSION, catalog, dash, logs, paths, purge, selfupdate, spawn, userpath
+from . import VERSION, catalog, dash, logs, paths, purge, selfupdate, settings, spawn, userpath
 from .daemon import discovery
 from .daemon.client import CallFailed, Client, NotRunning
 
@@ -73,6 +73,9 @@ anything else
   portable env                       print the settings a shell would need instead
   portable home                      where everything is kept, and what decided that
   portable home set D:\\portable      or --beside, to keep it next to the launcher
+  portable proxy                     what everything outbound goes through
+  portable proxy set http://host:3128
+                                     downloads, catalogues and update checks
   portable path add                  put this on your own PATH; no administrator
   portable purge                     take back everything outside this folder
   portable dash                      a full-screen view of what is running
@@ -388,6 +391,33 @@ def _parser() -> argparse.ArgumentParser:
     add_ext("list", "Extensions this PHP ships, and which are loaded.", _ext_list)
 
     ext.set_defaults(run=_ext_list, ext_command=None)
+
+    proxy = subparsers.add_parser(
+        "proxy",
+        parents=[common],
+        help="Send everything this downloads through a proxy.",
+    )
+    proxy.add_argument("--json", action="store_true", help="Machine-readable output.")
+    proxy_commands = proxy.add_subparsers(dest="proxy_command")
+
+    def add_proxy(name: str, help_text: str, run) -> argparse.ArgumentParser:
+        sub = proxy_commands.add_parser(name, help=help_text, parents=[common])
+        sub.add_argument(
+            "--json",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help="Machine-readable output.",
+        )
+        sub.set_defaults(run=run)
+
+        return sub
+
+    proxy_set = add_proxy("set", "Use this proxy from now on.", _proxy_set)
+    proxy_set.add_argument("url", help="http://host:port, with user:password@ if it needs one.")
+
+    add_proxy("clear", "Follow the environment again.", _proxy_clear)
+
+    proxy.set_defaults(run=_proxy_show, proxy_command=None)
 
     home = subparsers.add_parser(
         "home",
@@ -970,6 +1000,11 @@ def _version(args) -> int:
         "home": str(home),
         "home_source": source,
         "bundle": str(paths.bundle()) if paths.bundle() else None,
+        # Asked for whenever a download misbehaves, and the one field somebody
+        # would otherwise have to be told where to look for. Never the password.
+        "proxy": settings.without_password(
+            settings.proxy() or os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+        ),
         "daemon": None,
     }
 
@@ -990,6 +1025,10 @@ def _version(args) -> int:
 
     if payload["bundle"]:
         lines.append(f"  bundle  {payload['bundle']}")
+
+    if payload["proxy"]:
+        source = "set here" if settings.proxy() else "from HTTPS_PROXY"
+        lines.append(f"  proxy   {payload['proxy']}  ({source})")
 
     if payload["daemon"] is None:
         lines.append("  daemon  not running")
@@ -1246,6 +1285,83 @@ def _ext_change(args, enabling: bool) -> int:
         args,
         result,
         f"{result['name']} is now {'on' if enabling else 'off'} for PHP {result['php']}.{note}",
+    )
+
+
+def _proxy_show(args) -> int:
+    """
+    Which proxy is in force, and where that was decided.
+
+    Both halves matter. "None" is a different answer from "none set here, and
+    the environment does not name one either" — the first is a choice and the
+    second is a machine somebody has yet to tell.
+    """
+    chosen = settings.proxy()
+    inherited = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    payload = {
+        "proxy": settings.without_password(chosen),
+        "source": "setting" if chosen else ("environment" if inherited else None),
+        "environment": settings.without_password(inherited),
+    }
+
+    if chosen:
+        return _emit(
+            args,
+            payload,
+            f"{settings.without_password(chosen)}\n"
+            f"Set here, so it is used whatever the environment says.\n"
+            f"    portable proxy clear   to follow the environment again",
+        )
+
+    if inherited:
+        return _emit(
+            args,
+            payload,
+            f"{settings.without_password(inherited)}\n"
+            f"From HTTPS_PROXY in this environment, which is honoured as it is.\n"
+            f"    portable proxy set <url>   to fix one here instead",
+        )
+
+    return _emit(
+        args,
+        payload,
+        "No proxy. Downloads go straight out.\n"
+        "    portable proxy set http://host:3128",
+    )
+
+
+def _proxy_set(args) -> int:
+    try:
+        settings.set_proxy(args.url)
+    except settings.InvalidSetting as error:
+        return _fail(args, "invalid-proxy", str(error))
+
+    shown = settings.without_password(args.url)
+
+    # The daemon reads the file when it needs it, so nothing has to restart —
+    # but a download already in flight is going the old way, and saying so is
+    # cheaper than somebody wondering why.
+    return _emit(
+        args,
+        {"proxy": shown, "source": "setting"},
+        f"Everything this downloads now goes through {shown}.\n"
+        f"Runtimes, extensions, catalogues and update checks — anything already "
+        f"in flight finishes the way it started.",
+    )
+
+
+def _proxy_clear(args) -> int:
+    was = settings.proxy()
+    settings.set_proxy(None)
+
+    if not was:
+        return _emit(args, {"proxy": "", "source": None}, "There was none set here.")
+
+    return _emit(
+        args,
+        {"proxy": "", "source": None},
+        f"{settings.without_password(was)} is no longer used. "
+        f"HTTPS_PROXY is honoured again, if this environment has one.",
     )
 
 

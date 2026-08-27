@@ -82,8 +82,12 @@ unerreichbarer Host wurde fünfundzwanzigmal gefragt, jedes Mal mit eigener
 Zeitüberschreitung.
 
 Scheitert es weiterhin, führt die Meldung jeden Versuch auf. Fünf gleiche
-Rücksetzungen und fünf verschiedene Fehler bedeuten Verschiedenes. `HTTPS_PROXY`
-wird beachtet, falls Sie einen haben.
+Rücksetzungen und fünf verschiedene Fehler bedeuten Verschiedenes.
+
+Erreicht diese Maschine das Internet nur über einen Proxy, sagen Sie es ihr:
+`portable proxy set http://proxy.corp:3128`. `HTTPS_PROXY` wird beachtet wie
+bisher, ein hier gesetzter hat Vorrang. `portable version` zeigt, welcher gilt —
+ohne das Passwort.
 
 **`WinError 10060` gegen `downloads.mariadb.org`** ist eine Zeitüberschreitung
 beim Verbindungsaufbau, keine Rücksetzung — dieser Host ist aus manchen Netzen

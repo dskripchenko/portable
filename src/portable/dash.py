@@ -317,8 +317,12 @@ def build() -> Any:
            solid colour that size shouts down the tables below it, so the
            accent stays on the first line — the one that answers "is it up" —
            and the rest sits on the ordinary background. */
-        #masthead { height: 4; }
-        #titles { width: 1fr; height: 4; }
+        /* Five rows for four lines of text, because the face hangs one row
+           lower than the title beside it and reads better for it — level with
+           the first line it makes sense next to rather than level with the
+           name. The fifth row is the price, and it is a row of the tables. */
+        #masthead { height: 5; }
+        #titles { width: 1fr; height: 5; }
 
         #summary {
             height: 1;
@@ -335,8 +339,8 @@ def build() -> Any:
 
         #mascot {
             width: 10;
-            height: 4;
-            padding: 0 2 0 1;
+            height: 5;
+            padding: 1 2 0 1;
             color: $primary;
         }
 

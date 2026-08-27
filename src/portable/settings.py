@@ -6,14 +6,15 @@ served by `sites`, what runs by `services` — each of those is a list of things
 with its own file, and settings are what is left: single values, machine-wide,
 that somebody set once.
 
-Today that is the port. It is here rather than a field on `Stack` because a
-`Stack` is rebuilt every time the daemon starts, and a preference that does not
-survive a restart is not a preference.
+Today that is the port and the proxy. Both are here rather than fields on
+`Stack` because a `Stack` is rebuilt every time the daemon starts, and a
+preference that does not survive a restart is not a preference.
 """
 
 from __future__ import annotations
 
 import json
+import urllib.parse
 
 from . import paths, ports
 
@@ -114,3 +115,109 @@ def check_port(port: int) -> None:
             f"(49152-65535), so it can be taken while the router is starting. "
             f"Pick something below 49152."
         )
+
+
+def proxy() -> str | None:
+    """
+    The proxy everything outbound goes through, if one was chosen.
+
+    `None` means "whatever the environment says", which is the ordinary case:
+    `HTTPS_PROXY` is already honoured, and a machine that has one usually has it
+    set. This exists for the machine that does not — a proxy that is required
+    but never exported, which is most corporate laptops.
+    """
+    chosen = read().get("proxy")
+
+    return str(chosen) if chosen else None
+
+
+def set_proxy(url: str | None) -> str | None:
+    """Choose a proxy, or `None` to go back to following the environment."""
+    values = read()
+
+    if url is None:
+        values.pop("proxy", None)
+        write(values)
+
+        return None
+
+    check_proxy(url)
+    values["proxy"] = url
+    write(values)
+
+    return url
+
+
+def check_proxy(url: str) -> None:
+    """
+    Refuse what will not work, while it can still be explained.
+
+    A proxy that is wrong is discovered at the next download, five attempts and
+    two and a half minutes of connect timeouts later, as a network error that
+    names the host being fetched rather than the proxy in front of it.
+    """
+    parsed = urllib.parse.urlparse(url)
+
+    if parsed.scheme in ("socks4", "socks5", "socks5h"):
+        raise InvalidSetting(
+            f"{url} is a SOCKS proxy, and this speaks to proxies through Python's "
+            f"standard library, which handles HTTP proxies only. An HTTP proxy "
+            f"address will work; a SOCKS one needs a library this deliberately "
+            f"does not carry."
+        )
+
+    if parsed.scheme not in ("http", "https"):
+        raise InvalidSetting(
+            f"{url} needs to start with http:// or https:// — that scheme is how "
+            f"this reaches the proxy, not how it reaches what is behind it. Almost "
+            f"every proxy, including ones that fetch https, is reached over http."
+        )
+
+    if not parsed.hostname:
+        raise InvalidSetting(f"{url} names no host.")
+
+    if parsed.path not in ("", "/"):
+        raise InvalidSetting(
+            f"{url} has a path on it. A proxy is an address to connect to — "
+            f"scheme, host and port — and nothing further."
+        )
+
+    try:
+        # Reading it is the check: `urlparse` defers the number until asked, and
+        # asking is what raises on `:80000` or `:http`.
+        port = parsed.port
+    except ValueError as error:
+        raise InvalidSetting(f"{url} has an unusable port: {error}") from error
+
+    if port is None and parsed.scheme == "http":
+        # Not refused — a proxy on 80 is legal — but it is almost always a typo
+        # for the port somebody meant to type, and finding out costs a download.
+        raise InvalidSetting(
+            f"{url} names no port. Proxies are on one — 3128, 8080, 8888 are the "
+            f"usual ones. If yours really is on 80, write it: {url}:80"
+        )
+
+
+def without_password(url: str | None) -> str:
+    """
+    A proxy address safe to print, log, and put in a bug report.
+
+    Credentials in a proxy URL are ordinary in this world, and they end up in
+    `version --json`, in the log, and in whatever somebody pastes into an issue.
+    The password is replaced rather than the whole thing hidden: which proxy,
+    and as whom, are exactly what somebody debugging needs.
+    """
+    if not url:
+        return ""
+
+    parsed = urllib.parse.urlparse(url)
+
+    if not parsed.password:
+        return url
+
+    host = parsed.hostname or ""
+
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+
+    return f"{parsed.scheme}://{parsed.username}:***@{host}{parsed.path}"

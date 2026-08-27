@@ -179,3 +179,63 @@ class TestAPortThatCannotBeUsed:
         server.restore()
 
         assert server._status({})["router_error"] is None
+
+
+class TestChoosingAProxy:
+    """
+    A wrong proxy is found out at the next download, five attempts and two and
+    a half minutes of connect timeouts later, as an error naming the host being
+    fetched rather than the proxy in front of it. So it is checked while it can
+    still be explained.
+    """
+
+    def test_it_is_remembered(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+
+        settings.set_proxy("http://proxy.corp:3128")
+
+        assert settings.proxy() == "http://proxy.corp:3128"
+
+    def test_clearing_goes_back_to_the_environment(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        settings.set_proxy("http://proxy.corp:3128")
+
+        settings.set_proxy(None)
+
+        assert settings.proxy() is None
+
+    def test_socks_is_refused_with_the_reason(self):
+        # Python's standard library speaks to HTTP proxies. Accepting a SOCKS
+        # address would fail at the first download and blame the host.
+        with pytest.raises(settings.InvalidSetting) as refused:
+            settings.check_proxy("socks5://127.0.0.1:1080")
+
+        assert "SOCKS" in str(refused.value)
+
+    def test_a_bare_host_is_refused(self):
+        with pytest.raises(settings.InvalidSetting):
+            settings.check_proxy("proxy.corp:3128")
+
+    def test_a_missing_port_is_refused_as_the_typo_it_usually_is(self):
+        with pytest.raises(settings.InvalidSetting) as refused:
+            settings.check_proxy("http://proxy.corp")
+
+        assert "3128" in str(refused.value), "it should say what a port looks like"
+
+    def test_credentials_survive_but_the_password_does_not_get_printed(self):
+        # They are ordinary in this world, and they end up in `version --json`,
+        # in the log, and in whatever gets pasted into an issue.
+        settings.check_proxy("http://bob:hunter2@proxy.corp:3128")
+
+        shown = settings.without_password("http://bob:hunter2@proxy.corp:3128")
+
+        assert "hunter2" not in shown
+        assert "bob" in shown and "proxy.corp:3128" in shown
+
+    def test_one_without_a_password_is_shown_whole(self):
+        assert (
+            settings.without_password("http://proxy.corp:3128") == "http://proxy.corp:3128"
+        )
+
+    def test_nothing_is_the_empty_string_rather_than_the_word_none(self):
+        assert settings.without_password(None) == ""

@@ -214,10 +214,31 @@ portable service cli pg17
 | `portable env` | 打印一个 shell 会需要的设置，而不去改动任何东西。 |
 | `portable home` | 一切放在哪，以及是什么决定的。 |
 | `portable home set <路径>` | 放到别处。`--beside` 放在启动器旁边。 |
+| `portable proxy` | 所有出站流量走哪里，以及是谁定的。 |
+| `portable proxy set <url>` | 下载、目录和更新检查都经过它。 |
+| `portable proxy clear` | 重新跟随环境变量。 |
 | `portable home clear` | 回到默认。 |
 | `portable path` | 这个工具是否在你的 PATH 里。 |
 | `portable purge` | 清除这个工具放在自身目录之外的一切。 |
 | `portable path add` | 加进去 —— 只对**你**，不需要管理员。`remove` 撤销。 |
+
+`proxy` 是给那种确实需要代理、却从来没在环境里设过的机器用的。`HTTPS_PROXY` 一如
+既往会被采用；在这里设置的会覆盖它 —— 一个答案有两个来源，就意味着有一半时间生效
+的是错的那个，而且没有任何东西告诉你是哪个。
+
+```powershell
+portable proxy set http://proxy.corp:3128
+portable proxy set http://bob:secret@proxy.corp:3128    # 如果它要密码
+```
+
+它覆盖这里获取的一切：运行时、PHP 扩展、发布方的目录、GitHub 的 API 以及更新检查。
+即便代理去取的是 `https`，协议也写 `http://` —— 这个地址说的是怎么连到代理，而不是
+代理怎么连到目标。SOCKS 会被直接拒绝，而不是先接受、之后再失败：这里和代理说话的是
+Python 标准库，它只会 HTTP 代理。
+
+密码按原样保存，且从不打印：`proxy` 和 `version` 显示的是 `bob:***@`，这样贴出来的
+问题报告里不会带着它。
+
 
 `path add` 写的是 `HKEY_CURRENT_USER` —— 你自己的环境，不需要管理员权限。机器的
 PATH 在别处，永远不会被碰；也没有去碰它的选项。

@@ -317,3 +317,100 @@ class TestRetriesDoNotMultiply:
 
         assert partial.read_bytes() == whole
         assert len(offsets) == 4, "it stopped resuming"
+
+
+class TestGoingThroughAProxy:
+    """
+    A proxy that is configured and not used is worse than none: the machine
+    that needs one has no other route out, so every download fails with a
+    network error naming the host it could not reach and nothing about the
+    proxy standing in front of it.
+
+    So this runs a real proxy — a socket that answers absolute-URI requests the
+    way a proxy does — and checks the request arrives there rather than at the
+    host in the URL. Asserting on the handler list would only prove the code
+    was written the way it was written.
+    """
+
+    def proxy(self):
+        """A minimal HTTP proxy: one that answers, and remembers what it was asked."""
+        import http.server
+        import threading
+
+        asked: list[str] = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                # A proxy receives the whole URL on the request line, which is
+                # how this tells "went through me" from "went straight out".
+                asked.append(self.path)
+                body = b"through the proxy"
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        return server, asked
+
+    def test_a_chosen_proxy_carries_the_traffic(self, tmp_path, monkeypatch):
+        from portable import settings
+
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        server, asked = self.proxy()
+
+        try:
+            settings.set_proxy(f"http://127.0.0.1:{server.server_port}")
+
+            with net.open_url("http://somewhere.invalid/runtime.zip", timeout=10) as answer:
+                assert answer.read() == b"through the proxy"
+
+            assert asked == ["http://somewhere.invalid/runtime.zip"], (
+                "the request did not go through the proxy"
+            )
+        finally:
+            server.shutdown()
+
+    def test_without_one_the_environment_still_decides(self, tmp_path, monkeypatch):
+        # The ordinary case on a machine that already has HTTPS_PROXY exported:
+        # nothing chosen here, and urllib's own handling left exactly as it was.
+
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        server, asked = self.proxy()
+
+        try:
+            monkeypatch.setenv("http_proxy", f"http://127.0.0.1:{server.server_port}")
+
+            with net.open_url("http://elsewhere.invalid/x", timeout=10):
+                pass
+
+            assert asked == ["http://elsewhere.invalid/x"]
+        finally:
+            server.shutdown()
+
+    def test_a_chosen_one_wins_over_the_environment(self, tmp_path, monkeypatch):
+        # Two sources for one answer means the wrong one is in force half the
+        # time and nothing says which.
+        from portable import settings
+
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        chosen, went_to_chosen = self.proxy()
+        inherited, went_to_inherited = self.proxy()
+
+        try:
+            monkeypatch.setenv("http_proxy", f"http://127.0.0.1:{inherited.server_port}")
+            settings.set_proxy(f"http://127.0.0.1:{chosen.server_port}")
+
+            with net.open_url("http://either.invalid/x", timeout=10):
+                pass
+
+            assert went_to_chosen and not went_to_inherited
+        finally:
+            chosen.shutdown()
+            inherited.shutdown()
