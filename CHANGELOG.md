@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.8.1 — 2026-08-27
+
+### Fixed — "automatic" was true only for people trusting the root today
+
+1.8.0 wrote the roots file from `portable trust` and nowhere else. Somebody who
+trusted the authority months ago has no reason to run that command again — so
+an installation upgraded into the feature had a certificate the browsers
+believe and a PHP that does not, with nothing to suggest otherwise.
+
+The daemon now checks at startup: if the authority exists and the file is
+missing or older than it, it is written and the installed PHPs are pointed at
+it. A new data directory means a new authority, and a bundle naming the old one
+is worse than none.
+
+Nothing is restarted for it at startup — the pools have not begun, and the
+reconcile that follows starts them reading the ini as it stands.
+
 ## 1.8.0 — 2026-08-27
 
 Both gaps in HTTPS that the last conversation turned up.

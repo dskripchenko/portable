@@ -152,6 +152,7 @@ class ControlServer:
         can reach to fix it, including the command that would move the port.
         """
         try:
+            self._refresh_bundle()
             restored = self.stack.reconcile(self.sites.all(), self.services_registry.all())
             self.router_error = None
 
@@ -351,7 +352,40 @@ class ControlServer:
             "php": taught,
         }
 
-    def _teach_php(self, where: Path) -> list[str]:
+    def _refresh_bundle(self) -> None:
+        """
+        Keep the roots file in step with the authority, without being asked.
+
+        Writing it only from `trust` made "automatic" untrue for the case that
+        matters most: somebody who trusted the root months ago has no reason to
+        run that command again, so an installation upgraded into this would have
+        a certificate the browsers believe and a PHP that does not.
+
+        Rewritten when the authority is newer than the file as well as when the
+        file is missing — a new data directory means a new authority, and a
+        bundle naming the old one is worse than none.
+        """
+        certificate = trust.root_certificate()
+
+        if not certificate.is_file():
+            return
+
+        where = trust.bundle()
+
+        try:
+            current = where.is_file() and where.stat().st_mtime >= certificate.stat().st_mtime
+        except OSError:
+            current = False
+
+        if current:
+            return
+
+        written = trust.write_bundle()
+
+        if written:
+            self._teach_php(written, restart=False)
+
+    def _teach_php(self, where: Path, *, restart: bool = True) -> list[str]:
         """
         Point every installed PHP at the bundle, once.
 
@@ -359,6 +393,11 @@ class ControlServer:
         again — somebody edits it, and regenerating would quietly discard that.
         So this edits rather than rewrites, and leaves an ini that already names
         a bundle alone: that one was somebody's decision.
+
+        `restart` is off at startup: nothing is running yet to be restarted, and
+        the reconcile this happens just before will start the pools reading the
+        ini as it now stands. Left on it would reconcile from inside the restore
+        that is about to reconcile anyway.
         """
         taught = []
 
@@ -370,11 +409,12 @@ class ControlServer:
 
         # `php.ini` is read once, when a worker starts, so a running pool would
         # go on not trusting the certificate until something else restarted it.
-        for version in taught:
-            self.stack.reload_php(version)
+        if restart:
+            for version in taught:
+                self.stack.reload_php(version)
 
-        if taught:
-            self._reconcile()
+            if taught:
+                self._reconcile()
 
         return taught
 

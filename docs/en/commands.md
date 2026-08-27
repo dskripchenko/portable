@@ -171,6 +171,10 @@ local authority would make PHP trust `api.localhost` and reject every public
 certificate. If those roots cannot be collected, nothing is written and `trust`
 says so rather than leaving PHP trusting nobody.
 
+You do not have to run `trust` again to get it: the supervisor writes the file
+at startup whenever the authority exists and the file is missing or older than
+it.
+
 If 443 and 8443 are both taken, no HTTPS listener is started at all — HTTP is
 unaffected. `status` says so, and names what is holding them.
 

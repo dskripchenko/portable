@@ -184,6 +184,9 @@ lokalen Instanz ließe PHP `api.localhost` vertrauen und jedes öffentliche
 Zertifikat ablehnen. Lassen sie sich nicht einsammeln, wird nichts geschrieben,
 und `trust` sagt es.
 
+Dafür muss `trust` nicht erneut laufen: der Supervisor schreibt die Datei beim
+Start, sobald die Instanz existiert und die Datei fehlt oder älter ist.
+
 Sind 443 und 8443 beide belegt, wird gar kein HTTPS-Listener gestartet — HTTP
 bleibt unberührt. `status` sagt das und nennt, wer sie hält.
 

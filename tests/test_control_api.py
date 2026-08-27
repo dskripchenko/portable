@@ -829,3 +829,68 @@ class TestAskingHowToOpenAClient:
         assert answer["argv"][0] == str(older / "psql"), (
             "it handed back the client of a version that is not the one running"
         )
+
+
+class TestKeepingTheRootsFileInStep:
+    """
+    Writing it only from `trust` made "automatic" untrue for the case that
+    matters most: somebody who trusted the root months ago has no reason to run
+    that command again, so an installation upgraded into this feature would have
+    a certificate the browsers believe and a PHP that does not.
+    """
+
+    def with_a_root(self, server, tmp_path, monkeypatch):
+        from portable import trust
+
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+        certificate = trust.root_certificate()
+        certificate.parent.mkdir(parents=True, exist_ok=True)
+        certificate.write_text("-----BEGIN CERTIFICATE-----\nlocal\n-----END CERTIFICATE-----\n")
+        monkeypatch.setattr(trust, "_system_roots", lambda: "-----BEGIN CERTIFICATE-----\nsys\n-----END CERTIFICATE-----\n")
+
+        return trust
+
+    def test_a_start_writes_it_when_the_root_is_already_trusted(
+        self, server, tmp_path, monkeypatch
+    ):
+        trust = self.with_a_root(server, tmp_path, monkeypatch)
+
+        server._refresh_bundle()
+
+        assert trust.bundle().is_file(), "an existing installation would never get one"
+        assert "local" in trust.bundle().read_text(encoding="utf-8")
+
+    def test_a_second_start_leaves_it_alone(self, server, tmp_path, monkeypatch):
+        trust = self.with_a_root(server, tmp_path, monkeypatch)
+        server._refresh_bundle()
+        first = trust.bundle().stat().st_mtime_ns
+
+        server._refresh_bundle()
+
+        assert trust.bundle().stat().st_mtime_ns == first, "it rewrites on every start"
+
+    def test_a_new_authority_replaces_it(self, server, tmp_path, monkeypatch):
+        # A new data directory means a new authority, and a bundle naming the
+        # old one is worse than none.
+        import os
+
+        trust = self.with_a_root(server, tmp_path, monkeypatch)
+        server._refresh_bundle()
+
+        certificate = trust.root_certificate()
+        certificate.write_text("-----BEGIN CERTIFICATE-----\nsecond\n-----END CERTIFICATE-----\n")
+        later = trust.bundle().stat().st_mtime + 10
+        os.utime(certificate, (later, later))
+
+        server._refresh_bundle()
+
+        assert "second" in trust.bundle().read_text(encoding="utf-8")
+
+    def test_nothing_happens_before_anything_is_trusted(self, server, tmp_path, monkeypatch):
+        from portable import trust
+
+        monkeypatch.setenv("PORTABLE_HOME", str(tmp_path))
+
+        server._refresh_bundle()
+
+        assert not trust.bundle().exists()
