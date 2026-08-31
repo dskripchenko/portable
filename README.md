@@ -10,12 +10,13 @@
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
 Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **1.4.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
+> Status: **1.9.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
 > run; sites are served at `*.localhost`, over HTTP and HTTPS; several versions
 > of each run side by side. There is a full-screen dashboard, it replaces itself
-> with `upgrade`, and `service cli` opens a prompt at a running database. In
-> daily use on real Windows — see the note at the end for what that has and has
-> not covered.
+> with `upgrade`, `service cli` opens a prompt at a running database, and
+> `trust` puts the local authority in front of the browsers and the installed
+> PHPs alike. In daily use on real Windows — see the note at the end for what
+> that has and has not covered.
 
 The two version badges say different things: **tag** is what was cut, **release**
 is what CI built and published. They agree unless a release failed, which is
@@ -283,12 +284,29 @@ process group; the dashboard; and `logs` and `shell`.
 
 **`upgrade` was on that list and should not have been.** It passed its tests,
 including on `windows-latest`, and on a real machine it downloaded, verified,
-and left the old version in place every time. It renamed the bundle directory,
-and Windows will not rename a directory that is any process's current directory
-— which it is, twice over, when you run the upgrade from the folder the
-documentation tells you to stand in. Nothing in the test suite stood anywhere.
-Fixed in 1.3.2 by moving the contents instead, with a test that holds the
-directory the way a terminal does.
+and left the old version in place every time.
+
+It then took three explanations to fix, and 1.3.2 shipped on the second of them:
+that Windows will not rename a directory somebody is standing in. True of
+Windows, and not what was happening. What settled it was a log from the machine
+where it failed — `could not rename C:\...\portable`, with **no Windows error
+code in the message**, and that text is only produced when the rename was never
+attempted. Nothing had been refused because nothing had been asked.
+
+The real causes were two, and neither was Windows saying no. The waiting and the
+work shared one sixty-second deadline, so waiting used all of it and the work
+got none. And the wait never ended, because the helper asked `OpenProcess`
+whether the old process was gone — on Windows a process object outlives the
+process for as long as anybody holds a handle to it, and the shell that started
+it does. Fixed in 1.4.2: separate clocks, and the helper now asks whether the
+process object is signalled, which is true exactly when the process has left.
+A test on Windows CI measures that rather than assuming it, and fails loudly if
+the premise ever stops holding.
+
+**A message carrying no system error code means the system call was never
+made.** That is the part worth taking away, and it is why the wrong explanation
+survived two releases: both readings fit the symptom, and only one of them fit
+the text of the error.
 
 **One limitation, measured rather than promised.** A process can leave a job
 object only if that job permits it, and some launchers create one that does not.

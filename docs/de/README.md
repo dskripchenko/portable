@@ -35,9 +35,9 @@ Werkzeuge dieser Art sich sonst gar nicht installieren lassen.
 Im täglichen Einsatz auf echtem Windows: PHP durch den Pool ausliefern, Port 80
 als gewöhnlicher Benutzer belegen, das Schließen der Konsole überleben, die
 Vollbildansicht, und sich mit `upgrade` selbst ersetzen — Letzteres erst seit
-1.3.2: Es bestand monatelang seine Tests, ohne auf einer echten Maschine je
-fertig zu werden. Was da los war, steht in der
-[Notiz am Ende der Projekt-README](../../README.md).
+1.4.2: Es bestand monatelang seine Tests, ohne auf einer echten Maschine je
+fertig zu werden, und wurde zuvor zweimal für behoben erklärt. Was da los war,
+steht in der [Notiz am Ende der Projekt-README](../../README.md).
 
 Eine Einschränkung ist gemessen statt versprochen. Ein Terminal, das Gestartetes
 in ein **Job-Objekt ohne Breakaway-Erlaubnis** steckt, nimmt den Supervisor beim

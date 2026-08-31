@@ -35,8 +35,9 @@ this class of tool usually cannot be installed at all.
 
 In daily use on real Windows: serving PHP through the pool, binding port 80 as
 an ordinary user, surviving the console being closed, the dashboard, and
-replacing itself with `upgrade` — that last one only since 1.3.2, having passed
-its tests for months while never once finishing on a real machine. See the
+replacing itself with `upgrade` — that last one only since 1.4.2, having passed
+its tests for months while never once finishing on a real machine, and having
+been declared fixed twice before it was. See the
 [note at the end of the project README](../../README.md) for what that was.
 
 One limitation is measured rather than promised. A terminal that puts what it
