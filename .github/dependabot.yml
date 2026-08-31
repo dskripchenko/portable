@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+  # The actions are named by commit, which is what makes this necessary: a
+  # pinned SHA cannot pick up a fix on its own, and a pin nobody moves is an
+  # old version with a tidy name. Dependabot opens the pull request and the
+  # comment beside each SHA keeps saying which version it is.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Nothing to do today, deliberately kept anyway. `pyproject.toml` declares no
+  # dependencies because the tool imports nothing outside the standard library,
+  # and the four libraries the bundle vendors are pinned inside
+  # `scripts/bundle.py`, where no scanner looks — `.github/workflows/audit.yml`
+  # is what watches those. This entry exists so that the day a dependency is
+  # declared, it is already being watched rather than remembered about.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
