@@ -100,7 +100,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANALYSIS: ${{ steps.scan.outputs.analysis }}
         run: |
-          url="${ANALYSIS##*=}"
+          # `#*=`, cutting at the first `=`, not `##*=` at the last one. The
+          # output is `filename=url`, and the url ends in a base64 file
+          # identifier — which is padded with `=`. Cutting at the last one left
+          # the string `/detection`, and the release notes carried it as a link
+          # before this was noticed. Found by running it, not by reading it.
+          url="${ANALYSIS#*=}"
+
+          # An address or nothing. Whatever else goes wrong here, a release must
+          # not end up advertising a report that is not one.
+          case "$url" in
+            https://*) ;;
+            *) echo "the analysis output is not a URL: $ANALYSIS" >&2; exit 1 ;;
+          esac
+
           notes="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
 
           case "$notes" in
