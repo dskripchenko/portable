@@ -2,7 +2,15 @@ name: tests
 
 # Windows is not one platform among several here — it is the target. The suite
 # runs on macOS too, because that is where it is written, and a failure there
-# usually means something was assumed about paths or line endings.
+# usually means something was assumed about paths or line endings. It also
+# checks more than a run on that machine does: the dashboard's libraries are
+# installed below, and on the developer's own Python they are not, so a local
+# `pytest` skips a dozen tests and still prints green.
+#
+# Three jobs rather than four. Windows carries both ends of the supported range
+# — 3.13 is what the bundle ships, 3.11 is what `requires-python` promises —
+# and macOS carries only 3.13. The fourth cell, the floor on a platform that is
+# not a target, was testing a combination nobody runs.
 on:
   push:
     branches: [main]
@@ -15,6 +23,9 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest]
         python: ['3.11', '3.13']
+        exclude:
+          - os: macos-latest
+            python: '3.11'
 
     name: ${{ matrix.os }} · Python ${{ matrix.python }}
     runs-on: ${{ matrix.os }}
