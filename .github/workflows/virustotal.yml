@@ -90,30 +90,41 @@ jobs:
           # scanned every release and quietly written the link nowhere. The step
           # below does it from the action's `analysis` output instead.
 
-      # Appended to whatever the notes already say, and only if the tag is not
-      # already carrying a link: this workflow can be run again by hand after a
-      # failure, and a release ending in five copies of the same URL is its own
-      # kind of untrustworthy.
+      # The link is to the file's page, built from its digest, and not to the
+      # analysis URL the action returns. The two differ in a way that matters
+      # for something printed in a release note that outlives the run: an
+      # analysis address names one submission and shows the verdicts of that
+      # moment, while the file address is the same address forever and shows
+      # whatever the engines say today. Rescanned in six months, the first is a
+      # stale page and the second is current.
+      #
+      # It also makes "has this already been linked" answerable. Running this
+      # again by hand produces a new analysis id every time, so a check against
+      # that URL would never match and each run would append another line.
       - name: Put the report in the release notes
         if: steps.scan.outcome == 'success' && steps.scan.outputs.analysis != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANALYSIS: ${{ steps.scan.outputs.analysis }}
         run: |
-          # `#*=`, cutting at the first `=`, not `##*=` at the last one. The
-          # output is `filename=url`, and the url ends in a base64 file
-          # identifier — which is padded with `=`. Cutting at the last one left
-          # the string `/detection`, and the release notes carried it as a link
-          # before this was noticed. Found by running it, not by reading it.
-          url="${ANALYSIS#*=}"
+          # The analysis address goes to the log, where a stale one is
+          # harmless and an immediate look at the queue is what you want.
+          #
+          # `#*=` cuts at the first `=`, not `##*=` at the last: the output is
+          # `filename=url`, and the url ends in a base64 identifier padded with
+          # `=`. Cutting at the last one left the string `/detection`, and the
+          # notes of a release carried that as a link before a real run showed
+          # it. Read the code and it looks right; run it and it is not.
+          echo "submitted: ${ANALYSIS#*=}"
 
-          # An address or nothing. Whatever else goes wrong here, a release must
-          # not end up advertising a report that is not one.
-          case "$url" in
-            https://*) ;;
-            *) echo "the analysis output is not a URL: $ANALYSIS" >&2; exit 1 ;;
+          digest="$(sha256sum portable-*-x86_64-pc-windows-msvc.zip | cut -d' ' -f1)"
+
+          case "$digest" in
+            ????????????????????????????????????????????????????????????????) ;;
+            *) echo "that is not a sha256: $digest" >&2; exit 1 ;;
           esac
 
+          url="https://www.virustotal.com/gui/file/$digest"
           notes="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
 
           case "$notes" in
