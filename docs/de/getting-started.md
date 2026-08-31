@@ -93,6 +93,43 @@ cd C:\portable
 Führen Sie es in einem gewöhnlichen PowerShell-Fenster aus. Sollte je etwas nach
 Administratorrechten fragen, ist das ein Fehler — bitte melden Sie ihn.
 
+### Das Heruntergeladene prüfen
+
+Drei Dinge lassen sich prüfen, und sie beantworten drei verschiedene Fragen.
+
+**Die Prüfsumme — kam die Datei vollständig an.** Die `.sha256`-Datei neben dem
+Archiv, mit `certutil` verglichen wie oben. Der PowerShell-Installer tut das von
+selbst und verweigert eine Datei, die nicht passt. Woher das Archiv stammt, sagt
+sie nicht: Sie liegt auf derselben Seite wie der Download, wer also das eine
+austauschen kann, tauscht auch das andere aus.
+
+**Die Attestierung — woher es stammt.** Jede Veröffentlichung ab 1.9.0 wird beim
+Bauen über Sigstore signiert, auf einem GitHub-Runner, mit einer kurzlebigen
+Identität statt mit einem Schlüssel, den jemand verwahrt:
+
+```powershell
+gh attestation verify portable.zip -R dskripchenko/portable
+```
+
+Die Antwort nennt das Repository, den Workflow und den Commit, aus dem das
+Archiv gebaut wurde. Sie braucht die [GitHub CLI](https://cli.github.com) — ein
+eigener Download, der auf einem verwalteten Rechner selbst gesperrt sein kann;
+dann bleibt die Prüfsumme.
+
+**Der VirusTotal-Bericht — was die Scanner sagen.** Aus den Notizen jeder
+Veröffentlichung verlinkt, über rund siebzig Engines.
+
+Erwarten Sie einige Treffer statt keiner. Dieses Werkzeug lädt ausführbare
+Dateien herunter, entpackt sie, hält einen Pool abgekoppelter Prozesse und belegt
+Port 80 — und es liefert einen Interpreter in einem Zip aus, also in der Form
+eines Packers. Heuristiken sind genau darauf gebaut. Der Bericht steht da, um
+gelesen zu werden, nicht um etwas rein zu sprechen.
+
+**Das Archiv trägt kein Code-Signing-Zertifikat.** Solche Zertifikate kosten
+jährlich Geld, und dieses Projekt nimmt keines ein — SmartScreen wird also vor
+dem Download warnen. Daran lässt sich von hier aus nichts ändern, und der Rat,
+den Schutz abzuschalten, wäre ein schlechterer Tausch als die Warnung.
+
 ## Wählen Sie, wo es seine Daten ablegt
 
 ```powershell

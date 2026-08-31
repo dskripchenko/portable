@@ -4,6 +4,7 @@
 [![locked-down install](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/install.yml?branch=main&label=locked-down%20install)](https://github.com/dskripchenko/portable/actions/workflows/install.yml)
 [![tag](https://img.shields.io/github/v/tag/dskripchenko/portable?label=tag&sort=semver)](https://github.com/dskripchenko/portable/tags)
 [![release](https://img.shields.io/github/v/release/dskripchenko/portable?label=release)](https://github.com/dskripchenko/portable/releases/latest)
+[![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
 A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
@@ -19,6 +20,11 @@ Node, Redis — that installs **beside** the system rather than into it.
 The two version badges say different things: **tag** is what was cut, **release**
 is what CI built and published. They agree unless a release failed, which is
 worth seeing from here rather than finding out at a download.
+
+**release scanned** says a scan ran and its report reached the release notes. It
+does not say the result was clean, and it should not be read that way — see
+[checking a download](#checking-a-download) for why a few detections are the
+expected outcome for an archive shaped like this one.
 
 Documentation: [English](docs/en/) · [Русский](docs/ru/) · [Deutsch](docs/de/) ·
 [中文](docs/zh/)
@@ -109,9 +115,15 @@ above is required. From `cmd`, executing no script at all:
 
 ```bat
 curl -fsSL -o portable.zip https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
 certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
 tar -xf portable.zip
 ```
+
+The second download is what the first line is compared against — see
+[checking a download](#checking-a-download) for what that proves and what it
+does not.
 
 Or download the bundle from the
 [releases](https://github.com/dskripchenko/portable/releases), unzip it
@@ -201,6 +213,56 @@ Fixtures are captured from the publishers rather than written by hand. A
 hand-made fixture only proves the parser agrees with its author: Caddy publishes
 **sha512** checksums in a file that looks exactly like a sha256 listing, and
 only a real one catches that.
+
+## Checking a download
+
+Three things can be checked, and they answer three different questions. None of
+them needs administrator rights, and the first needs no tooling at all.
+
+**The checksum — did the file arrive whole.** Every release publishes
+`<archive>.sha256` beside the archive, in the format `sha256sum` reads:
+
+```bat
+curl -fsSL -o portable.zip.sha256 https://github.com/dskripchenko/portable/releases/latest/download/portable-windows-x64.zip.sha256
+certutil -hashfile portable.zip SHA256
+type portable.zip.sha256
+```
+
+The PowerShell one-liner does this on its own and refuses to install a file that
+does not match. What it cannot do is tell you anything about the archive's
+origin: the checksum is published on the same page as the download, so anyone
+able to replace one can replace the other.
+
+**The attestation — where the file came from.** Every release from 1.9.0 on is
+signed through Sigstore at the moment it is built, on a GitHub runner, with a
+short-lived identity rather than a key anybody holds:
+
+```bat
+gh attestation verify portable.zip -R dskripchenko/portable
+```
+
+It answers with the repository, the workflow file and the commit the archive was
+built from. That is the claim worth having — not "these are the advertised
+bytes" but "these bytes came out of that build of this source". It needs the
+[GitHub CLI](https://cli.github.com), which is a separate download and may
+itself be unavailable on a managed machine; the checksum path above stays open
+in that case.
+
+**The VirusTotal report — what the scanners make of it.** A link to a report
+across some seventy engines is appended to each release's notes.
+
+Expect a handful of detections rather than a clean sheet, and the reason is the
+tool's own description: it downloads executables from the internet, unpacks
+them, runs a pool of detached processes and binds port 80, and it ships an
+interpreter inside a zip, which is the shape of a packer. Heuristics are built
+to notice exactly that. The report is published so the question can be looked
+at rather than argued about; it is not evidence of anything being clean.
+
+**What is not done: the archive is not signed with a code-signing certificate.**
+Those cost money annually and this project takes none, so SmartScreen will warn
+about the download and Defender may hold it for a moment. Nothing here can
+remove that, and any instruction to switch protection off would be a worse trade
+than the warning.
 
 ## What has not been verified
 

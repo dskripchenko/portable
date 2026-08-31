@@ -87,6 +87,43 @@ cd C:\portable
 Run it from an ordinary PowerShell window. If anything ever asks for
 administrator rights, that is a bug — please report it.
 
+### Checking what you downloaded
+
+Three things can be checked, answering three different questions.
+
+**The checksum — did the file arrive whole.** The `.sha256` file beside each
+archive, compared with `certutil` as above. The PowerShell installer does this
+by itself and refuses a file that does not match. What it cannot tell you is
+where the archive came from: the checksum sits on the same page as the download,
+so whoever could replace one could replace the other.
+
+**The attestation — where it came from.** Every release from 1.9.0 on is signed
+through Sigstore as it is built, on a GitHub runner, with a short-lived identity
+rather than a key anybody keeps:
+
+```powershell
+gh attestation verify portable.zip -R dskripchenko/portable
+```
+
+The answer names the repository, the workflow and the commit the archive was
+built from. It needs the [GitHub CLI](https://cli.github.com), which is a
+separate download and may itself be blocked here — the checksum stays available
+in that case.
+
+**The VirusTotal report — what the scanners say.** Linked from each release's
+notes, across some seventy engines.
+
+Expect a few detections rather than none. This tool downloads executables,
+unpacks them, runs a pool of detached processes and binds port 80, and it ships
+an interpreter inside a zip — which is the shape of a packer. Heuristics are
+built to notice precisely that. The report is there to be read, not to prove
+anything clean.
+
+**The archive carries no code-signing certificate.** Those are an annual cost
+and this project takes no money, so SmartScreen will warn about the download.
+Nothing here changes that, and turning protection off would be a worse trade
+than the warning.
+
 ## Choose where it keeps things
 
 ```powershell
