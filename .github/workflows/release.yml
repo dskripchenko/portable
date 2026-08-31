@@ -36,6 +36,15 @@ jobs:
     name: x86_64-pc-windows-msvc
     runs-on: windows-latest
 
+    # `id-token` mints the short-lived identity the attestation is signed with,
+    # `attestations` files the result against this repository. Both are needed
+    # only by the attest step and are granted here rather than at the top of the
+    # file, so the other two jobs cannot sign anything.
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
     env:
       TARGET: x86_64-pc-windows-msvc
 
@@ -90,6 +99,24 @@ jobs:
 
           if "the dashboard builds" not in result.stdout:
               raise SystemExit("the vendored dashboard does not build inside the bundle")
+
+      # Signed here, where the bytes are made, rather than in the job that
+      # uploads them: what the attestation is worth is the claim "this archive
+      # came out of this workflow, at this commit, on a GitHub runner", and that
+      # claim is only true of the machine that built it.
+      #
+      # The published `portable-windows-x64.zip` is a byte-for-byte copy made
+      # downstream and is covered by the same attestation: verification is by
+      # digest, and a copy has the digest of what it copied.
+      #
+      # Only for a tag. A `workflow_dispatch` build is somebody trying the
+      # workflow out, and provenance for an archive that is never published
+      # would be a signature on nothing.
+      - name: Attest what was built
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.zip
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -164,6 +191,9 @@ jobs:
     if: github.event_name == 'push'
     name: the one-liner installs it
     runs-on: windows-latest
+
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
