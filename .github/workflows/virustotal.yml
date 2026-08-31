@@ -1,0 +1,96 @@
+name: virustotal
+
+# Send the published bundle to VirusTotal and put the report link in the
+# release notes.
+#
+# This tool does, by design, most of what an antivirus heuristic is built to
+# notice: it downloads executables from the internet, unpacks them, starts a
+# pool of processes, detaches them from the console, and binds port 80. The
+# archive is also an interpreter carried inside a zip, which is the shape of a
+# packer. So a handful of engines out of some seventy will call it something.
+# That is the expected outcome here rather than a failure — and the reason to
+# run this at all is that somebody deciding whether to trust the download can
+# then read a report instead of taking a README's word for it.
+#
+# Triggered by the release workflow finishing, not by `release: published`.
+# GitHub does not start workflows from events raised by `GITHUB_TOKEN`, and our
+# releases are published with it — so a `release` trigger would sit there
+# looking exactly like a bundle being scanned and never fire once. This is the
+# same trap the installer check documents. `workflow_run` fires on a workflow
+# ending, and the release workflow was started by a human pushing a tag.
+on:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to scan, to redo one by hand.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    # A release that failed has nothing published to scan, and a
+    # `workflow_dispatch` run of the release workflow publishes nothing either
+    # — only a tag does, which is what the branch name being a version means
+    # here.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
+
+    runs-on: ubuntu-latest
+
+    # The report link is appended to the release notes, which is a write.
+    permissions:
+      contents: write
+
+    env:
+      TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+
+    steps:
+      # The versioned archive only. `portable-windows-x64.zip` is a copy of it
+      # under a name that never changes, and sending both would spend two of a
+      # free key's five hundred daily submissions on one file.
+      - name: Fetch the published bundle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'portable-*-x86_64-pc-windows-msvc.zip' \
+            --dir .
+
+          ls -l portable-*.zip
+
+      # `continue-on-error`, and that is the whole failure policy. VirusTotal is
+      # somebody else's service reached over somebody else's network, and a
+      # release that is already published and installable must not be reported
+      # as broken because a scan queue was busy. A missing key does the same
+      # thing: the step does nothing and the run ends green.
+      - name: Scan
+        id: scan
+        continue-on-error: true
+        uses: crazy-max/ghaction-virustotal@936d8c5c00afe97d3d9a1af26d017cfdf26800a2 # v5.0.0
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: portable-*-x86_64-pc-windows-msvc.zip
+          # Four a minute is what the free public API allows. The bundle is
+          # around forty-six megabytes, past the thirty-two the ordinary upload
+          # endpoint accepts, so the action asks VirusTotal for a large-file
+          # upload URL first. The analysis then queues for a while, which is
+          # normal and not this workflow's business.
+          request_rate: 4
+          update_release_body: true
+
+      - name: Say what happened
+        run: |
+          if [ "${{ steps.scan.outcome }}" = success ]; then
+            echo "The report link is in the notes of $TAG."
+          else
+            echo "VirusTotal did not answer, or no VT_API_KEY is set."
+            echo "$TAG is unaffected. Run this workflow again with the tag to retry."
+          fi
