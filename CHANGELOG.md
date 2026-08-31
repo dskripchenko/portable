@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.9.0 — 2026-08-31
+
+### Added — a download that can be checked rather than believed
+
+This release changes nothing about what the tool does. It is about the archive:
+this is a program people are asked to run on a locked-down machine, and until
+now the only answer to "why should I trust this" was the README saying so.
+
+- **Every bundle is signed as it is built.** Sigstore, on the GitHub runner
+  that produced it, with a short-lived identity rather than a key anybody keeps:
+
+  ```
+  gh attestation verify portable.zip -R dskripchenko/portable
+  ```
+
+  The answer names the repository, the workflow and the commit. That is a claim
+  the digest published beside the archive cannot make — a checksum sits on the
+  same page as the download, so it proves delivery and not origin.
+
+- **Each release is submitted to VirusTotal** and the report is linked from its
+  notes. Expect a few detections out of some seventy engines rather than a clean
+  sheet: this downloads executables, unpacks them, runs a pool of detached
+  processes, binds port 80 and ships an interpreter inside a zip. The report is
+  published so that can be read rather than argued about.
+
+- **`SECURITY.md`** — where to report something, which versions get fixes, and
+  what is checked by what, with the two things that are not done stated beside
+  them.
+
+- **The vendored libraries are audited weekly.** `pyproject.toml` declares no
+  dependencies, which is true of the tool and not of the archive: the
+  dashboard's four libraries are pinned inside `scripts/bundle.py`, where no
+  scanner looks. The audit reads its list out of the bundler.
+
+### Changed
+
+- **Every GitHub Action is named by commit rather than by tag.** A tag is a name
+  its owner can move, and the release workflow holds a token that writes
+  releases. Dependabot keeps the commits moving.
+
+- **The README says what to compare a checksum against.** It had told people to
+  run `certutil -hashfile` for months without ever naming the file holding the
+  expected value — which every release has published beside the archive all
+  along.
+
+### Fixed — a postmortem that had been wrong since 1.3.2
+
+The note on `upgrade` in the README explained the failure as Windows refusing to
+rename a directory somebody is standing in. That was the second of three
+explanations and it was wrong; 1.4.2 fixed the real causes — one deadline shared
+between waiting and working, and `OpenProcess` reporting an exited process as
+still running — and the README was never brought in line.
+
+A section whose whole purpose is saying what has and has not been checked is the
+last place a disproven account should sit. Corrected in all four translations.
+
 ## 1.8.1 — 2026-08-27
 
 ### Fixed — "automatic" was true only for people trusting the root today
