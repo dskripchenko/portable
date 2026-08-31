@@ -84,12 +84,42 @@ jobs:
           # upload URL first. The analysis then queues for a while, which is
           # normal and not this workflow's business.
           request_rate: 4
-          update_release_body: true
+          # Not `update_release_body`. That input is only read when the action
+          # is running under a `release` event, and is otherwise ignored without
+          # a word — so with the trigger this workflow has to use, it would have
+          # scanned every release and quietly written the link nowhere. The step
+          # below does it from the action's `analysis` output instead.
+
+      # Appended to whatever the notes already say, and only if the tag is not
+      # already carrying a link: this workflow can be run again by hand after a
+      # failure, and a release ending in five copies of the same URL is its own
+      # kind of untrustworthy.
+      - name: Put the report in the release notes
+        if: steps.scan.outcome == 'success' && steps.scan.outputs.analysis != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANALYSIS: ${{ steps.scan.outputs.analysis }}
+        run: |
+          url="${ANALYSIS##*=}"
+          notes="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
+
+          case "$notes" in
+            *"$url"*)
+              echo "$TAG already links this report."
+              exit 0
+              ;;
+          esac
+
+          printf '%s\n\n---\n\n[VirusTotal report](%s) for the bundle in this release.\n' \
+            "$notes" "$url" > notes.md
+
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          echo "linked $url"
 
       - name: Say what happened
         run: |
           if [ "${{ steps.scan.outcome }}" = success ]; then
-            echo "The report link is in the notes of $TAG."
+            echo "Scanned. Analysis: ${{ steps.scan.outputs.analysis }}"
           else
             echo "VirusTotal did not answer, or no VT_API_KEY is set."
             echo "$TAG is unaffected. Run this workflow again with the tag to retry."
