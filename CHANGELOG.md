@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.9.1 — 2026-10-23
+
+### Fixed — MariaDB could not be created on Windows
+
+`mariadb-install-db.exe` on Windows is not the Unix script under another name
+but a separate native program with options of its own. It rejected both
+`--defaults-file` and `--auth-root-authentication-method` as "unknown
+variable", so adding a MariaDB service failed before any data was written.
+
+On Windows the installer is now given the data directory and nothing else. It
+ignores the `my.ini` files other installations leave behind and has no socket
+authentication to opt out of; it creates a passwordless root reachable over the
+loopback. The server is still started with portable's own defaults file, so
+nothing changes once the database exists. Elsewhere the command is as before.
+
 ## 1.9.0 — 2026-08-31
 
 ### Added — a download that can be checked rather than believed
