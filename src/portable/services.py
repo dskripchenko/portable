@@ -20,6 +20,7 @@ wifi becomes somebody else's.
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -106,7 +107,12 @@ def validate(service: Service) -> None:
 
 
 def init_command(
-    kind: str, executables: dict[str, Path], data: Path, config: Path | None = None
+    kind: str,
+    executables: dict[str, Path],
+    data: Path,
+    config: Path | None = None,
+    *,
+    windows: bool = os.name == "nt",
 ) -> list[str]:
     """
     The one-time command that creates the data directory.
@@ -116,6 +122,9 @@ def init_command(
     and a password prompt on every `psql` buys nothing when anything running as
     that user could read the data directory anyway. The protection is that
     nothing outside the machine can reach it.
+
+    `config` is MariaDB's defaults file. On Windows the installer cannot take
+    it (see below), but the server still starts with it.
     """
     if kind == "postgres":
         return [
@@ -129,6 +138,21 @@ def init_command(
             # production, and finds out in a test that passes for one person.
             "--locale=C",
         ]
+
+    # On Windows `mariadb-install-db.exe` is not the Unix script under another
+    # name. It is a separate native program (`mysql_install_db.exe`, "Ver 1.00
+    # for Windows") with an option set of its own, and it rejects everything
+    # below as "unknown variable": `--defaults-file`,
+    # `--auth-root-authentication-method`. Both are also unnecessary there:
+    #
+    # - it bootstraps from the `my.ini` it writes into the new data directory,
+    #   not from whatever the machine has. Checked against a Laragon MariaDB
+    #   with its own `my.ini` beside the binaries, which it ignored;
+    # - it has no socket authentication to opt out of. It creates
+    #   `root@localhost`, `root@127.0.0.1` and `root@::1` with no password, and
+    #   that is reachable over TCP with `--skip-name-resolve`.
+    if windows:
+        return [str(executables["install"]), f"--datadir={data}"]
 
     # `--defaults-file` first, and it is not optional. MariaDB reads
     # configuration from a list of places outside this installation —

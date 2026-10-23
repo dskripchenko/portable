@@ -331,7 +331,10 @@ class TestMariadbIgnoringTheRestOfTheMachine:
         config = Path("/conf/my.cnf")
         expected = f"--defaults-file={config}"
 
-        assert init_command("mariadb", self.paths_for(), Path("/data"), config)[1] == expected
+        assert (
+            init_command("mariadb", self.paths_for(), Path("/data"), config, windows=False)[1]
+            == expected
+        )
         assert (
             start_command("mariadb", self.paths_for(), Path("/data"), 3306, config)[1] == expected
         )
@@ -346,9 +349,30 @@ class TestMariadbIgnoringTheRestOfTheMachine:
         connect". A tool that says how to connect and is wrong about it is worse
         than one that says nothing.
         """
-        command = init_command("mariadb", self.paths_for(), Path("/data"), Path("/my.cnf"))
+        command = init_command(
+            "mariadb", self.paths_for(), Path("/data"), Path("/my.cnf"), windows=False
+        )
 
         assert "--auth-root-authentication-method=normal" in command
+
+    def test_windows_gets_only_what_its_own_installer_understands(self):
+        """
+        On Windows `mariadb-install-db.exe` is a separate native program.
+
+        It rejects `--defaults-file` and `--auth-root-authentication-method` as
+        "unknown variable", so initialisation failed before it began. It takes
+        the data directory and nothing else; the server is still started with
+        the defaults file, so the machine's other `my.ini` files stay out.
+        """
+        data = Path("/data")
+        command = init_command(
+            "mariadb", self.paths_for(), data, Path("/my.cnf"), windows=True
+        )
+
+        assert command == [str(Path("/bin/install")), f"--datadir={data}"]
+        assert start_command("mariadb", self.paths_for(), data, 3306, Path("/my.cnf"))[
+            1
+        ].startswith("--defaults-file=")
 
     def test_the_file_is_written_once_and_then_left_alone(self, tmp_path, monkeypatch):
         # The same rule `php.ini` follows: somebody will edit it, and
