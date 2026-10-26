@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.10.0 — 2026-10-26
+
 ### Added — your own router configuration, kept across changes
 
 `conf/caddy.json` is regenerated on every change, so anything written into it
