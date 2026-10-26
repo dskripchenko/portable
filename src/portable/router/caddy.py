@@ -7,10 +7,10 @@ speaks, and speaking it means adding a site is one HTTP call rather than
 rewriting a file, reloading, and hoping the reload took.
 
 It also removes the worst failure mode of generated configuration: there is no
-file for a person to edit, so there is nothing for this tool to overwrite. When
-hand-written configuration becomes necessary it will arrive as an explicit
-per-site fragment, not as "we regenerate the whole thing and try to preserve
-your edits".
+file for a person to edit, so there is nothing for this tool to overwrite.
+Hand-written configuration arrives as a separate file instead — see `Override`
+— which this tool reads and never writes, applied on top of what it generates
+rather than "we regenerate the whole thing and try to preserve your edits".
 
 The routes below mirror what the Caddyfile directive `php_fastcgi` expands to,
 minus the parts a local development environment does not need.
@@ -18,9 +18,10 @@ minus the parts a local development environment does not need.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import paths
@@ -68,6 +69,108 @@ class Site:
 #: The TLS server's name, beside `SERVER`.
 TLS_SERVER = "portable-tls"
 
+#: In an override's `routes`, the key that means every site.
+EVERY_SITE = "*"
+
+
+class InvalidOverride(ValueError):
+    """The hand-written file cannot be applied, with the reason."""
+
+
+@dataclass(frozen=True)
+class Override:
+    """
+    What a person wrote, to be applied on top of what is generated.
+
+    Two parts, because there are two kinds of thing people need and one
+    mechanism serves neither well:
+
+    - **`routes`** — Caddy routes per site, keyed by site name or `*` for all.
+      They run first inside the site, before files and PHP, which is where a
+      `headers` handler for CORS or a `static_response` for a preflight has to
+      be. Merging into the generated route list instead would mean addressing
+      it by position, and the position changes whenever this tool changes.
+    - **`config`** — a JSON Merge Patch (RFC 7396) over the whole document:
+      objects merge, `null` deletes, anything else replaces. For what is not
+      per site — logging, timeouts, a server option.
+    """
+
+    routes: dict[str, list[dict]] = field(default_factory=dict)
+    patch: dict = field(default_factory=dict)
+
+    def routes_for(self, name: str) -> list[dict]:
+        """`*` first, then the site's own: the specific one gets the last word."""
+        return [*self.routes.get(EVERY_SITE, []), *self.routes.get(name, [])]
+
+
+def load_override(path: Path) -> Override | None:
+    """
+    The override at [path], or None when there is no file.
+
+    Refused loudly rather than skipped. A file somebody wrote and that is
+    silently ignored looks exactly like a Caddy that ignores their headers, and
+    that is a much longer afternoon than a message naming the line.
+    """
+    if not path.is_file():
+        return None
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise InvalidOverride(
+            f"{path} is not valid JSON: {error.msg} at line {error.lineno}, "
+            f"column {error.colno}."
+        ) from error
+    except OSError as error:
+        raise InvalidOverride(f"{path} cannot be read: {error}") from error
+
+    if not isinstance(raw, dict):
+        raise InvalidOverride(f"{path} should hold an object with `routes` and/or `config`.")
+
+    unknown = sorted(set(raw) - {"routes", "config"})
+
+    if unknown:
+        # Most likely a fragment of Caddy's own config pasted at the top level,
+        # which belongs under `config`. Saying so beats ignoring it.
+        raise InvalidOverride(
+            f"{path} has {', '.join(map(repr, unknown))} at the top level. Only "
+            f"`routes` (per site) and `config` (merged over the whole document) "
+            f"are read — Caddy's own keys go under `config`."
+        )
+
+    routes = raw.get("routes", {})
+
+    if not isinstance(routes, dict) or not all(
+        isinstance(value, list) and all(isinstance(route, dict) for route in value)
+        for value in routes.values()
+    ):
+        raise InvalidOverride(
+            f"{path}: `routes` should map a site name, or `*`, to a list of Caddy routes."
+        )
+
+    patch = raw.get("config", {})
+
+    if not isinstance(patch, dict):
+        raise InvalidOverride(f"{path}: `config` should be an object.")
+
+    return Override(routes=routes, patch=patch)
+
+
+def merge_patch(target: object, patch: object) -> object:
+    """RFC 7396, returning a new value and leaving both arguments alone."""
+    if not isinstance(patch, dict):
+        return copy.deepcopy(patch)
+
+    merged = dict(target) if isinstance(target, dict) else {}
+
+    for key, value in patch.items():
+        if value is None:
+            merged.pop(key, None)
+        else:
+            merged[key] = merge_patch(merged.get(key), value)
+
+    return merged
+
 
 def config(
     sites: list[Site],
@@ -75,15 +178,23 @@ def config(
     admin: str = DEFAULT_ADMIN,
     storage: Path | None = None,
     tls_listen: int | None = None,
+    override: Override | None = None,
 ) -> dict:
-    """The whole configuration document."""
-    routes = [*[route_for(site) for site in sites], _unmatched(sites)]
+    """The whole configuration document, with [override] applied last."""
+    override = override or Override()
+    routes = [
+        *[route_for(site, extra=override.routes_for(site.name)) for site in sites],
+        _unmatched(sites),
+    ]
     # The TLS server gets its own copies. `@id` has to be unique across the
     # whole document — Caddy refuses to load one where it is not, with
     # "duplicate ID", and refuses entirely rather than partially — so handing
     # both servers the same route objects means nothing starts at all.
     secure_routes = [
-        *[route_for(site, suffix="-tls") for site in sites],
+        *[
+            route_for(site, suffix="-tls", extra=override.routes_for(site.name))
+            for site in sites
+        ],
         _unmatched(sites, suffix="-tls"),
     ]
     document = {
@@ -151,16 +262,24 @@ def config(
             "tls_connection_policies": [{}],
         }
 
+    if override.patch:
+        document = merge_patch(document, override.patch)
+
     return document
 
 
-def route_for(site: Site, suffix: str = "") -> dict:
+def route_for(site: Site, suffix: str = "", extra: list[dict] | None = None) -> dict:
     """
     One site: match the hostname, serve files, hand `.php` to the pool.
 
     The order inside matters and is the same order `php_fastcgi` uses. A request
     for an existing file is served as a file; anything else becomes a request for
     the front controller. Reversing those two makes `style.css` arrive at PHP.
+
+    [extra] — hand-written routes from the override — go straight after the
+    root is set and before any of that, so a `headers` handler wraps whatever
+    answers and a preflight is answered before PHP ever sees it. Copied, since
+    the same list goes to both servers.
     """
     root = str(site.root)
 
@@ -173,6 +292,7 @@ def route_for(site: Site, suffix: str = "") -> dict:
                 "routes": [
                     # Every handler below needs to know where the site lives.
                     {"handle": [{"handler": "vars", "root": root}]},
+                    *copy.deepcopy(extra or []),
                     # A directory: try its index file before anything else.
                     {
                         "match": [{"file": {"try_files": ["{http.request.uri.path}/" + site.index]}}],

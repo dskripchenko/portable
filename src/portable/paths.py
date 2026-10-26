@@ -205,6 +205,22 @@ def config_file() -> Path:
     return root() / "portable.json"
 
 
+def conf() -> Path:
+    """Generated configuration for the processes this tool starts."""
+    return root() / "conf"
+
+
+def caddy_override() -> Path:
+    """
+    Hand-written additions to the router's configuration.
+
+    Beside the generated `caddy.json` but never written by this tool, which is
+    the point: the generated file is replaced on every change, and an edit made
+    there lasts until the next site is added.
+    """
+    return conf() / "caddy.override.json"
+
+
 def daemon_file() -> Path:
     """
     How a client finds the daemon: port and token.

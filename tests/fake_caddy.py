@@ -89,7 +89,21 @@ class Admin(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         length = int(self.headers.get("Content-Length") or 0)
-        STATE["document"] = json.loads(self.rfile.read(length).decode("utf-8"))
+        document = json.loads(self.rfile.read(length).decode("utf-8"))
+
+        # Caddy refuses a document it cannot load with a 400 and a JSON reason,
+        # and keeps the one it had. A key no real config has stands in for
+        # whatever mistake makes it do that.
+        if "fake_refuse" in document:
+            encoded = json.dumps({"error": "loading config: fake refusal"}).encode("utf-8")
+            self.send_response(400)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+            return
+
+        STATE["document"] = document
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()

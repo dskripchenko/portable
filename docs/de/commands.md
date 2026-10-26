@@ -162,6 +162,7 @@ Erweiterungen hinein.
 | `portable site remove <name>` | Eine nicht mehr ausliefern. |
 | `portable port 8888` | Der Port, auf dem ausgeliefert wird. `auto` kehrt zu 80, dann 8080 zurück. |
 | `portable trust` | Der lokalen Zertifizierungsstelle vertrauen, damit `https://` nicht mehr warnt. `--forget` nimmt es zurück. |
+| `portable reload` | `conf/caddy.override.json` über die erzeugte Router-Konfiguration legen. |
 
 Ein gewählter Port ist der **einzige**, der versucht wird. Nach einer Bitte um
 8888 auf 8080 auszuweichen, würde die Website an eine Adresse legen, die Sie
@@ -189,6 +190,58 @@ Start, sobald die Instanz existiert und die Datei fehlt oder älter ist.
 
 Sind 443 und 8443 beide belegt, wird gar kein HTTPS-Listener gestartet — HTTP
 bleibt unberührt. `status` sagt das und nennt, wer sie hält.
+
+### Eigene Router-Konfiguration
+
+`conf/caddy.json` wird erzeugt und bei jeder Änderung ersetzt — eine Änderung
+darin hält bis zum nächsten `site add`. Was darüber hinaus nötig ist, gehört in
+`conf/caddy.override.json` daneben; diese Datei liest das Werkzeug und schreibt
+sie nie:
+
+```json
+{
+  "routes": {
+    "api": [
+      {
+        "handle": [{
+          "handler": "headers",
+          "response": {"set": {
+            "Access-Control-Allow-Origin": ["http://app.localhost:5173"],
+            "Access-Control-Allow-Credentials": ["true"],
+            "Vary": ["Origin"]
+          }}
+        }]
+      },
+      {
+        "match": [{"method": ["OPTIONS"]}],
+        "handle": [
+          {"handler": "headers", "response": {"set": {
+            "Access-Control-Allow-Methods": ["GET, POST, PUT, PATCH, DELETE, OPTIONS"],
+            "Access-Control-Allow-Headers": ["Content-Type, Authorization"]
+          }}},
+          {"handler": "static_response", "status_code": 204}
+        ]
+      }
+    ]
+  },
+  "config": {
+    "logging": {"logs": {"default": {"level": "DEBUG"}}}
+  }
+}
+```
+
+- **`routes`** — Caddy-Routen pro Site-Name oder `*` für alle Sites (diese
+  zuerst). Sie laufen innerhalb der Site vor statischen Dateien und PHP, auf
+  HTTP und HTTPS — genau dort gehören CORS-Header und die Preflight-Antwort hin.
+- **`config`** — ein [JSON Merge Patch](https://www.rfc-editor.org/rfc/rfc7396)
+  über das ganze erzeugte Dokument: Objekte werden zusammengeführt, `null`
+  löscht einen Schlüssel, alles andere ersetzt ihn.
+
+`portable reload` wendet die Datei in ihrem jetzigen Stand an; außerdem bei
+jedem Start und jedem `site add`. Ungültiges JSON wird mit der Zeile abgelehnt,
+an der es bricht, und eine Konfiguration, die Caddy ablehnt, lässt die vorige
+weiterlaufen. Lassen Sie `@id` in eigenen Routen weg: Jede wird in beide Server
+kopiert, und Caddy lehnt ein Dokument mit doppelter ID ab.
 
 ## Mehrere Versionen gleichzeitig
 

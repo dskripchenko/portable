@@ -894,3 +894,38 @@ class TestKeepingTheRootsFileInStep:
         server._refresh_bundle()
 
         assert not trust.bundle().exists()
+
+
+class TestRouterReload:
+    """
+    `portable reload`. With no sites nothing is started — the file is only
+    checked — which is enough to test what the route reports and refuses.
+    """
+
+    def write(self, content: str) -> None:
+        target = paths.caddy_override()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+
+    def test_no_file_is_reported_not_refused(self, endpoint):
+        result = Client(endpoint=endpoint).call("POST", "/v1/router/reload")
+
+        assert result["exists"] is False
+        assert result["applied"] is False
+        assert result["override"] == str(paths.caddy_override())
+
+    def test_routes_for_a_name_no_site_has_are_named(self, endpoint):
+        self.write(json.dumps({"routes": {"*": [], "nope": []}}))
+
+        result = Client(endpoint=endpoint).call("POST", "/v1/router/reload")
+
+        assert result["exists"] is True
+        assert result["unmatched"] == ["nope"]
+
+    def test_a_broken_file_is_refused_with_a_key(self, endpoint):
+        self.write("{")
+
+        with pytest.raises(CallFailed) as excinfo:
+            Client(endpoint=endpoint).call("POST", "/v1/router/reload")
+
+        assert excinfo.value.key == "invalid-override"
