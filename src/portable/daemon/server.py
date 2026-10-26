@@ -34,6 +34,7 @@ from .. import catalog as catalogs
 from .. import net as net_module
 from ..catalog import CatalogError
 from ..http import LoopbackHTTPServer
+from ..router import caddy
 from ..runtimes import Installed, NotInstalled
 from ..runtimes import Registry as Runtimes
 from ..services import InvalidService
@@ -233,6 +234,7 @@ class ControlServer:
             ("POST", f"{API}/trust"): self._trust_add,
             ("POST", f"{API}/trust/forget"): self._trust_forget,
             ("POST", f"{API}/port"): self._port_set,
+            ("POST", f"{API}/router/reload"): self._router_reload,
             ("POST", f"{API}/runtimes/remove"): self._runtime_remove,
             ("GET", f"{API}/php/extensions"): self._extensions,
             ("POST", f"{API}/php/extensions/install"): self._extension_install,
@@ -927,6 +929,43 @@ class ControlServer:
             # out loud — otherwise the first surprise is somebody wondering why
             # their edits to the wrong index.php change nothing.
             "detected": detected,
+        }
+
+    def _router_reload(self, _payload: dict) -> dict:
+        """
+        Apply `conf/caddy.override.json` as it now stands.
+
+        Explicit rather than watched. A file is saved half-written, or saved
+        three times while somebody fixes a bracket, and each of those reloading
+        the router would put a broken configuration in front of the browser
+        that was being used to test it.
+        """
+        override = paths.caddy_override()
+
+        try:
+            loaded = caddy.load_override(override)
+        except caddy.InvalidOverride as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "invalid-override", str(error)) from error
+
+        sites = self.sites.all()
+
+        if sites:
+            self._reconcile()
+
+        known = {site.name for site in sites}
+
+        return {
+            "override": str(override),
+            "exists": loaded is not None,
+            "applied": bool(sites) and loaded is not None,
+            "sites": len(sites),
+            # Routes for a name no site has are kept, not refused — the site may
+            # simply not be added yet — but said, since a typo looks the same.
+            "unmatched": sorted(
+                name
+                for name in (loaded.routes if loaded else {})
+                if name != caddy.EVERY_SITE and name not in known
+            ),
         }
 
     def _site_remove(self, payload: dict) -> dict:

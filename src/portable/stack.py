@@ -535,7 +535,28 @@ class Stack:
             "    listening and binding still fails; `netsh interface ipv4 show\n"
             "    excludedportrange protocol=tcp` lists them.\n\n"
             "`netstat -ano | findstr \":80 \"` names the process holding it.\n\n"
+            f"{self._override_hint()}"
             f"{paths.tail(paths.logs() / 'caddy.log')}"
+        )
+
+    @staticmethod
+    def _override_hint() -> str:
+        """
+        A line about the hand-written override, when there is one.
+
+        A Caddy that refuses its configuration fails to start on every port
+        alike, which reads as a port problem. When part of that configuration
+        was written by hand, it is the first thing to suspect and should be
+        named before the list of port culprits is believed.
+        """
+        override = paths.caddy_override()
+
+        if not override.is_file():
+            return ""
+
+        return (
+            f"{override} is applied on top of the generated configuration — if\n"
+            "the log below complains about the config, look there first.\n\n"
         )
 
     def _no_tls_because(self) -> str:
@@ -561,21 +582,30 @@ class Stack:
             "or leave it — https is a convenience here, not the product."
         )
 
-    def _write_config(self, sites: list[caddy.Site], port: int) -> Path:
-        directory = paths.root() / "conf"
+    def _document(self, sites: list[caddy.Site], port: int) -> dict:
+        """The configuration for [port], with the hand-written override on top."""
+        try:
+            override = caddy.load_override(paths.caddy_override())
+        except caddy.InvalidOverride as error:
+            raise StackError(str(error)) from error
+
+        return caddy.config(
+            sites,
+            listen=port,
+            admin=self.admin or caddy.DEFAULT_ADMIN,
+            storage=trust.storage(),
+            tls_listen=self.tls_port,
+            override=override,
+        )
+
+    def _write_config(
+        self, sites: list[caddy.Site], port: int, document: dict | None = None
+    ) -> Path:
+        directory = paths.conf()
         directory.mkdir(parents=True, exist_ok=True)
         target = directory / "caddy.json"
         target.write_text(
-            json.dumps(
-                caddy.config(
-                    sites,
-                    listen=port,
-                    admin=self.admin or caddy.DEFAULT_ADMIN,
-                    storage=trust.storage(),
-                    tls_listen=self.tls_port,
-                ),
-                indent=2,
-            ),
+            json.dumps(document or self._document(sites, port), indent=2),
             encoding="utf-8",
         )
 
@@ -588,16 +618,15 @@ class Stack:
         The whole reason the configuration is JSON. A restart would drop every
         connection in flight, and adding a second site has no business
         interrupting the first.
-        """
-        document = caddy.config(
-            sites,
-            listen=self.port or self.candidate_ports[0],
-            admin=self.admin or caddy.DEFAULT_ADMIN,
-            storage=trust.storage(),
-            tls_listen=self.tls_port,
-        )
-        self._write_config(sites, self.port or self.candidate_ports[0])
 
+        Written to disk only once Caddy has accepted it. A refused document is
+        left in memory, so the file stays the last configuration that worked
+        and the next start does not fail over a mistake already reported here.
+        """
+        port = self.port or self.candidate_ports[0]
+        document = self._document(sites, port)
+
+        import urllib.error
         import urllib.request
 
         request = urllib.request.Request(
@@ -607,8 +636,25 @@ class Stack:
             headers={"Content-Type": "application/json"},
         )
 
-        with urllib.request.urlopen(request, timeout=10) as response:
-            response.read()
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                response.read()
+        except urllib.error.HTTPError as error:
+            # Caddy says exactly what it disliked, in a JSON body; a bare
+            # "HTTP Error 400" would throw that away.
+            body = error.read().decode("utf-8", errors="replace").strip()
+
+            try:
+                reason = json.loads(body).get("error", body)
+            except (json.JSONDecodeError, AttributeError):
+                reason = body
+
+            raise StackError(
+                f"Caddy refused the new configuration and kept the previous one.\n\n"
+                f"{self._override_hint()}{reason}"
+            ) from error
+
+        self._write_config(sites, port, document)
 
     #: Sent to a port to find out whether *our* Caddy is the thing on it. The
     #: hostname is one no site can be called — a dot is rejected by the site name

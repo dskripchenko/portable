@@ -56,6 +56,7 @@ sites
   portable site list / site remove <name>
   portable port 8888                 when 80 and 8080 are both taken; `auto` undoes it
   portable trust                     trust the local authority, so https:// stops warning
+  portable reload                    apply conf/caddy.override.json — CORS, headers, anything
 
 php extensions
   portable ext list                  what this build ships, and what is loaded
@@ -254,6 +255,12 @@ def _parser() -> argparse.ArgumentParser:
         "number",
         nargs="?",
         help="A port, or `auto` to try 80 and then 8080. Omit to show the current one.",
+    )
+
+    add(
+        "reload",
+        "Apply conf/caddy.override.json on top of the generated router configuration.",
+        _reload,
     )
 
     update = add("update", "Newer releases on the same line as what is installed.", _update)
@@ -1450,6 +1457,27 @@ def _port(args) -> int:
         result,
         f"Set to {result['chosen'] or 'automatic'}. Nothing is being served yet.",
     )
+
+
+def _reload(args) -> int:
+    result = Client().call("POST", "/v1/router/reload", timeout=120)
+    said = []
+
+    if not result["exists"]:
+        said.append(
+            f"No {result['override']} — the generated configuration is all there is.\n"
+            "Create it to add routes per site (CORS, headers) or patch the rest; see "
+            "docs/en/commands.md."
+        )
+    elif not result["sites"]:
+        said.append(f"{result['override']} is valid. Nothing is served yet; it applies to the first site.")
+    else:
+        said.append(f"Applied {result['override']}.")
+
+    for name in result["unmatched"]:
+        said.append(f"  routes for {name!r}, which is not a site — a typo, or one not added yet")
+
+    return _emit(args, result, "\n".join(said))
 
 
 def _update(args) -> int:

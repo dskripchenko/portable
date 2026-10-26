@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — your own router configuration, kept across changes
+
+`conf/caddy.json` is regenerated on every change, so anything written into it
+by hand — CORS headers, most often — was gone at the next `site add`. There is
+now a file for that which this tool reads and never writes:
+`conf/caddy.override.json`.
+
+- **`routes`** — Caddy routes per site, or `*` for all of them, run inside the
+  site before static files and PHP, on HTTP and HTTPS alike.
+- **`config`** — a JSON Merge Patch (RFC 7396) over the whole generated
+  document, for what is not per site.
+
+`portable reload` applies it; so does every start and every change to the
+sites. A file that is not valid JSON is refused with the line it breaks on, and
+a configuration Caddy refuses leaves the previous one running — the error says
+why, and `conf/caddy.json` stays the last one that worked.
+
 ## 1.9.1 — 2026-10-23
 
 ### Fixed — MariaDB could not be created on Windows

@@ -12,11 +12,15 @@ by running the real thing; see the README.
 
 from __future__ import annotations
 
+import json
 import sys
+import urllib.request
 from pathlib import Path
 
 import pytest
 
+from portable import paths
+from portable.router import caddy
 from portable.runtimes import Installed
 from portable.runtimes import Registry as Runtimes
 from portable.sites import InvalidSite, Site
@@ -313,3 +317,70 @@ class TestNamingWhoHasAPort:
         )
 
         assert port_module.holder(443) is None
+
+
+CORS = {
+    "handle": [
+        {"handler": "headers", "response": {"set": {"Access-Control-Allow-Origin": ["*"]}}}
+    ]
+}
+
+
+class TestOverride:
+    """
+    `conf/caddy.override.json`, through the whole stack: the file Caddy starts
+    from, the live reconfiguration, and what happens when either is refused.
+    The document itself is covered in `test_router_override.py`.
+    """
+
+    @staticmethod
+    def write(content: object) -> None:
+        target = paths.caddy_override()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            content if isinstance(content, str) else json.dumps(content), encoding="utf-8"
+        )
+
+    @staticmethod
+    def first_extra(document: dict) -> dict:
+        routes = document["apps"]["http"]["servers"][caddy.SERVER]["routes"]
+
+        return routes[0]["handle"][0]["routes"][1]
+
+    def test_it_is_in_the_file_caddy_starts_from(self, stack, tmp_path):
+        self.write({"routes": {"demo": [CORS]}})
+        stack.reconcile([site(tmp_path)])
+
+        written = json.loads((paths.conf() / "caddy.json").read_text(encoding="utf-8"))
+
+        assert self.first_extra(written) == CORS
+
+    def test_a_change_reaches_the_running_caddy(self, stack, tmp_path):
+        stack.reconcile([site(tmp_path)])
+        self.write({"routes": {"demo": [CORS]}})
+        stack.reconcile([site(tmp_path)])
+
+        with urllib.request.urlopen(f"http://{stack.admin}/config/", timeout=5) as response:
+            live = json.loads(response.read())
+
+        assert self.first_extra(live) == CORS
+
+    def test_a_broken_file_is_refused_by_name(self, stack, tmp_path):
+        self.write("{nope")
+
+        with pytest.raises(StackError) as excinfo:
+            stack.reconcile([site(tmp_path)])
+
+        assert "caddy.override.json" in str(excinfo.value)
+
+    def test_a_refusal_keeps_the_last_good_file(self, stack, tmp_path):
+        stack.reconcile([site(tmp_path)])
+        before = (paths.conf() / "caddy.json").read_text(encoding="utf-8")
+        self.write({"config": {"fake_refuse": True}})
+
+        with pytest.raises(StackError) as excinfo:
+            stack.reconcile([site(tmp_path)])
+
+        assert "fake refusal" in str(excinfo.value)
+        assert "caddy.override.json" in str(excinfo.value)
+        assert (paths.conf() / "caddy.json").read_text(encoding="utf-8") == before

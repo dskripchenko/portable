@@ -131,6 +131,7 @@
 | `portable site remove <名称>` | 不再提供该站点。 |
 | `portable port 8888` | 提供服务用的端口。`auto` 回到先试 80、再试 8080。 |
 | `portable trust` | 信任本地证书颁发机构，让 `https://` 不再警告。`--forget` 撤销。 |
+| `portable reload` | 把 `conf/caddy.override.json` 应用在自动生成的路由配置之上。 |
 
 选定的端口是**唯一**会尝试的端口。在你要求 8888 之后退回 8080，会把站点放到一个你
 没选、也没人告诉你的地址上 —— 而人们之所以要选端口，正是因为默认值不能用。
@@ -151,6 +152,55 @@ PHP、curl 和 Node 读的是各自的清单，而不是系统存储。所以站
 
 如果 443 和 8443 都被占用，就根本不会启动 HTTPS 监听 —— HTTP 不受影响。`status` 会
 说明这一点，并指出是谁占着它们。
+
+### 自定义路由配置
+
+`conf/caddy.json` 是生成的，每次变更都会被覆盖 —— 在里面的修改只能活到下一次
+`site add`。需要额外加的内容写在旁边的 `conf/caddy.override.json` 里；这个文件
+工具只读、从不写：
+
+```json
+{
+  "routes": {
+    "api": [
+      {
+        "handle": [{
+          "handler": "headers",
+          "response": {"set": {
+            "Access-Control-Allow-Origin": ["http://app.localhost:5173"],
+            "Access-Control-Allow-Credentials": ["true"],
+            "Vary": ["Origin"]
+          }}
+        }]
+      },
+      {
+        "match": [{"method": ["OPTIONS"]}],
+        "handle": [
+          {"handler": "headers", "response": {"set": {
+            "Access-Control-Allow-Methods": ["GET, POST, PUT, PATCH, DELETE, OPTIONS"],
+            "Access-Control-Allow-Headers": ["Content-Type, Authorization"]
+          }}},
+          {"handler": "static_response", "status_code": 204}
+        ]
+      }
+    ]
+  },
+  "config": {
+    "logging": {"logs": {"default": {"level": "DEBUG"}}}
+  }
+}
+```
+
+- **`routes`** —— 按站点名分组的 Caddy 路由，`*` 表示所有站点（排在最前）。它们
+  在站点内部、静态文件和 PHP 之前执行，HTTP 和 HTTPS 都生效 —— CORS 头和预检
+  请求的应答就该放在这里。
+- **`config`** —— 作用于整个生成文档的 [JSON Merge Patch](https://www.rfc-editor.org/rfc/rfc7396)：
+  对象合并，`null` 删除键，其余直接替换。
+
+`portable reload` 按文件当前内容应用；每次启动和每次 `site add` 也会应用。无效的
+JSON 会被拒绝并指出出错的行；Caddy 拒绝的配置不会生效，之前的配置继续运行。
+不要在自己的路由里写 `@id`：每条路由都会复制到两个服务器上，而 Caddy 拒绝 id
+重复的文档。
 
 ## 多个版本同时运行
 

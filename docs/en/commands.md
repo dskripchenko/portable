@@ -155,6 +155,7 @@ manages would be a surprising thing for this to do.
 | `portable site remove <name>` | Stop serving one. |
 | `portable port 8888` | The port sites are served on. `auto` returns to trying 80, then 8080. |
 | `portable trust` | Trust the local certificate authority, so `https://` stops warning. `--forget` undoes it. |
+| `portable reload` | Apply `conf/caddy.override.json` on top of the generated router configuration. |
 
 `trust` puts the local authority's root into **your** certificate store, which
 is the only one reachable without administrator rights, and writes
@@ -181,6 +182,57 @@ unaffected. `status` says so, and names what is holding them.
 A chosen port is the **only** one tried. Falling back to 8080 after you asked
 for 8888 would put the site at an address you did not pick and were not told
 about — and the reason to choose one is that the defaults were not usable.
+
+### Your own router configuration
+
+`conf/caddy.json` is generated and replaced on every change — editing it lasts
+until the next `site add`. What you need on top of it goes in
+`conf/caddy.override.json`, beside it, which this tool reads and never writes:
+
+```json
+{
+  "routes": {
+    "api": [
+      {
+        "handle": [{
+          "handler": "headers",
+          "response": {"set": {
+            "Access-Control-Allow-Origin": ["http://app.localhost:5173"],
+            "Access-Control-Allow-Credentials": ["true"],
+            "Vary": ["Origin"]
+          }}
+        }]
+      },
+      {
+        "match": [{"method": ["OPTIONS"]}],
+        "handle": [
+          {"handler": "headers", "response": {"set": {
+            "Access-Control-Allow-Methods": ["GET, POST, PUT, PATCH, DELETE, OPTIONS"],
+            "Access-Control-Allow-Headers": ["Content-Type, Authorization"]
+          }}},
+          {"handler": "static_response", "status_code": 204}
+        ]
+      }
+    ]
+  },
+  "config": {
+    "logging": {"logs": {"default": {"level": "DEBUG"}}}
+  }
+}
+```
+
+- **`routes`** — Caddy routes per site name, or `*` for every site (those come
+  first). They run inside the site before static files and PHP, on both HTTP
+  and HTTPS — which is where CORS headers and a preflight answer belong.
+- **`config`** — a [JSON Merge Patch](https://www.rfc-editor.org/rfc/rfc7396)
+  over the whole generated document: objects merge, `null` deletes a key,
+  anything else replaces it.
+
+`portable reload` applies the file as it now stands; it is also applied at every
+start and every `site add`. A file that is not valid JSON is refused with the
+line it breaks on, and a configuration Caddy refuses leaves the previous one
+running. Leave `@id` out of your routes: each is copied to both servers, and
+Caddy rejects a document where an id repeats.
 
 ## Several versions at once
 
