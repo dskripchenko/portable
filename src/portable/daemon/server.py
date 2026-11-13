@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-from .. import acquire, extensions, paths, pecl, pool, services, settings, trust
+from .. import acquire, apps, extensions, paths, pecl, pool, services, settings, trust
 from .. import catalog as catalogs
 from .. import net as net_module
 from ..catalog import CatalogError
@@ -243,6 +243,7 @@ class ControlServer:
             ("GET", f"{API}/sites"): self._sites,
             ("POST", f"{API}/sites/add"): self._site_add,
             ("POST", f"{API}/sites/remove"): self._site_remove,
+            ("POST", f"{API}/sites/restart"): self._site_restart,
             ("GET", f"{API}/environment"): self._environment,
             ("GET", f"{API}/services"): self._services_list,
             ("POST", f"{API}/services/add"): self._service_add,
@@ -305,7 +306,10 @@ class ControlServer:
         branch = payload.get("branch") or None
 
         try:
-            offers = catalog.available(branch=branch) if branch else catalog.available()
+            # `line`, which is what every catalog calls it. This passed `branch`,
+            # which none of them accepts, so `available php 8.3` failed with a
+            # TypeError instead of listing the archive.
+            offers = catalog.available(line=branch) if branch else catalog.available()
         except CatalogError as error:
             raise ApiError(HTTPStatus.BAD_GATEWAY, "catalog-unavailable", str(error)) from error
 
@@ -619,7 +623,14 @@ class ControlServer:
             users += [
                 f"site {site.name}"
                 for site in self.sites.all()
-                if site.php in (None, line, entry.version)
+                if not site.is_python and site.php in (None, line, entry.version)
+            ]
+
+        if entry.name == "python":
+            users += [
+                f"site {site.name}"
+                for site in self.sites.all()
+                if site.is_python and self._runs_on(site, entry, line)
             ]
 
         users += [
@@ -629,6 +640,31 @@ class ControlServer:
         ]
 
         return users
+
+    @staticmethod
+    def _runs_on(site: Site, entry: Installed, line: str) -> bool:
+        """
+        Whether a Python site would break without this Python.
+
+        A project with a virtual environment does not run on whatever Python the
+        site is pinned to — it runs on the one its venv was made from, which the
+        pin says nothing about. Deleting that one leaves a venv pointing at a
+        directory that is gone, so it is what is asked about.
+        """
+        environment = apps.venv_of(site.root)
+
+        if environment is None:
+            return site.python in (None, line, entry.version)
+
+        home = apps.venv_home(environment)
+
+        if home is None:
+            return False
+
+        with contextlib.suppress(OSError, ValueError):
+            return home.resolve().is_relative_to(entry.directory.resolve())
+
+        return False
 
     # -------------------------------------------------------------- extensions
 
@@ -872,10 +908,15 @@ class ControlServer:
             "sites": [
                 {
                     "name": site.name,
+                    "kind": site.kind,
                     "hostname": site.hostname,
                     "url": self._url_for(site.hostname),
                     "root": str(site.root),
                     "php": site.php,
+                    "python": site.python,
+                    "command": site.command,
+                    "port": app.port if (app := self.stack.apps.get(site.name)) else None,
+                    "venv": str(venv) if site.is_python and (venv := apps.venv_of(site.root)) else None,
                 }
                 for site in self.sites.all()
             ],
@@ -884,17 +925,48 @@ class ControlServer:
     def _site_add(self, payload: dict) -> dict:
         name = str(payload.get("name") or "")
         root = Path(str(payload.get("root") or "")).expanduser()
+        command = str(payload.get("command") or "").strip() or None
+        python = payload.get("python")
+        # A Python site is asked for by naming a Python — `--python`, with or
+        # without a version — or by giving a command, which only a Python site
+        # has a use for.
+        is_python = payload.get("kind") == "python" or python is not None or command is not None
+
+        if is_python and payload.get("php"):
+            raise ApiError(
+                HTTPStatus.BAD_REQUEST,
+                "invalid-site",
+                "A site is served by PHP or by a Python application, not both. "
+                "Drop --php or --python.",
+            )
 
         detected = False
+        command_detected = False
 
-        # Only when the caller has not said otherwise. `--exact` exists because
-        # somebody who typed a path meant it, and a tool that quietly serves a
-        # different directory than the one it was handed is worse than one that
-        # serves the wrong one obediently.
-        if root.is_dir() and not payload.get("exact"):
-            root, detected = document_root(root)
+        if is_python:
+            # The project's directory, always: the application decides what it
+            # serves, and there is no front controller to go looking for.
+            if root.is_dir() and command is None:
+                command = apps.default_command(root)
+                command_detected = command is not None
 
-        site = Site(name=name, root=root, php=payload.get("php") or None)
+            site = Site(
+                name=name,
+                root=root,
+                kind="python",
+                python=(str(python).strip() or None) if python is not None else None,
+                command=command,
+            )
+        else:
+            # Only when the caller has not said otherwise. `--exact` exists
+            # because somebody who typed a path meant it, and a tool that
+            # quietly serves a different directory than the one it was handed is
+            # worse than one that serves the wrong one obediently.
+            if root.is_dir() and not payload.get("exact"):
+                root, detected = document_root(root)
+
+            site = Site(name=name, root=root, php=payload.get("php") or None)
+
         previous = {existing.name for existing in self.sites.all()}
 
         try:
@@ -918,8 +990,11 @@ class ControlServer:
 
             raise
 
+        app = self.stack.apps.get(site.name)
+
         return {
             "name": site.name,
+            "kind": site.kind,
             "hostname": site.hostname,
             "url": self._url_for(site.hostname),
             "https": self._https_url_for(site.hostname),
@@ -929,6 +1004,21 @@ class ControlServer:
             # out loud — otherwise the first surprise is somebody wondering why
             # their edits to the wrong index.php change nothing.
             "detected": detected,
+            **(
+                {
+                    "command": site.command,
+                    # Said for the same reason: a command nobody typed is
+                    # running in their project.
+                    "command_detected": command_detected,
+                    "port": app.port if app else None,
+                    "venv": str(venv) if (venv := apps.venv_of(site.root)) else None,
+                    # Without `{port}` the application has to read PORT from its
+                    # environment, which most development servers do not.
+                    "port_in_command": apps.PORT in (site.command or ""),
+                }
+                if site.is_python
+                else {}
+            ),
         }
 
     def _router_reload(self, _payload: dict) -> dict:
@@ -968,6 +1058,54 @@ class ControlServer:
             ),
         }
 
+    def _site_restart(self, payload: dict) -> dict:
+        """
+        Start a site's processes afresh.
+
+        For a Python site, its application — after `pip install`, or after it
+        crashed often enough that the supervisor stopped trying. For a PHP site,
+        the pool of its PHP version, which every other site on that version
+        shares and is said so.
+        """
+        name = str(payload.get("name") or "")
+        site = self.sites.get(name)
+
+        if site is None:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-site", f"No site called {name!r}.")
+
+        if site.is_python:
+            if not self.stack.restart_app(name):
+                self._reconcile()
+
+            return {"name": name, "kind": site.kind, "restarted": [apps.process_name(name)]}
+
+        try:
+            runtime = self.runtimes.get("php", site.php)
+        except NotInstalled as error:
+            raise ApiError(HTTPStatus.NOT_FOUND, "no-such-runtime", str(error)) from error
+
+        self.stack.reload_php(runtime.version)
+        self._reconcile()
+
+        return {
+            "name": name,
+            "kind": site.kind,
+            "restarted": [f"php {runtime.version}"],
+            "shared_with": sorted(
+                other.name
+                for other in self.sites.all()
+                if other.name != name
+                and not other.is_python
+                and self._php_version_of(other) == runtime.version
+            ),
+        }
+
+    def _php_version_of(self, site: Site) -> str | None:
+        try:
+            return self.runtimes.get("php", site.php).version
+        except NotInstalled:
+            return None
+
     def _site_remove(self, payload: dict) -> dict:
         name = str(payload.get("name") or "")
 
@@ -998,16 +1136,29 @@ class ControlServer:
             if not directory.is_dir():
                 directory = entry.directory
 
+            extra: list[str] = []
+
+            if entry.name == "python":
+                # Where `python.exe` is — the root of python.org's zip, `tools\`
+                # in the NuGet packages of older releases — and `Scripts` beside
+                # it, where pip puts `uvicorn.exe` and everything else it
+                # installs. Listed even before it exists: the first `pip install`
+                # creates it, and the shell asked for this before that.
+                with contextlib.suppress(NotInstalled):
+                    directory = entry.executable("python").parent
+                extra = [str(directory / "Scripts")]
+
             entries.append(
                 {
                     "name": entry.name,
                     "version": entry.version,
                     "path": str(directory),
+                    "extra": extra,
                 }
             )
 
         return {
-            "path": [entry["path"] for entry in entries],
+            "path": [path for entry in entries for path in (entry["path"], *entry["extra"])],
             "runtimes": entries,
             "vars": {
                 # So a script can tell it is running inside one of these, and
@@ -1039,6 +1190,8 @@ class ControlServer:
             "SSL_CERT_FILE": str(where),
             "CURL_CA_BUNDLE": str(where),
             "NODE_EXTRA_CA_CERTS": str(where),
+            # `requests`, and pip through it, reads neither of the above.
+            "REQUESTS_CA_BUNDLE": str(where),
         }
 
     def _services_list(self, _payload: dict) -> dict:

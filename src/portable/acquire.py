@@ -252,7 +252,9 @@ def _extract(archive: Path, into: Path) -> None:
     """
     name = archive.name.lower()
 
-    if name.endswith(".zip"):
+    # A NuGet package is a zip by definition, and is what python.org's index
+    # lists for its oldest releases.
+    if name.endswith((".zip", ".nupkg")):
         with zipfile.ZipFile(archive) as bundle:
             _refuse_escapes(bundle.namelist(), into, archive)
             bundle.extractall(into)

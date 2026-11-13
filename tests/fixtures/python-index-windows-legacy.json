@@ -1,0 +1,6399 @@
+{
+ "versions": [
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.11",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.11-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.11-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.11-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.11",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.11",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.11",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.11/python.3.10.11.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.10",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.10-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.10",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.10",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.10",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.10/python.3.10.10.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.9",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.9-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.9",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.9",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.9",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.9/python.3.10.9.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.8",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.8-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.8",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.8",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.8",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.8/python.3.10.8.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.7",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.7-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.7",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.7",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.7",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.7/python.3.10.7.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.6",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.6-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.6",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.6",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.6",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.6/python.3.10.6.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.5",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.5-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.5",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.5",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.5",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.5/python.3.10.5.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.4",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.4-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.4/python.3.10.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.3",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.3-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.3/python.3.10.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.2",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.2-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.2/python.3.10.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.1",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.1-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.1-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.1-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.1",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.1",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.1",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.1/python.3.10.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.10-64",
+   "sort-version": "3.10.0",
+   "company": "PythonCore",
+   "tag": "3.10-64",
+   "install-for": [
+    "3.10.0-64",
+    "3.10-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.10.0-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.10.0-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.10.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.10.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.10",
+     "DisplayName": "Python 3.10.0",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.10",
+     "Version": "3.10.0",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.10/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.10",
+     "Items": [
+      {
+       "Name": "Python 3.10",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.10 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.10/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.10/"
+    }
+   ],
+   "display-name": "Python 3.10.0",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.10.0/python.3.10.0.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.13",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.13-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.13-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.13-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.13",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.13",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.13",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.13/python.3.9.13.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.12",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.12-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.12-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.12-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.12",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.12",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.12",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.12/python.3.9.12.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.11",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.11-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.11-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.11-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.11",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.11",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.11",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.11.1/python.3.9.11.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.10",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.10-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.10",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.10",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.10",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.10/python.3.9.10.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.9",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.9-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.9",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.9",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.9",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.9/python.3.9.9.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.8",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.8-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.8",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.8",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.8",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.8/python.3.9.8.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.7",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.7-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.7",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.7",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.7",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.7/python.3.9.7.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.6",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.6-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.6",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.6",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.6",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.6/python.3.9.6.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.5",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.5-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.5",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.5",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.5",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.5/python.3.9.5.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.4",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.4-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.4/python.3.9.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.3",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.3-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.3/python.3.9.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.2",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.2-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.2/python.3.9.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.1",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.1-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.1-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.1-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.1",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.1",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.1",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.1/python.3.9.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.9-64",
+   "sort-version": "3.9.0",
+   "company": "PythonCore",
+   "tag": "3.9-64",
+   "install-for": [
+    "3.9.0-64",
+    "3.9-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.9.0-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.9.0-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.9.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.9.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.9",
+     "DisplayName": "Python 3.9.0",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.9",
+     "Version": "3.9.0",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.9/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.9",
+     "Items": [
+      {
+       "Name": "Python 3.9",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.9 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.9/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.9/"
+    }
+   ],
+   "display-name": "Python 3.9.0",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.9.0/python.3.9.0.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.10",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.10-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.10-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.10-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.10",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.10",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.10",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.10/python.3.8.10.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.9",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.9-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.9",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.9",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.9",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.9/python.3.8.9.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.8",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.8-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.8",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.8",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.8",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.8/python.3.8.8.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.7",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.7-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.7",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.7",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.7",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.7/python.3.8.7.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.6",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.6-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.6",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.6",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.6",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.6/python.3.8.6.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.5",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.5-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.5",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.5",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.5",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.5/python.3.8.5.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.4",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.4-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.4/python.3.8.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.3",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.3-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.3/python.3.8.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.2",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.2-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.2/python.3.8.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.1",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.1-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.1-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.1-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.1",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.1",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.1",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.1/python.3.8.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.8-64",
+   "sort-version": "3.8.0",
+   "company": "PythonCore",
+   "tag": "3.8-64",
+   "install-for": [
+    "3.8.0-64",
+    "3.8-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.8.0-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.8.0-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.8.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.8.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.8",
+     "DisplayName": "Python 3.8.0",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.8",
+     "Version": "3.8.0",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.8/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.8",
+     "Items": [
+      {
+       "Name": "Python 3.8",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.8 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.8/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.8/"
+    }
+   ],
+   "display-name": "Python 3.8.0",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.8.0/python.3.8.0.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.9",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.9-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.9-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.9-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.9",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.9",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.9",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.9/python.3.7.9.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.8",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.8-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.8",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.8",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.8",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.8/python.3.7.8.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.7",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.7-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.7",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.7",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.7",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.7/python.3.7.7.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.6",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.6-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.6",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.6",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.6",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.6/python.3.7.6.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.5",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.5-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.5",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.5",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.5",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.5/python.3.7.5.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.4",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.4-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.4/python.3.7.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.3",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.3-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.3/python.3.7.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.2",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.2-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.2/python.3.7.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.1",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.1-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.1-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.1-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.1",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.1",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.1",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.1/python.3.7.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.7-64",
+   "sort-version": "3.7.0",
+   "company": "PythonCore",
+   "tag": "3.7-64",
+   "install-for": [
+    "3.7.0-64",
+    "3.7-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.7.0-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.7.0-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.7.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.7",
+     "DisplayName": "Python 3.7.0",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.7",
+     "Version": "3.7.0",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.7",
+     "Items": [
+      {
+       "Name": "Python 3.7",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.7/"
+    }
+   ],
+   "display-name": "Python 3.7.0",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.7.0/python.3.7.0.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.8",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.8-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.8-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.8-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.8",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.8",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.8",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.8/python.3.6.8.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.7",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.7-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.7-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.7",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.7",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.7",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.7/python.3.6.7.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.6",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.6-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.6",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.6",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.6",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.6/python.3.6.6.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.5",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.5-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.5",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.5",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.5",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.5/python.3.6.5.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.4",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.4-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.4/python.3.6.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.3",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.3-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.3/python.3.6.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.2",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.2-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.2/python.3.6.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.1",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.1-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.1-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.1-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.1",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.1",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.1",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.1/python.3.6.1.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.6-64",
+   "sort-version": "3.6.0",
+   "company": "PythonCore",
+   "tag": "3.6-64",
+   "install-for": [
+    "3.6.0-64",
+    "3.6-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.6.0-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.6.0-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.6-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.6.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.6.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.6",
+     "DisplayName": "Python 3.6.0",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.6",
+     "Version": "3.6.0",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.6/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.6",
+     "Items": [
+      {
+       "Name": "Python 3.6",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.6 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.6/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.6/"
+    }
+   ],
+   "display-name": "Python 3.6.0",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.6.0/python.3.6.0.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.5-64",
+   "sort-version": "3.5.4",
+   "company": "PythonCore",
+   "tag": "3.5-64",
+   "install-for": [
+    "3.5.4-64",
+    "3.5-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.5.4-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5.4-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.5.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.5.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.5",
+     "DisplayName": "Python 3.5.4",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.5",
+     "Version": "3.5.4",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.5/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.5",
+     "Items": [
+      {
+       "Name": "Python 3.5",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.5 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.5/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.5/"
+    }
+   ],
+   "display-name": "Python 3.5.4",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.5.4/python.3.5.4.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.5-64",
+   "sort-version": "3.5.3",
+   "company": "PythonCore",
+   "tag": "3.5-64",
+   "install-for": [
+    "3.5.3-64",
+    "3.5-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.5.3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5.3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.5.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.5.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.5",
+     "DisplayName": "Python 3.5.3",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.5",
+     "Version": "3.5.3",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.5/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.5",
+     "Items": [
+      {
+       "Name": "Python 3.5",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.5 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.5/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.5/"
+    }
+   ],
+   "display-name": "Python 3.5.3",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.5.3/python.3.5.3.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.5-64",
+   "sort-version": "3.5.2",
+   "company": "PythonCore",
+   "tag": "3.5-64",
+   "install-for": [
+    "3.5.2-64",
+    "3.5-64",
+    "3-64"
+   ],
+   "run-for": [
+    {
+     "tag": "3.5.2-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "3.5.2-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3.5-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "tag": "3-64",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "alias": [
+    {
+     "name": "python3.5.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python3.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "pythonw3.5.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    },
+    {
+     "name": "pythonw3.exe",
+     "target": "pythonw.exe",
+     "windowed": 1
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\3.5",
+     "DisplayName": "Python 3.5.2",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "3.5",
+     "Version": "3.5.2",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/3.5/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 3.5",
+     "Items": [
+      {
+       "Name": "Python 3.5",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 3.5 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/3.5/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/3.5/"
+    }
+   ],
+   "display-name": "Python 3.5.2",
+   "executable": "./python.exe",
+   "url": "https://api.nuget.org/v3-flatcontainer/python/3.5.2.2/python.3.5.2.2.nupkg"
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-2.7-64",
+   "sort-version": "2.7.18",
+   "company": "PythonCore",
+   "tag": "2.7-64",
+   "install-for": [
+    "2.7.18-64",
+    "2.7-64",
+    "2-64"
+   ],
+   "run-for": [
+    {
+     "tag": "2.7.18-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "2.7-64",
+     "target": "python.exe"
+    },
+    {
+     "tag": "2-64",
+     "target": "python.exe"
+    }
+   ],
+   "alias": [
+    {
+     "name": "python2.7.exe",
+     "target": "python.exe"
+    },
+    {
+     "name": "python2.exe",
+     "target": "python.exe"
+    }
+   ],
+   "shortcuts": [
+    {
+     "kind": "pep514",
+     "Key": "PythonCore\\2.7",
+     "DisplayName": "Python 2.7.18 (64-bit)",
+     "SupportUrl": "https://www.python.org/",
+     "SysArchitecture": "64bit",
+     "SysVersion": "2.7",
+     "Version": "2.7.18",
+     "InstallPath": {
+      "_": "%PREFIX%",
+      "ExecutablePath": "%PREFIX%python.exe",
+      "WindowedExecutablePath": "%PREFIX%pythonw.exe"
+     },
+     "Help": {
+      "Online Python Documentation": {
+       "_": "https://docs.python.org/2.7/"
+      }
+     }
+    },
+    {
+     "kind": "start",
+     "Name": "Python 2.7",
+     "Items": [
+      {
+       "Name": "Python 2.7 (64-bit)",
+       "Target": "%PREFIX%python.exe",
+       "Icon": "%PREFIX%python.exe"
+      },
+      {
+       "Name": "Python 2.7 Online Documentation",
+       "Icon": "%SystemRoot%\\System32\\SHELL32.dll",
+       "IconIndex": 13,
+       "Target": "https://docs.python.org/2.7/"
+      }
+     ]
+    },
+    {
+     "kind": "uninstall",
+     "Publisher": "Python Software Foundation",
+     "HelpLink": "https://docs.python.org/2.7/"
+    }
+   ],
+   "display-name": "Python 2.7.18",
+   "executable": "./python.exe",
+   "url": "https://globalcdn.nuget.org/packages/python2.2.7.18.nupkg"
+  }
+ ]
+}

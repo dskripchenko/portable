@@ -7,8 +7,8 @@
 [![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
-Локальная среда разработки для Windows — PHP, Caddy, PostgreSQL, MariaDB, Redis,
-Node — которая ставится рядом с системой, а не в неё.
+Локальная среда разработки для Windows — PHP, Python, Caddy, PostgreSQL, MariaDB,
+Redis, Node — которая ставится рядом с системой, а не в неё.
 
 - [Начало работы](getting-started.md) — установить, поднять сайт, добавить базу
 - [Команды](commands.md) — все команды и для чего каждая

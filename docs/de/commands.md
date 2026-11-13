@@ -136,7 +136,7 @@ bleibt.
 | `portable update [--install]` | Neuere Ausgaben auf derselben Linie wie das Installierte. |
 | `portable uninstall <name> <version>` | Eine löschen und den Speicherplatz zurückgewinnen. |
 
-Installierbar: `php`, `caddy`, `node`, `postgres`, `mariadb`, `redis`.
+Installierbar: `php`, `python`, `caddy`, `node`, `postgres`, `mariadb`, `redis`.
 
 **Versionen werden nebeneinander installiert, nie übereinander.** Was an die
 alte gebunden ist, läuft weiter — dafür gibt es `uninstall`.
@@ -242,6 +242,52 @@ jedem Start und jedem `site add`. Ungültiges JSON wird mit der Zeile abgelehnt,
 an der es bricht, und eine Konfiguration, die Caddy ablehnt, lässt die vorige
 weiterlaufen. Lassen Sie `@id` in eigenen Routen weg: Jede wird in beide Server
 kopiert, und Caddy lehnt ein Dokument mit doppelter ID ab.
+
+## Python-Websites
+
+| | |
+|---|---|
+| `portable install python [Version]` | Von python.org: `latest`, eine Linie (`3.13`) oder eine genaue Version (`3.12.4`). |
+| `portable available python 3.12` | Jedes Release dieser Linie, das python.org noch führt. |
+| `portable site add <Name> <Pfad> --command "<Befehl>"` | Eine Anwendung ausliefern, die selbst HTTP-Server ist. `{port}` wird durch den ihr zugeteilten Port ersetzt. |
+| `portable site add <Name> <Pfad> --python 3.12` | Python festlegen. Für ein Django-Projekt (`manage.py`) wird der Befehl angenommen. |
+| `portable site restart <Name>` | Die Anwendung neu starten — nach `pip install` oder nachdem sie zu oft abgestürzt ist. |
+| `portable run python -m pip install -r requirements.txt` | pip des installierten Python. |
+
+```
+portable site add api C:\projects\api --command "uvicorn main:app --port {port}"
+portable site add shop C:\projects\shop          # manage.py: runserver wird angenommen
+portable site add web C:\projects\web --command "flask --app app run --port {port}"
+portable site add wsgi C:\projects\wsgi --command "waitress-serve --port={port} app:app"
+```
+
+**Die Anwendung ist der Server.** PHP beantwortet ein Pool von Interpretern, die
+vom Projekt nichts wissen; ein Python-Projekt bringt seinen eigenen Server mit —
+`runserver`, uvicorn, Flask, waitress. Eine Python-Website ist deshalb ein
+überwachter Prozess, gestartet im Projektverzeichnis auf einem Port aus demselben
+Bereich wie die PHP-Pools, und `<Name>.localhost` wird vollständig an ihn
+weitergereicht. `--php` und `--python` lassen sich nicht kombinieren.
+
+**Das eigene `.venv` (oder `venv`) des Projekts wird verwendet, wenn es eines
+hat** — dort liegen seine Abhängigkeiten. Sonst das installierte Python, mit
+`--python` festgelegt, standardmäßig das neueste. Das erste Wort des Befehls wird
+zuerst im `Scripts` der Umgebung gesucht; `python` meint immer den gewählten
+Interpreter.
+
+Die Anwendung erhält außerdem `PORT` und `PYTHONUNBUFFERED=1`; ihre Ausgabe:
+`portable logs python-<Name> -f`. Nach `trust` zeigen `SSL_CERT_FILE` und
+`REQUESTS_CA_BUNDLE` auf `conf/ca-bundle.pem`.
+
+**Reloader sind kein Problem.** Beim Stoppen wird der ganze Prozessbaum beendet,
+denn der Kindprozess des Reloaders hält den Port. Während ein Reloader neu
+startet, wartet der Router bis zu 15 Sekunden statt mit 502 zu antworten. Eine
+Anwendung, die sich innerhalb einer Sekunde beendet, lässt `site add` mit ihrer
+eigenen Ausgabe scheitern.
+
+`latest` und eine Linie bedeuten das neueste **finale** Release; ein Vorab-Release
+wird nur installiert, wenn es genau genannt wird. Releases älter als 3.11 kommen
+aus python.orgs NuGet-Paketen ohne veröffentlichte Prüfsumme und werden
+ungeprüft installiert — `install` sagt es.
 
 ## Mehrere Versionen gleichzeitig
 

@@ -58,6 +58,14 @@ class Spec:
     env: dict[str, str] | None = None
     log: Path | None = None
 
+    tree: bool = False
+    """
+    Whether stopping it must stop what it started, too.
+
+    True for a Python application: dev servers with a reloader run the app in a
+    child, and the child is the one holding the port. See `spawn.stop_tree`.
+    """
+
     restart: bool = True
     """
     Whether exiting means "start it again".
@@ -156,6 +164,12 @@ class Supervisor:
             process = managed.process
             managed.process = None
 
+        if managed.spec.tree and process is not None:
+            # Even when the parent has gone: its children may not have.
+            spawn.stop_tree(process, timeout=timeout)
+
+            return
+
         if process is None or process.poll() is not None:
             return
 
@@ -202,6 +216,15 @@ class Supervisor:
 
         if managed is not None and managed.process is not None:
             raise RuntimeError(f"{name} is still running — stop it before forgetting it.")
+
+    def alive(self, name: str) -> bool:
+        """Whether [name] has a process running right now."""
+        with self._lock:
+            return self._alive(self._require(name))
+
+    def restarts(self, name: str) -> int:
+        with self._lock:
+            return self._require(name).restarts
 
     def status(self) -> list[dict]:
         """A snapshot, shaped for the control API to hand to a client."""
@@ -259,7 +282,13 @@ class Supervisor:
             spec.log.parent.mkdir(parents=True, exist_ok=True)
 
         managed.process = spawn.start_child(
-            spec.argv, cwd=spec.cwd or paths.root(), env=spec.env, log=spec.log
+            spec.argv,
+            cwd=spec.cwd or paths.root(),
+            env=spec.env,
+            log=spec.log,
+            # Asked for only when wanted, so that everything else is started
+            # exactly as it always was.
+            **({"group": True} if spec.tree else {}),
         )
         managed.state = State.RUNNING
         managed.failure = None

@@ -109,7 +109,7 @@
 | `portable update [--install]` | 与已安装版本同一条线上的新版本。 |
 | `portable uninstall <名称> <版本>` | 删掉一个并收回磁盘空间。 |
 
-可安装：`php`、`caddy`、`node`、`postgres`、`mariadb`、`redis`。
+可安装：`php`、`python`、`caddy`、`node`、`postgres`、`mariadb`、`redis`。
 
 **版本是并排安装的，不会覆盖。** 固定在旧版本上的东西照常工作 —— 这正是
 `uninstall` 存在的理由。
@@ -201,6 +201,44 @@ PHP、curl 和 Node 读的是各自的清单，而不是系统存储。所以站
 JSON 会被拒绝并指出出错的行；Caddy 拒绝的配置不会生效，之前的配置继续运行。
 不要在自己的路由里写 `@id`：每条路由都会复制到两个服务器上，而 Caddy 拒绝 id
 重复的文档。
+
+## Python 站点
+
+| | |
+|---|---|
+| `portable install python [版本]` | 来自 python.org：`latest`、一条版本线（`3.13`）或确切版本（`3.12.4`）。 |
+| `portable available python 3.12` | python.org 仍列出的该版本线的所有发布。 |
+| `portable site add <名称> <路径> --command "<命令>"` | 托管一个自带 HTTP 服务器的应用。`{port}` 会被替换为分配给它的端口。 |
+| `portable site add <名称> <路径> --python 3.12` | 固定 Python 版本。Django 项目（有 `manage.py`）会自动采用默认命令。 |
+| `portable site restart <名称>` | 重新启动应用——在 `pip install` 之后，或在它频繁崩溃之后。 |
+| `portable run python -m pip install -r requirements.txt` | 使用已安装 Python 的 pip。 |
+
+```
+portable site add api C:\projects\api --command "uvicorn main:app --port {port}"
+portable site add shop C:\projects\shop          # 有 manage.py：自动使用 runserver
+portable site add web C:\projects\web --command "flask --app app run --port {port}"
+portable site add wsgi C:\projects\wsgi --command "waitress-serve --port={port} app:app"
+```
+
+**应用本身就是服务器。** PHP 由一组对项目一无所知的解释器进程池应答；Python
+项目自带服务器——`runserver`、uvicorn、Flask、waitress。因此 Python 站点是一个受
+监督的进程，在项目目录中、以与 PHP 进程池相同范围内的端口启动，`<名称>.localhost`
+整体反向代理到它。同一站点不能同时使用 `--php` 和 `--python`。
+
+**如果项目有自己的 `.venv`（或 `venv`），就使用它**——依赖都在那里。否则使用已安装
+的 Python：用 `--python` 固定，默认为最新版本。命令的第一个词会先在虚拟环境的
+`Scripts` 中查找；`python` 始终指所选的解释器。
+
+应用还会得到 `PORT` 和 `PYTHONUNBUFFERED=1`；查看输出：`portable logs python-<名称> -f`。
+执行 `trust` 之后，`SSL_CERT_FILE` 和 `REQUESTS_CA_BUNDLE` 指向 `conf/ca-bundle.pem`。
+
+**自动重载没有问题。** 停止站点会结束整个进程树，因为占用端口的是重载器的子进程。
+重载器重启期间，路由器最多等待 15 秒，而不是返回 502。启动后一秒内就退出的应用会让
+`site add` 失败，并附上它自己的输出。
+
+`latest` 和版本线表示最新的**正式**发布；预发布版本只有在确切指明时才会安装。早于
+3.11 的发布来自 python.org 的 NuGet 包，没有公布校验和，因此以未验证的方式安装，
+`install` 会说明这一点。
 
 ## 多个版本同时运行
 

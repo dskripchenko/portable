@@ -37,6 +37,9 @@ EXECUTABLES = {
     "mariadb": ("mariadbd.exe", "mariadbd"),
     "redis": ("redis-server.exe", "redis-server"),
     "node": ("node.exe", "node"),
+    # `python3` before `python` for an adopted POSIX tree, where `python` is
+    # either absent or, on older systems, Python 2.
+    "python": ("python.exe", "python3", "python"),
 }
 
 

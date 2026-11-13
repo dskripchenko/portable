@@ -7,7 +7,7 @@
 [![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
-面向 Windows 的本地开发环境 —— PHP、Caddy、PostgreSQL、MariaDB、Redis、Node ——
+面向 Windows 的本地开发环境 —— PHP、Python、Caddy、PostgreSQL、MariaDB、Redis、Node ——
 它安装在系统**旁边**，而不是装进系统里。
 
 - [快速开始](getting-started.md) —— 安装、跑起一个站点、加一个数据库

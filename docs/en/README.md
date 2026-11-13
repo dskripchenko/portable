@@ -7,8 +7,8 @@
 [![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
-A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
-Redis, Node — that installs beside the system rather than into it.
+A local development environment for Windows — PHP, Python, Caddy, PostgreSQL,
+MariaDB, Redis, Node — that installs beside the system rather than into it.
 
 - [Getting started](getting-started.md) — install it, serve a site, add a database
 - [Commands](commands.md) — every command, with what each one is for

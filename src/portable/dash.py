@@ -97,6 +97,15 @@ def available() -> bool:
     return True
 
 
+
+def _runs(site: dict) -> str:
+    """What answers for a site, in a few characters: `php 8.4`, `python venv`."""
+    if site.get("kind") == "python":
+        return "python venv" if site.get("venv") else f"python {site.get('python') or 'newest'}"
+
+    return f"php {site.get('php') or 'newest'}"
+
+
 @dataclass
 class Snapshot:
     """Everything the screen shows, as of one moment."""
@@ -277,10 +286,12 @@ def _suggestions() -> list[str]:
             "site add ",
             "site list",
             "site remove ",
+            "site restart ",
             "service add ",
             "service list",
             "install php",
             "install caddy",
+            "install python",
             "ext list",
             "ext install ",
             "logs php",
@@ -493,7 +504,7 @@ def build() -> Any:
             processes.border_title = "processes"
 
             sites = self.query_one("#sites", DataTable)
-            sites.add_columns("site", "url", "php")
+            sites.add_columns("site", "url", "runs")
             sites.border_title = "sites"
 
             services = self.query_one("#services", DataTable)
@@ -931,9 +942,7 @@ def build() -> Any:
                 sites.add_row("none yet", "type: site add", "")
 
             for entry in snapshot.sites:
-                sites.add_row(
-                    entry.get("name", ""), entry.get("url", ""), entry.get("php") or "newest"
-                )
+                sites.add_row(entry.get("name", ""), entry.get("url", ""), _runs(entry))
 
             services = self.query_one("#services", DataTable)
             services.clear()
