@@ -7,8 +7,8 @@
 [![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
-Eine lokale Entwicklungsumgebung für Windows — PHP, Caddy, PostgreSQL, MariaDB,
-Redis, Node — die sich **neben** das System setzt statt hinein.
+Eine lokale Entwicklungsumgebung für Windows — PHP, Python, Caddy, PostgreSQL,
+MariaDB, Redis, Node — die sich **neben** das System setzt statt hinein.
 
 - [Erste Schritte](getting-started.md) — installieren, eine Website ausliefern, eine Datenbank hinzufügen
 - [Befehle](commands.md) — jeder Befehl und wofür er da ist

@@ -1,0 +1,3198 @@
+{
+ "versions": [
+  {
+   "schema": 1,
+   "id": "pythoncore-3.16-64",
+   "sort-version": "3.16.0a2",
+   "company": "PythonCore",
+   "tag": "3.16-dev-64",
+   "install-for": [
+    "3.16.0a2-64",
+    "3.16-64",
+    "3-64",
+    "3.16-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.16.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.16-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.16.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.16-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.16.0a2",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.16.0/python-3.16.0a2-amd64.zip",
+   "hash": {
+    "sha256": "e604493562d97593a3456cc4c7e8483448176bf0d4e49d7d74d388dd433f28c7"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.2",
+   "company": "PythonCore",
+   "tag": "3.15-64",
+   "install-for": [
+    "3.15.2-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.2",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.2/python-3.15.2-amd64.zip",
+   "hash": {
+    "sha256": "d6da9c33a32cf111e1d52b91392c83ea6a808545b646e0557f66cb6d9ee76785"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.10",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.10-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.10",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.10/python-3.14.10-amd64.zip",
+   "hash": {
+    "sha256": "cc28026a650970cc1570bb127312f1f9634eb67abfe157ae6ca1acbbc627d091"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.10",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.10-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.10 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.10/python-3.14.10-arm64.zip",
+   "hash": {
+    "sha256": "a7dae9a65d9ffb674d6f3c6d0476cdd10adc77876bb4426007684f8886ac2f77"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.10",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.10t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.10 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.10/python-3.14.10t-amd64.zip",
+   "hash": {
+    "sha256": "e429b56abc14dbb2fde600ae8fc97cf8cc86d98bf0bbde0bda5c74441bdffe8c"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-32",
+   "sort-version": "3.13.17",
+   "company": "PythonCore",
+   "tag": "3.13-32",
+   "install-for": [
+    "3.13.17-32",
+    "3.13-32",
+    "3-32"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-32.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-32.exe"
+    }
+   ],
+   "display-name": "Python 3.13.17 (32-bit)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-win32.zip",
+   "hash": {
+    "sha256": "e1c2384cb7103639f74a04ded039399351ae1a94287511cb9e7dd7ddc9b86b93"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-64",
+   "sort-version": "3.13.17",
+   "company": "PythonCore",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.17-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.17",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-amd64.zip",
+   "hash": {
+    "sha256": "b26ca4b4ee51e157836049934d2b8eabd55939be296f3130254251b6df96ec2f"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythonembed-3.13-64",
+   "sort-version": "3.13.17",
+   "company": "PythonEmbed",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.17-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [],
+   "display-name": "Python 3.13.17 (embeddable)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-embeddable-amd64.zip",
+   "hash": {
+    "sha256": "0ba1ee4bfcbdc3a559d27e2e9ce76d04a7839947a23f46375872c755c0d463b8"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythontest-3.13-64",
+   "sort-version": "3.13.17",
+   "company": "PythonTest",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.17-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.17 (with tests)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-test-amd64.zip",
+   "hash": {
+    "sha256": "2ae67f3ccdaa7665c192297c5cbeab0992ccb3acf4b27a23951f7c765ceab2d1"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.9",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.9-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.9",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.9/python-3.14.9-amd64.zip",
+   "hash": {
+    "sha256": "874d01bac04b470c6e1422dfccb9e182b9efe90c6a8adc5fc50d66bf84c40191"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.9",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.9-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.9 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.9/python-3.14.9-arm64.zip",
+   "hash": {
+    "sha256": "af32375db223ff01dfbf556e8bce1e48278da917d31385f411e504a5b999e32c"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.9",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.9t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.9 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.9/python-3.14.9t-amd64.zip",
+   "hash": {
+    "sha256": "c803a18f3e82a79b46a185e7f7a0d7981c20effbf29a0626279de4b57076bf16"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.1",
+   "company": "PythonCore",
+   "tag": "3.15-64",
+   "install-for": [
+    "3.15.1-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.1",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.1/python-3.15.1-amd64.zip",
+   "hash": {
+    "sha256": "cc1448e5dc0e1c5782396ededcaea11dd3966175751ae67857629d1dca20aff5"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.16-64",
+   "sort-version": "3.16.0a1",
+   "company": "PythonCore",
+   "tag": "3.16-dev-64",
+   "install-for": [
+    "3.16.0a1-64",
+    "3.16-64",
+    "3-64",
+    "3.16-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.16.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.16-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.16.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.16-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.16.0a1",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.16.0/python-3.16.0a1-amd64.zip",
+   "hash": {
+    "sha256": "d70c353262f6a2ccd50cd5aa9273e22bc217a75d9ce1855b07b83fc2e6296454"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0",
+   "company": "PythonCore",
+   "tag": "3.15-64",
+   "install-for": [
+    "3.15.0-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0-amd64.zip",
+   "hash": {
+    "sha256": "6b1a3f885ce416cf3a68af203e62203664eb5224d8d0c1d2a1945fddec5c500b"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0rc3",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0rc3-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0rc3",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0rc3-amd64.zip",
+   "hash": {
+    "sha256": "69e7368d08cb22cafd4712fb18effb2cb56963b7e736e73900df432f98086481"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-32",
+   "sort-version": "3.13.16",
+   "company": "PythonCore",
+   "tag": "3.13-32",
+   "install-for": [
+    "3.13.16-32",
+    "3.13-32",
+    "3-32"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-32.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-32.exe"
+    }
+   ],
+   "display-name": "Python 3.13.16 (32-bit)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-win32.zip",
+   "hash": {
+    "sha256": "d53cd689875a6bea9c96c14d299759f071c88ea233ea4acc10410f830bde9679"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-64",
+   "sort-version": "3.13.16",
+   "company": "PythonCore",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.16-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.16",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-amd64.zip",
+   "hash": {
+    "sha256": "bbf675bb5e763c1efbb09a3a461b259d81598a63c30c4b0d7ea11b9f063df159"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythonembed-3.13-64",
+   "sort-version": "3.13.16",
+   "company": "PythonEmbed",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.16-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [],
+   "display-name": "Python 3.13.16 (embeddable)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-embeddable-amd64.zip",
+   "hash": {
+    "sha256": "589dc1e9d02549ca5f680710307ff9b77f6e3ffc4aa3efccd7fa54eeeafac94b"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythontest-3.13-64",
+   "sort-version": "3.13.16",
+   "company": "PythonTest",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.16-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.16 (with tests)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-test-amd64.zip",
+   "hash": {
+    "sha256": "d367133dfe8069c82fb60cf05bf0ab3d1fba9e7832f0f0aa0ec86641086b3e82"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.8",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.8-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.8",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-amd64.zip",
+   "hash": {
+    "sha256": "4873947a8afc037846b180312b83c744a4146a851cfd316a75c3125a4d8299da"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.8",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.8-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.8 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-arm64.zip",
+   "hash": {
+    "sha256": "b147a5719d871f5b16b18a7da8533db1926f06018c2b00f1ecd20444f7a40057"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.8",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.8t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.8 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.8/python-3.14.8t-amd64.zip",
+   "hash": {
+    "sha256": "f2fd033c99c637a3c2dafe8b95ba7e6cbd592331e7998843c4fe494d4da5ccd2"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0rc2",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0rc2-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0rc2",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0rc2-amd64.zip",
+   "hash": {
+    "sha256": "a3e04db80924eec65203f606e5dd6a3f2f43fb33dd666f1aee1e63f9211565ae"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-32",
+   "sort-version": "3.13.15",
+   "company": "PythonCore",
+   "tag": "3.13-32",
+   "install-for": [
+    "3.13.15-32",
+    "3.13-32",
+    "3-32"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-32.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-32.exe"
+    }
+   ],
+   "display-name": "Python 3.13.15 (32-bit)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-win32.zip",
+   "hash": {
+    "sha256": "3da809210007fa7421b81e9abffc4ef2fc332480bf2566617ea894b78a1a37fa"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-64",
+   "sort-version": "3.13.15",
+   "company": "PythonCore",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.15-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.15",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-amd64.zip",
+   "hash": {
+    "sha256": "6479223746cdfb79d25865110d6f524ac98de081324e119af1dc3ae36bddc7a5"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythonembed-3.13-64",
+   "sort-version": "3.13.15",
+   "company": "PythonEmbed",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.15-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [],
+   "display-name": "Python 3.13.15 (embeddable)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-embeddable-amd64.zip",
+   "hash": {
+    "sha256": "791ada5e20aba24524f8d939cdeb069976d632a699fe5cb65274b23f4545e68a"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythontest-3.13-64",
+   "sort-version": "3.13.15",
+   "company": "PythonTest",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.15-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.15 (with tests)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.15/python-3.13.15-test-amd64.zip",
+   "hash": {
+    "sha256": "f360be79b13723b5e78c104b49dc87783f7d53a9a9ffe7cdadf93ea3a7262884"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.7",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.7-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.7",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.7/python-3.14.7-amd64.zip",
+   "hash": {
+    "sha256": "ac1a727a71738e11de80b76e975f9b8a258aea6412bfc31696b929d59c6aafd0"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.7",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.7-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.7 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.7/python-3.14.7-arm64.zip",
+   "hash": {
+    "sha256": "88953b39002caf974c081469356caf6220fd4ebcd1bc46aef099a03b0a7e8447"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.7",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.7t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.7 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.7/python-3.14.7t-amd64.zip",
+   "hash": {
+    "sha256": "3e34cdd928a3bd3fa7af9ceee1d44c8c2275a65fedcd84a94664e5fd4d293a03"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0rc1",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0rc1-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0rc1",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0rc1-amd64.zip",
+   "hash": {
+    "sha256": "c5b0d2123e74dfc806799a0c03a210e9f1fdf2fb5811b942e65751a0603e07f2"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0b4",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0b4-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0b4",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0b4-amd64.zip",
+   "hash": {
+    "sha256": "1a8710fc75e93e0d865bf246139580469f3f2d9da2677428ce719786f287cfee"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0b3",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0b3-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0b3",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0b3-amd64.zip",
+   "hash": {
+    "sha256": "98aeaf81f5443ca91f253d14127e2c2a4651958961372d6cc79c6d293f60812f"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-32",
+   "sort-version": "3.13.14",
+   "company": "PythonCore",
+   "tag": "3.13-32",
+   "install-for": [
+    "3.13.14-32",
+    "3.13-32",
+    "3-32"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-32.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-32.exe"
+    }
+   ],
+   "display-name": "Python 3.13.14 (32-bit)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-win32.zip",
+   "hash": {
+    "sha256": "982ecca2efeb3a303a6fa820e9297853730ad7f0d0e63242d133b74443fbd119"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-64",
+   "sort-version": "3.13.14",
+   "company": "PythonCore",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.14-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.14",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-amd64.zip",
+   "hash": {
+    "sha256": "f73b6535281b58eee6bcfb3403af2bcfac711ea1463d8340c47c3047248eddf7"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythonembed-3.13-64",
+   "sort-version": "3.13.14",
+   "company": "PythonEmbed",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.14-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [],
+   "display-name": "Python 3.13.14 (embeddable)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embeddable-amd64.zip",
+   "hash": {
+    "sha256": "2dcbfaca0c0742b6201209e5dbfc129ef5602e44544d6313b09eabc3931cdf65"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythontest-3.13-64",
+   "sort-version": "3.13.14",
+   "company": "PythonTest",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.14-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.14 (with tests)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-test-amd64.zip",
+   "hash": {
+    "sha256": "fe88c6cff6ae7a2f43b304e6e9df4e8aec784d77f2989324289fed4033281d0e"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.6",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.6-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.6",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.zip",
+   "hash": {
+    "sha256": "75afa83f93b284d19040e24bc440ab741c09582c0d5310504d607a4e08c3dbaf"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.6",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.6-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.6 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.6/python-3.14.6-arm64.zip",
+   "hash": {
+    "sha256": "59a66f6f54df898679db439d1728cc0587d347d309fde041879138060e62fb93"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.6",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.6t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.6 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.6/python-3.14.6t-amd64.zip",
+   "hash": {
+    "sha256": "114e5c5811939a131ae9eb13b04e7d934cd21210cf74cbe287063b9abfd9a9be"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0b2",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0b2-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0b2",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-amd64.zip",
+   "hash": {
+    "sha256": "db3f9bec05de5a368a6ac95bb4fca0b843a214c3c3d84fb3e6c92555a70bcbae"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.5",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.5-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5-amd64.zip",
+   "hash": {
+    "sha256": "c66c6e75aba5cc0434541089127557010da2af9f6ef653abc14bdb694fdf3594"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.5",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.5-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5-arm64.zip",
+   "hash": {
+    "sha256": "44305da5d41ad136f506ca947edfa6e12539c904137259cb2c225606cbc76792"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.5",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.5t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5t-amd64.zip",
+   "hash": {
+    "sha256": "eedce231931f2d25a4fe2b277bbf2a25d02aa3397e8cf4266d8ac55afbb8f7b3"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0b1",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0b1-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0b1",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0b1-amd64.zip",
+   "hash": {
+    "sha256": "3d2eff8e413fce4ef90ba4d4dca8a66a1556991e9470a4dc7093892218703ea6"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.5rc1",
+   "company": "PythonCore",
+   "tag": "3.14-dev-64",
+   "install-for": [
+    "3.14.5rc1-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5rc1",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5rc1-amd64.zip",
+   "hash": {
+    "sha256": "9a2bc511fee0fdeb438a7c0b4c783fe04859d28645b176e20094fa937b401169"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.5rc1",
+   "company": "PythonCore",
+   "tag": "3.14-dev-arm64",
+   "install-for": [
+    "3.14.5rc1-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5rc1 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5rc1-arm64.zip",
+   "hash": {
+    "sha256": "a04a2f20c3a3ed65dfb7c13d37297f2c58ebb1a239ac7b7a0f0036732601f31f"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.5rc1",
+   "company": "PythonCore",
+   "tag": "3.14t-dev-64",
+   "install-for": [
+    "3.14.5rc1t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.5rc1 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.5/python-3.14.5rc1t-amd64.zip",
+   "hash": {
+    "sha256": "004907949bece4e75d8c19136cd3f310da6741c4cc76bc73097befc03a1d66ce"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.15-64",
+   "sort-version": "3.15.0a8",
+   "company": "PythonCore",
+   "tag": "3.15-dev-64",
+   "install-for": [
+    "3.15.0a8-64",
+    "3.15-64",
+    "3-64",
+    "3.15-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.15.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.15-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.15-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.15.0a8",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.15.0/python-3.15.0a8-amd64.zip",
+   "hash": {
+    "sha256": "7c14221aaaadec14e9bd3a41dbc4d23d3b01a8c048390bd9953a5d2fb6553c7c"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-64",
+   "sort-version": "3.14.4",
+   "company": "PythonCore",
+   "tag": "3.14-64",
+   "install-for": [
+    "3.14.4-64",
+    "3.14-64",
+    "3-64",
+    "3.14-dev-64",
+    "3-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.4",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.4/python-3.14.4-amd64.zip",
+   "hash": {
+    "sha256": "11a6f5f5e7defeaa67a0b8e797f0eabec6e4499e663815319a0e0d360091f906"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14-arm64",
+   "sort-version": "3.14.4",
+   "company": "PythonCore",
+   "tag": "3.14-arm64",
+   "install-for": [
+    "3.14.4-arm64",
+    "3.14-arm64",
+    "3-arm64",
+    "3.14-dev-arm64",
+    "3-dev-arm64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.14.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.14-arm64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.14-arm64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-arm64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.4 (ARM64)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.14.4/python-3.14.4-arm64.zip",
+   "hash": {
+    "sha256": "f4430f865ec6a76b58a0effc8261609663f8a7509e95eaf7a166d7644bfb776a"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.14t-64",
+   "sort-version": "3.14.4",
+   "company": "PythonCore",
+   "tag": "3.14t-64",
+   "install-for": [
+    "3.14.4t-64",
+    "3.14t-64",
+    "3t-64",
+    "3.14t-dev-64",
+    "3t-dev-64"
+   ],
+   "alias": [
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3.14t-64.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t.exe"
+    },
+    {
+     "target": "python3.14t.exe",
+     "name": "python3t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3.14t-64.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t.exe"
+    },
+    {
+     "target": "pythonw3.14t.exe",
+     "windowed": 1,
+     "name": "pythonw3t-64.exe"
+    }
+   ],
+   "display-name": "Python 3.14.4 (free-threaded)",
+   "executable": ".\\python3.14t.exe",
+   "url": "https://www.python.org/ftp/python/3.14.4/python-3.14.4t-amd64.zip",
+   "hash": {
+    "sha256": "96893211d653ee5227444e5563738e68f98788dde35a8570f1f454eb517d6135"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-32",
+   "sort-version": "3.13.13",
+   "company": "PythonCore",
+   "tag": "3.13-32",
+   "install-for": [
+    "3.13.13-32",
+    "3.13-32",
+    "3-32"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-32.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-32.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-32.exe"
+    }
+   ],
+   "display-name": "Python 3.13.13 (32-bit)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.13/python-3.13.13-win32.zip",
+   "hash": {
+    "sha256": "e1975ba1430b0bcfce8e85579731abd14f3c00ff198e9f04e5d5414b688f29e3"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.13-64",
+   "sort-version": "3.13.13",
+   "company": "PythonCore",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.13-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.13",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.13/python-3.13.13-amd64.zip",
+   "hash": {
+    "sha256": "5f066036aebfaa3aa9aa4d52f852022f24641e7b5bc52f2bf8bb7acbe7bab958"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythonembed-3.13-64",
+   "sort-version": "3.13.13",
+   "company": "PythonEmbed",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.13-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [],
+   "display-name": "Python 3.13.13 (embeddable)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.13/python-3.13.13-embeddable-amd64.zip",
+   "hash": {
+    "sha256": "142666a4a9079507815d395b9bfb73546ec391003d385beb559a9d68fb240062"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythontest-3.13-64",
+   "sort-version": "3.13.13",
+   "company": "PythonTest",
+   "tag": "3.13-64",
+   "install-for": [
+    "3.13.13-64",
+    "3.13-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.13.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.13-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.13-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.13.13 (with tests)",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.13.13/python-3.13.13-test-amd64.zip",
+   "hash": {
+    "sha256": "9fcb4123f5c84e62c7aa96a0506fd605990561a72c675aec740c7edbce2c5181"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.12-64",
+   "sort-version": "3.12.10",
+   "company": "PythonCore",
+   "tag": "3.12-64",
+   "install-for": [
+    "3.12.10-64",
+    "3.12-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.12.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.12-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.12.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.12-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.12.10",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.zip",
+   "hash": {
+    "sha256": "8649692de846c56a7189d6dae5c322ab20deb1b5908b6f39426b62a36f39415d"
+   }
+  },
+  {
+   "schema": 1,
+   "id": "pythoncore-3.11-64",
+   "sort-version": "3.11.9",
+   "company": "PythonCore",
+   "tag": "3.11-64",
+   "install-for": [
+    "3.11.9-64",
+    "3.11-64",
+    "3-64"
+   ],
+   "alias": [
+    {
+     "target": "python.exe",
+     "name": "python3.11.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.11-64.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3.exe"
+    },
+    {
+     "target": "python.exe",
+     "name": "python3-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.11.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.11-64.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3.exe"
+    },
+    {
+     "target": "pythonw.exe",
+     "windowed": 1,
+     "name": "pythonw3-64.exe"
+    }
+   ],
+   "display-name": "Python 3.11.9",
+   "executable": ".\\python.exe",
+   "url": "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.zip",
+   "hash": {
+    "sha256": "4ba90a4ab8990891033d37ff04d2047fdae8948d0d2729a68d3a6a17c585b681"
+   }
+  }
+ ],
+ "next": "index-windows-recent.json"
+}

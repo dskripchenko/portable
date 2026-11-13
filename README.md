@@ -7,8 +7,8 @@
 [![release scanned](https://img.shields.io/github/actions/workflow/status/dskripchenko/portable/virustotal.yml?label=release%20scanned)](https://github.com/dskripchenko/portable/releases/latest)
 [![license](https://img.shields.io/github/license/dskripchenko/portable?label=license)](https://github.com/dskripchenko/portable/blob/main/LICENSE)
 
-A local development environment for Windows — PHP, Caddy, PostgreSQL, MariaDB,
-Node, Redis — that installs **beside** the system rather than into it.
+A local development environment for Windows — PHP, Python, Caddy, PostgreSQL,
+MariaDB, Node, Redis — that installs **beside** the system rather than into it.
 
 > Status: **1.9.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
 > run; sites are served at `*.localhost`, over HTTP and HTTPS; several versions
@@ -152,6 +152,11 @@ portable uninstall php 8.3.20        # reclaim the disk afterwards
 portable ext list                    # what this PHP ships, and what is loaded
 portable ext enable sodium
 portable ext install xdebug          # not in the build — downloaded to match it
+
+portable install python              # from python.org, verified
+portable site add api C:\projects\api --command "uvicorn main:app --port {port}"
+                                     # a Python app at http://api.localhost;
+                                     # its .venv is used when it has one
 
 portable service add postgres        # 127.0.0.1:5432, user postgres
 portable service add redis

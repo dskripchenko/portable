@@ -25,6 +25,7 @@ controlling terminal and the process group together.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import subprocess
 import sys
@@ -242,6 +243,7 @@ def start_child(
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
     log: Path | None = None,
+    group: bool = False,
 ) -> subprocess.Popen:
     """
     Start a process the daemon supervises and owns.
@@ -273,10 +275,67 @@ def start_child(
             stdout=stdout,
             stderr=subprocess.STDOUT,
             creationflags=child_flags(),
+            # Its own process group on POSIX, so the whole of it can be stopped
+            # at once — see `stop_tree`. Windows needs nothing at start for that:
+            # `taskkill /T` follows the parent links instead.
+            start_new_session=group and not WINDOWS,
         )
     finally:
         if log:
             stdout.close()
+
+
+def stop_tree(process: subprocess.Popen, timeout: float = 5.0) -> None:
+    """
+    Stop a process **and everything it started**.
+
+    For the processes that start their own: a Python dev server with its
+    reloader on — Django's `runserver`, `uvicorn --reload`, Flask in debug — is
+    a watcher process whose child holds the port. Stopping only the watcher
+    leaves the child listening, and the next start of the same site fails on a
+    port nobody appears to hold.
+
+    `taskkill /T` on Windows, which needs no administrator for processes this
+    user started. A process group on POSIX, created by `start_child(group=True)`.
+    """
+    if WINDOWS:
+        # `/T` walks down from a live process; once the parent has gone there
+        # is nothing to walk from.
+        if process.poll() is not None:
+            return
+
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=CREATE_NO_WINDOW,
+            check=False,
+        )
+    else:
+        import signal
+
+        # The group outlives its leader, so this reaches a reloader's child
+        # even after the watcher that started it has exited.
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            if process.poll() is not None:
+                return
+
+            process.terminate()
+
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if not WINDOWS:
+            import signal
+
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(process.pid, signal.SIGKILL)
+
+        process.kill()
+        process.wait(timeout=timeout)
 
 
 def is_running(pid: int) -> bool:

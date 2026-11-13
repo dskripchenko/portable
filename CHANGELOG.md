@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added — Python, installed and served like PHP
+
+- **`portable install python`** — from python.org's own Windows index, the one
+  its install manager reads: complete layouts with pip, each verified against
+  the sha256 python.org lists. `latest` and a line (`3.13`) mean the newest
+  final release; a pre-release installs only when named. `available python
+  3.12` follows the index's pages back to every release of that line; those
+  older than 3.11 are NuGet packages published without a digest and install
+  unverified, said out loud.
+- **Python sites.** `site add api <path> --command "uvicorn main:app --port
+  {port}"` runs the application under the supervisor, in the project's
+  directory, on an allocated port, and proxies `api.localhost` to it. The
+  project's `.venv` is used when it has one, and the command's first word is
+  found in it; otherwise the installed Python, pinned with `--python`. A Django
+  project (`manage.py`) needs no command. An application that exits at once
+  fails `site add` with its own output.
+- **`site restart <name>`** — a Python site's application, or a PHP site's pool.
+- Stopping a Python site stops its whole process tree, so a reloader's child
+  does not keep the port.
+- `run` and `env` put the installed Python and its `Scripts` on PATH, and pass
+  `REQUESTS_CA_BUNDLE` alongside the other trust variables.
+
+### Fixed
+
+- `portable available php 8.3` failed: the daemon passed the line to the
+  catalogs under a name none of them accepts.
+
 ## 1.10.0 — 2026-10-26
 
 ### Added — your own router configuration, kept across changes

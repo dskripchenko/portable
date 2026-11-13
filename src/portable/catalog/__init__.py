@@ -96,12 +96,13 @@ def modules() -> dict[str, Any]:
     Adding a runtime is now one entry here, and `test_catalog` checks the two
     sides still agree.
     """
-    from . import caddy, mariadb, node, php, postgres, redis
+    from . import caddy, mariadb, node, php, postgres, python, redis
 
     return {
         "php": php,
         "caddy": caddy,
         "node": node,
+        "python": python,
         "postgres": postgres,
         "mariadb": mariadb,
         "redis": redis,

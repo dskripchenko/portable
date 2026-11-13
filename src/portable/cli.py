@@ -32,7 +32,7 @@ from .daemon.client import CallFailed, Client, NotRunning
 OVERVIEW = """
 getting started
   portable up                        start the supervisor; everything else talks to it
-  portable install php               and: caddy, node, postgres, mariadb, redis
+  portable install php               and: python, caddy, node, postgres, mariadb, redis
   portable site add demo C:\\projects\\demo
                                      served at http://demo.localhost
   portable status                    what is running, and on which port
@@ -54,9 +54,19 @@ sites
   portable site add <name> <path> --php 8.2
                                      pin a version; the newest is the default
   portable site list / site remove <name>
+  portable site restart <name>       start its processes afresh
   portable port 8888                 when 80 and 8080 are both taken; `auto` undoes it
   portable trust                     trust the local authority, so https:// stops warning
   portable reload                    apply conf/caddy.override.json — CORS, headers, anything
+
+python sites
+  portable install python            from python.org; `available python` lists them
+  portable site add api C:\\projects\\api --command "uvicorn main:app --port {port}"
+                                     the app serves api.localhost; {port} is allocated
+  portable site add shop C:\\projects\\shop --python 3.12
+                                     a Django project: manage.py runserver is assumed
+                                     the project's .venv is used when it has one
+  portable run python -m pip install -r requirements.txt
 
 php extensions
   portable ext list                  what this build ships, and what is loaded
@@ -303,9 +313,37 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Serve exactly this directory, without looking for public/ inside it.",
     )
+    add_it.add_argument(
+        "--python",
+        nargs="?",
+        const="",
+        metavar="VERSION",
+        help=(
+            "Serve a Python application instead of PHP. A version pins one; without it "
+            "the newest installed is used — or the project's own .venv, when it has one."
+        ),
+    )
+    add_it.add_argument(
+        "--command",
+        # Not `command`: that is where the top-level parser keeps which command
+        # was typed, and sharing it made `site add` look like no command at all.
+        dest="app_command",
+        help=(
+            'How the application starts, with {port} where the port goes: '
+            '"uvicorn main:app --port {port}". Implies --python. '
+            "Assumed for a Django project (manage.py)."
+        ),
+    )
 
     remove = add_site("remove", "Stop serving a site.", _site_remove)
     remove.add_argument("name")
+
+    restart = add_site(
+        "restart",
+        "Start a site's processes afresh: its Python application, or its PHP pool.",
+        _site_restart,
+    )
+    restart.add_argument("name")
 
     add_site("list", "Sites and their addresses.", _site_list)
 
@@ -1647,10 +1685,15 @@ def _site_add(args) -> int:
             "root": str(root),
             "php": args.php,
             "exact": getattr(args, "exact", False),
+            "python": getattr(args, "python", None),
+            "command": getattr(args, "app_command", None),
         },
         # Adding the first site starts a pool and the router.
         timeout=120,
     )
+
+    if result.get("kind") == "python":
+        return _emit(args, result, _describe_python_site(result))
 
     # Said out loud when the directory served is not the one that was named.
     # Right far more often than not, and still somebody's business to know —
@@ -1665,6 +1708,36 @@ def _site_add(args) -> int:
     secure = f"\n{result['https']}" if result.get("https") else ""
 
     return _emit(args, result, f"{result['url']}{secure}  ->  {result['root']}{note}")
+
+
+def _describe_python_site(result: dict) -> str:
+    secure = f"\n{result['https']}" if result.get("https") else ""
+    lines = [
+        f"{result['url']}{secure}  ->  {result['command']}",
+        f"  in {result['root']}, on 127.0.0.1:{result['port']}",
+        f"  python from {result['venv']}" if result.get("venv") else "  python: the installed one",
+    ]
+
+    if result.get("command_detected"):
+        lines.append("  (a Django project: the command was assumed. --command to say otherwise.)")
+
+    if not result.get("port_in_command"):
+        lines.append(
+            "  note: the command has no {port} in it, so the application must read PORT "
+            "from its environment — or nothing will be listening where the site points."
+        )
+
+    lines.append(f"  output: portable logs python-{result['name']} -f")
+
+    return "\n".join(lines)
+
+
+def _site_restart(args) -> int:
+    result = Client().call("POST", "/v1/sites/restart", {"name": args.name}, timeout=120)
+    shared = result.get("shared_with") or []
+    note = f"\n(shared with {', '.join(shared)}, restarted too)" if shared else ""
+
+    return _emit(args, result, f"Restarted {', '.join(result['restarted'])}.{note}")
 
 
 def _site_remove(args) -> int:
@@ -1685,6 +1758,11 @@ def _site_list(args) -> int:
         return 0
 
     for site in result["sites"]:
+        if site.get("kind") == "python":
+            where = f"venv {site['venv']}" if site.get("venv") else f"python {site.get('python') or 'newest'}"
+            print(f"  {site['url']:<40} {site['root']}  {where}  `{site.get('command')}`")
+            continue
+
         pinned = f"  php {site['php']}" if site["php"] else ""
         print(f"  {site['url']:<40} {site['root']}{pinned}")
 
@@ -1798,6 +1876,11 @@ RUNTIME_COMMANDS = {
     "npm": "node",
     "npx": "node",
     "php": "php",
+    "python": "python",
+    "python3": "python",
+    "pythonw": "python",
+    "pip": "python",
+    "pip3": "python",
     "psql": "postgres",
     "redis-cli": "redis",
     "mariadb": "mariadb",
@@ -1914,7 +1997,7 @@ def _service_help(args) -> int:
 
 
 def _site_help(args) -> int:
-    print("Usage: portable site {add,remove,list}")
+    print("Usage: portable site {add,remove,restart,list}")
 
     return 2
 

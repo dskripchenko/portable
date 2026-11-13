@@ -130,7 +130,7 @@ and runs the dashboard anyway, so that stays true.
 | `portable update [--install]` | Newer releases on the same line as what is installed. |
 | `portable uninstall <runtime> <version>` | Delete one and reclaim its disk. |
 
-Installable: `php`, `caddy`, `node`, `postgres`, `mariadb`, `redis`.
+Installable: `php`, `python`, `caddy`, `node`, `postgres`, `mariadb`, `redis`.
 
 **Versions install alongside, never over.** Anything pinned to the old one keeps
 working, which is why `uninstall` exists.
@@ -233,6 +233,58 @@ start and every `site add`. A file that is not valid JSON is refused with the
 line it breaks on, and a configuration Caddy refuses leaves the previous one
 running. Leave `@id` out of your routes: each is copied to both servers, and
 Caddy rejects a document where an id repeats.
+
+## Python sites
+
+| | |
+|---|---|
+| `portable install python [version]` | From python.org: `latest`, a line (`3.13`) or an exact version (`3.12.4`). |
+| `portable available python 3.12` | Every release of that line python.org still lists. |
+| `portable site add <name> <path> --command "<command>"` | Serve an application that is its own HTTP server. `{port}` becomes the port allocated to it. |
+| `portable site add <name> <path> --python 3.12` | Pin the Python. For a Django project (`manage.py`) the command is assumed. |
+| `portable site restart <name>` | Start the application afresh — after `pip install`, or after it crashed too often. |
+| `portable run python -m pip install -r requirements.txt` | pip of the installed Python. |
+
+```
+portable site add api C:\projects\api --command "uvicorn main:app --port {port}"
+portable site add shop C:\projects\shop          # manage.py: runserver is assumed
+portable site add web C:\projects\web --command "flask --app app run --port {port}"
+portable site add wsgi C:\projects\wsgi --command "waitress-serve --port={port} app:app"
+```
+
+**The application is the server.** PHP is answered by a pool of interpreters
+that know nothing about the project; a Python project brings its own server —
+`runserver`, uvicorn, Flask, waitress. So a Python site is one supervised process,
+started in the project's directory on a port from the same range as the PHP
+pools, and `<name>.localhost` is proxied to it whole: no files are served around
+it and nothing is rewritten. `--php` and `--python` do not mix on one site.
+
+**The project's own `.venv` (or `venv`) is used when it has one**, because that
+is where its dependencies are. Without one, the installed Python is used —
+pinned with `--python`, the newest by default. The first word of the command is
+looked for in the venv's `Scripts` first: on Windows a bare `uvicorn` would
+otherwise be searched for on the supervisor's PATH, not the project's. `python`
+always means the chosen interpreter.
+
+**The application is also given `PORT`**, for code that reads its port rather
+than being told it, plus `PYTHONUNBUFFERED=1` so that its output reaches the log
+as it is written: `portable logs python-<name> -f`. After `trust`,
+`SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` point at `conf/ca-bundle.pem`, so the
+application can call the other sites over HTTPS.
+
+**Reloaders are fine.** Stopping a site stops the whole tree it started — a
+reloader's child holds the port, and leaving it running would make the next
+start fail on a port nobody seems to hold. While a reloader restarts, the router
+waits up to 15 seconds rather than answering 502.
+
+An application that exits within a second of starting — a typo in the command, a
+module that does not import — fails `site add` with its own output instead of
+being restarted in a loop.
+
+`latest` and a line mean the newest **final** release: `3.16` while it is in
+alpha is refused with what it has, and a pre-release installs when named
+exactly. Releases older than 3.11 come from python.org's NuGet packages, which
+are published without a digest; those install unverified and `install` says so.
 
 ## Several versions at once
 

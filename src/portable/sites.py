@@ -1,9 +1,10 @@
 """
 What is served, and from where.
 
-A site is three facts: a name, a directory, and which PHP answers for it. The
-hostname follows from the name and is not stored — deriving it means it can
-never disagree with the name it was derived from.
+A site is three facts: a name, a directory, and what answers for it — a PHP
+version, or a Python application started by a command. The hostname follows
+from the name and is not stored — deriving it means it can never disagree with
+the name it was derived from.
 """
 
 from __future__ import annotations
@@ -87,9 +88,32 @@ class Site:
 
     index: str = "index.php"
 
+    kind: str = "php"
+    """
+    `php` or `python` — what answers for the site.
+
+    Stored rather than inferred from which fields are set: a Python site pinned
+    to no version and given no command (because one was detected) would
+    otherwise look exactly like a PHP site pinned to nothing.
+    """
+
+    python: str | None = None
+    """Which Python, for a Python site without a virtual environment of its own.
+    None follows the newest installed, as `php` does."""
+
+    command: str | None = None
+    """
+    How a Python site's application is started, with `{port}` where the port
+    goes: `uvicorn main:app --port {port}`. Run in the site's directory.
+    """
+
     @property
     def hostname(self) -> str:
         return f"{self.name}.localhost"
+
+    @property
+    def is_python(self) -> bool:
+        return self.kind == "python"
 
 
 def validate(name: str, root: Path) -> None:
@@ -102,6 +126,25 @@ def validate(name: str, root: Path) -> None:
 
     if not root.is_dir():
         raise InvalidSite(f"{root} is not a directory.")
+
+
+def check(site: Site) -> None:
+    """Everything `validate` checks, plus what a Python site needs on top."""
+    validate(site.name, site.root)
+
+    if site.kind not in KINDS:
+        raise InvalidSite(f"{site.kind!r} is not a kind of site. Known: {', '.join(KINDS)}.")
+
+    if site.is_python and not (site.command or "").strip():
+        raise InvalidSite(
+            f"{site.name} is a Python site with no command to start it. Give one with "
+            f'--command, putting {{port}} where the port goes: '
+            f'--command "uvicorn main:app --port {{port}}".'
+        )
+
+
+#: What can answer for a site.
+KINDS = ("php", "python")
 
 
 class Registry:
@@ -123,6 +166,11 @@ class Registry:
                 root=Path(entry["root"]),
                 php=entry.get("php"),
                 index=entry.get("index", "index.php"),
+                # Absent from every file written before Python sites existed,
+                # and every one of those sites is PHP.
+                kind=entry.get("kind", "php"),
+                python=entry.get("python"),
+                command=entry.get("command"),
             )
             for entry in raw
         ]
@@ -131,7 +179,7 @@ class Registry:
         return next((site for site in self.all() if site.name == name), None)
 
     def add(self, site: Site) -> None:
-        validate(site.name, site.root)
+        check(site)
 
         entries = [existing for existing in self.all() if existing.name != site.name]
         entries.append(site)
@@ -158,6 +206,9 @@ class Registry:
                         "root": str(site.root),
                         "php": site.php,
                         "index": site.index,
+                        "kind": site.kind,
+                        "python": site.python,
+                        "command": site.command,
                     }
                     for site in sorted(sites, key=lambda site: site.name)
                 ],

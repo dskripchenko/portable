@@ -10,6 +10,7 @@ What it decides:
 
 - a pool of `php-cgi` workers per PHP version any site asks for, and none for a
   version nothing asks for;
+- one application process per Python site, on a port of its own;
 - Caddy, running, with a configuration covering exactly the sites that exist.
 
 Caddy is reconfigured through its admin API rather than restarted. Restarting
@@ -24,6 +25,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import apps as apps_module
 from . import paths, pool, ports, settings, trust
 from . import services as services_module
 from .router import caddy
@@ -78,6 +80,19 @@ class Stack:
     Read from the settings each time a Stack is built, so `portable port 8888`
     survives a restart — a preference that does not is not a preference. A field
     rather than a constant also keeps the tests off whatever is listening on 80.
+    """
+
+    apps: dict[str, apps_module.App] = field(default_factory=dict)
+    """Python sites' application processes, keyed by site name."""
+
+    app_grace: float = 1.5
+    """
+    How long a just-started application is watched for exiting at once.
+
+    A command with a typo, a module that does not import, a port it cannot
+    have: each of those exits within a second, and finding out at `site add`
+    beats finding out from a browser that keeps waiting for a server the
+    supervisor is busy restarting.
     """
 
     services: dict[str, tuple[Service, int]] = field(default_factory=dict)
@@ -147,9 +162,14 @@ class Stack:
                 "services_started": started_services,
             }
 
-        wanted = self._versions_for(sites)
+        php_sites = [site for site in sites if not site.is_python]
+        python_sites = [site for site in sites if site.is_python]
+
+        wanted = self._versions_for(php_sites)
         started = self._ensure_pools(wanted)
         stopped = self._stop_unused_pools(wanted)
+        apps_stopped = self._stop_unused_apps(python_sites)
+        apps_started = self._ensure_apps(python_sites)
         resolved = self._resolve(sites)
         self._ensure_caddy(resolved)
 
@@ -158,6 +178,9 @@ class Stack:
             "pools": sorted(self.pools),
             "pools_started": started,
             "pools_stopped": stopped,
+            "apps": sorted(self.apps),
+            "apps_started": apps_started,
+            "apps_stopped": apps_stopped,
             "port": self.port,
             "services": self.service_report(),
             "services_started": started_services,
@@ -351,7 +374,7 @@ class Stack:
                 continue
 
             ini = pool.ini_for(runtime, paths.root() / "conf")
-            reserved = {worker.port for existing in self.pools.values() for worker in existing.workers}
+            reserved = self._reserved_ports()
             built = pool.build(
                 runtime,
                 ini=ini,
@@ -440,12 +463,177 @@ class Stack:
 
         return stopped
 
+    # -------------------------------------------------------------------- apps
+
+    def _python_for(self, site: Site) -> Installed | None:
+        """
+        The installed Python a site runs under, or None when its venv decides.
+
+        A project with its own virtual environment does not need an installed
+        Python at all — the venv names its interpreter — so its absence is only
+        an error for a project without one.
+        """
+        if apps_module.venv_of(site.root) is not None:
+            try:
+                return self.runtimes.get("python", site.python)
+            except NotInstalled:
+                return None
+
+        try:
+            return self.runtimes.get("python", site.python)
+        except NotInstalled as error:
+            raise StackError(
+                f"{site.name} needs Python {site.python or '(any)'}, which is not installed, "
+                f"and has no virtual environment of its own (.venv or venv). {error}"
+            ) from error
+
+    def _describe_app(self, site: Site, port: int) -> apps_module.App:
+        try:
+            return apps_module.build(
+                site,
+                port,
+                self._python_for(site),
+                log=paths.logs() / f"{apps_module.process_name(site.name)}.log",
+            )
+        except apps_module.InvalidCommand as error:
+            raise StackError(f"{site.name}: {error}") from error
+
+    def _ensure_apps(self, sites: list[Site]) -> list[str]:
+        """
+        Start each Python site's application, and restart one whose command or
+        interpreter has changed since it was started.
+
+        Compared by what would be run rather than by what was declared: a site
+        pinned to nothing whose newest Python changed is a different process,
+        and one re-added with the same command is not.
+        """
+        started = []
+
+        for site in sites:
+            running = self.apps.get(site.name)
+            reserved = self._reserved_ports()
+            port = running.port if running else ports.find(1, taken=reserved)[0]
+            app = self._describe_app(site, port)
+
+            if running is not None:
+                if (running.spec.argv, running.spec.cwd) == (app.spec.argv, app.spec.cwd):
+                    continue
+
+                self._stop_app(site.name)
+
+            self.supervisor.add(app.spec)
+
+            try:
+                self.supervisor.start(app.spec.name)
+            except OSError as error:
+                self.supervisor.forget(app.spec.name)
+
+                raise StackError(
+                    f"{site.name} would not start: {error}\nCommand: {' '.join(app.spec.argv)}"
+                ) from error
+
+            self.apps[site.name] = app
+
+            if not self._survives(app):
+                self._stop_app(site.name)
+
+                raise StackError(
+                    f"{site.name} exited as soon as it started.\n"
+                    f"Command: {' '.join(app.spec.argv)}\n"
+                    f"In: {site.root}\n"
+                    f"{paths.tail(app.spec.log)}"
+                )
+
+            started.append(site.name)
+
+        return started
+
+    def _survives(self, app: apps_module.App) -> bool:
+        """
+        Whether the process is still there once the grace period is over.
+
+        A restart counts as not surviving: the watcher may already have noticed
+        the exit and started it again, and a process that is alive only because
+        it is being restarted in a loop is the case this exists to catch.
+        """
+        import time
+
+        name = app.spec.name
+        restarts = self.supervisor.restarts(name)
+        deadline = time.monotonic() + self.app_grace
+
+        while True:
+            if not self.supervisor.alive(name) or self.supervisor.restarts(name) != restarts:
+                return False
+
+            if time.monotonic() >= deadline:
+                return True
+
+            time.sleep(0.1)
+
+    def _reserved_ports(self) -> set[int]:
+        """Every port this stack already handed out, so none is handed out twice."""
+        return {
+            *(worker.port for existing in self.pools.values() for worker in existing.workers),
+            *(app.port for app in self.apps.values()),
+        }
+
+    def _stop_app(self, name: str) -> None:
+        app = self.apps.pop(name, None)
+
+        if app is None:
+            return
+
+        self.supervisor.stop(app.spec.name)
+        self.supervisor.forget(app.spec.name)
+
+    def _stop_unused_apps(self, sites: list[Site]) -> list[str]:
+        names = {site.name for site in sites}
+        stopped = []
+
+        for name in list(self.apps):
+            if name not in names:
+                self._stop_app(name)
+                stopped.append(name)
+
+        return stopped
+
+    def restart_app(self, name: str) -> bool:
+        """
+        Stop a Python site's application and start it again, on the same port.
+
+        Needed after `pip install` and after editing anything a reloader does not
+        watch — settings read once, an `.env` file — and to bring back one the
+        supervisor gave up on after it crashed too often.
+        """
+        app = self.apps.get(name)
+
+        if app is None:
+            return False
+
+        self.supervisor.stop(app.spec.name)
+        self.supervisor.start(app.spec.name)
+
+        return True
+
     # ------------------------------------------------------------------- caddy
 
     def _resolve(self, sites: list[Site]) -> list[caddy.Site]:
         resolved = []
 
         for site in sites:
+            if site.is_python:
+                resolved.append(
+                    caddy.Site(
+                        name=site.name,
+                        root=site.root,
+                        upstreams=[self.apps[site.name].upstream],
+                        proxy=True,
+                    )
+                )
+
+                continue
+
             runtime = self.runtimes.get("php", site.php)
             built = self.pools[runtime.version]
 
@@ -710,6 +898,9 @@ class Stack:
             for worker in self.pools.pop(version).workers:
                 self.supervisor.stop(worker.name)
                 self.supervisor.forget(worker.name)
+
+        for name in list(self.apps):
+            self._stop_app(name)
 
         if self.caddy_running:
             self.supervisor.stop("caddy")

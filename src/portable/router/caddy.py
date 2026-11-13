@@ -52,6 +52,13 @@ class Site:
 
     index: str = "index.php"
 
+    proxy: bool = False
+    """
+    True for an application that serves HTTP itself — a Python site. Everything
+    is handed to [upstreams] as it arrives, with no files served and no front
+    controller: the application has its own routing and its own static files.
+    """
+
     @property
     def hostname(self) -> str:
         """
@@ -283,6 +290,9 @@ def route_for(site: Site, suffix: str = "", extra: list[dict] | None = None) -> 
     """
     root = str(site.root)
 
+    if site.proxy:
+        return _proxy_route(site, suffix, extra)
+
     return {
         "@id": _route_id(site.name) + suffix,
         "match": [{"host": [site.hostname]}],
@@ -368,6 +378,46 @@ def route_for(site: Site, suffix: str = "", extra: list[dict] | None = None) -> 
                         ],
                     },
                     {"handle": [{"handler": "file_server", "root": root}]},
+                ],
+            }
+        ],
+        "terminal": True,
+    }
+
+
+def _proxy_route(site: Site, suffix: str, extra: list[dict] | None) -> dict:
+    """
+    One site served by its own application: match the hostname, pass it on.
+
+    The same shape as a PHP site's route — the root set first, hand-written
+    routes next — so an override written for one works for the other.
+    """
+    return {
+        "@id": _route_id(site.name) + suffix,
+        "match": [{"host": [site.hostname]}],
+        "handle": [
+            {
+                "handler": "subroute",
+                "routes": [
+                    {"handle": [{"handler": "vars", "root": str(site.root)}]},
+                    *copy.deepcopy(extra or []),
+                    {
+                        "handle": [
+                            {
+                                "handler": "reverse_proxy",
+                                "upstreams": [{"dial": upstream} for upstream in site.upstreams],
+                                "load_balancing": {
+                                    # Development servers restart themselves on
+                                    # every saved file, and are gone while they
+                                    # re-import the application — seconds, for a
+                                    # Django project. A request in that window
+                                    # waits for it rather than getting a 502.
+                                    "try_duration": "15s",
+                                    "try_interval": "250ms",
+                                },
+                            }
+                        ]
+                    },
                 ],
             }
         ],
