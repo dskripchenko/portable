@@ -10,13 +10,15 @@
 A local development environment for Windows — PHP, Python, Caddy, PostgreSQL,
 MariaDB, Node, Redis — that installs **beside** the system rather than into it.
 
-> Status: **1.9.** PHP, Caddy, PostgreSQL, MariaDB, Redis and Node install and
-> run; sites are served at `*.localhost`, over HTTP and HTTPS; several versions
-> of each run side by side. There is a full-screen dashboard, it replaces itself
-> with `upgrade`, `service cli` opens a prompt at a running database, and
-> `trust` puts the local authority in front of the browsers and the installed
-> PHPs alike. In daily use on real Windows — see the note at the end for what
-> that has and has not covered.
+> Status: **1.11.** PHP, Python, Caddy, PostgreSQL, MariaDB, Redis and Node
+> install and run; sites are served at `*.localhost`, over HTTP and HTTPS —
+> PHP through a `php-cgi` pool, Python as the project's own application server;
+> several versions of each run side by side. There is a full-screen dashboard,
+> it replaces itself with `upgrade`, `service cli` opens a prompt at a running
+> database, and `trust` puts the local authority in front of the browsers and
+> the installed PHPs alike. In daily use on real Windows — see the note at the
+> end for what that has and has not covered; Python sites are new and are not
+> yet on that list.
 
 The two version badges say different things: **tag** is what was cut, **release**
 is what CI built and published. They agree unless a release failed, which is
@@ -286,6 +288,12 @@ the premise the whole design rests on; runtimes downloading and unpacking over a
 network that resets TLS connections mid-handshake; installing under a PowerShell
 locked into Constrained Language Mode; detaching from the console and the
 process group; the dashboard; and `logs` and `shell`.
+
+**Not yet on real Windows: Python sites.** An application behind Caddy, restarted,
+and a reloader's whole process tree stopped have been run on macOS; stopping the
+tree is tested on `windows-latest`, where it goes through `taskkill /T` instead.
+The interpreter from python.org's zip serving a real project — Django's
+`runserver` with its reloader, uvicorn — has not been seen on Windows yet.
 
 **`upgrade` was on that list and should not have been.** It passed its tests,
 including on `windows-latest`, and on a real machine it downloaded, verified,
